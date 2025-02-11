@@ -3,12 +3,12 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "package_name"
+name = "master_thesis_adapters"
 version = "0.1"
-requires-python = ">= 3.10"
-authors = [{ name = "Wessel Poelman", email = "contact@wesselpoelman.nl" }]
-maintainers = [{ name = "Wessel Poelman", email = "contact@wesselpoelman.nl" }]
-description = "A package to **description** (package_name)."
+requires-python = ">= 3.11"
+authors = [{ name = "Stef Accou", email = "stef.accou@gmail.com" }]
+maintainers = [{ name = "Stef Accou", email = "stef.accou@gmail.com" }]
+description = "A package to do the things we do in a thesis (master_thesis_adapters)."
 readme = "README.md"
 license = { file = "LICENSE" }
 classifiers = [
@@ -27,7 +27,7 @@ dev = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/WPoelman/package_name"
+"Homepage" = "https://github.com/stefaccou/Master_thesis"
 
 [tool.setuptools.packages.find]
 where = ["src"]
