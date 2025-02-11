@@ -1,9 +1,9 @@
 from datasets import load_dataset
-from transformers.adapters.composition import Stack
-from transformers import AutoConfig, AutoAdapterModel
-from transformers import AdapterConfig
+from adapters.composition import Stack
+from transformers import AutoConfig
+from adapters import AutoAdapterModel, AdapterConfig, AdapterTrainer
 from transformers import AutoTokenizer
-from transformers import TrainingArguments, AdapterTrainer
+from transformers import TrainingArguments
 from datasets import concatenate_datasets
 import numpy as np
 from transformers import EvalPrediction
@@ -28,10 +28,16 @@ parser.add_argument("--none_tr", type=bool, default=True, help="No language adap
 parser.add_argument("--seed", type=int, default=123, help="Seed for reproducibility")
 parser.add_argument("--epochs", type=int, default=6, help="Seed for reproducibility")
 parser.add_argument(
-    "--train_output_dir", type=str, default="./training_output", help="Output directory for training artifacts"
+    "--train_output_dir",
+    type=str,
+    default="$VSC_DATA/test_adapters/training_output",
+    help="Output directory for training artifacts",
 )
 parser.add_argument(
-    "--eval_output_dir", type=str, default="./eval_output", help="Output directory for evaluation artifacts"
+    "--eval_output_dir",
+    type=str,
+    default="$VSC_DATA/test_adapters/eval_output",
+    help="Output directory for evaluation artifacts",
 )
 
 

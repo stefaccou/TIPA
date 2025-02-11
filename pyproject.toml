@@ -15,8 +15,13 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
-dependencies = [
 
+dependencies = [
+    "adapters",
+    "transformers",
+    "datasets",
+    "numpy",
+    "torch"
 ]
 
 [project.optional-dependencies]
