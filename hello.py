@@ -25,7 +25,7 @@ executor.update_parameters(
         "account": "lp_hpcinfo",
         "nodes": 1,
         "cpus_per_gpu": 64,
-        # "gpus_per_node": 1,
+        "gpus_per_node": 1,
         "output": "/test_for_output",
     },
 )
