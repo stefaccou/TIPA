@@ -21,7 +21,7 @@ executor.update_parameters(
     slurm_additional_parameters={
         "job_name": "Submitit_test",
         "clusters": "wice",
-        "account": "lc_hpcinfo",
+        "account": "lp_hpcinfo",
         "nodes": 1,
         "cpus_per_gpu": 64,
         # "gpus_per_node": 1,
