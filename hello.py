@@ -17,10 +17,11 @@ executor = submitit.AutoExecutor(folder="log_test")
 # set timeout in min, and partition for running the job
 executor.update_parameters(
     timeout_min=1,
-    slurm_partition="interactive",
+    slurm_partition="wice",
     slurm_additional_parameters={
         "job_name": "Submitit_test",
         "clusters": "wice",
+        "partition": "interactive",
         "account": "lp_hpcinfo",
         "nodes": 1,
         "cpus_per_gpu": 64,
