@@ -17,6 +17,7 @@ classifiers = [
 ]
 
 dependencies = [
+    "argparse",
     "adapters",
     "transformers",
     "datasets",

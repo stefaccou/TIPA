@@ -9,5 +9,5 @@ From: /apps/containers/Conda/miniconda-23.10.0-1.sif
 
     # Install dependencies from pip
     pip install --upgrade pip
-    pip install -U adapter-transformers==3.2.1
+    pip install -U adapters
     pip install -U datasets==2.14.6
