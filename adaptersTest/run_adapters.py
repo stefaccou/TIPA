@@ -281,7 +281,7 @@ if __name__ == "__main__":
             "clusters": "wice",
             "account": "intro_vsc37220",
             "nodes": 1,
-            "cpus_per_gpu": 64,
+            "cpus_per_gpu": 18,
             "gpus_per_node": 1,
             "mail_type": "BEGIN,END,FAIL",
             "mail_user": "stef.accou@student.kuleuven.be",
