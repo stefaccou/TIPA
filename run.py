@@ -5,7 +5,7 @@ import os
 def run_adapters_script():
     # Define the command to run the adapters.py script with the specified arguments
     command = (
-        "python lang-adapters-impact/adapters.py "
+        "python adapters.py "
         "--task 'xnli' "
         "--data_setup 'all' "
         "--train_lang 'en' "
