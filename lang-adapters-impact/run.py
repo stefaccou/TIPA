@@ -20,7 +20,7 @@ def main():
 
     command = [
         "python",
-        "lang-adapters-impact/adapters.py",
+        "adapters.py",
         "--task",
         "xnli",
         "--data_setup",
