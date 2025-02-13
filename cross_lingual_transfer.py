@@ -81,10 +81,6 @@ def main():
 
     model.active_adapters = Stack("zh", "copa")
 
-    # Save all adapters
-    for adapter_name in model.config.adapters.adapters:
-        model.save_adapter(adapter_name, f"{adapter_name}_saved")
-
     def compute_accuracy(p: EvalPrediction):
         preds = np.argmax(p.predictions, axis=1)
         return {"acc": (preds == p.label_ids).mean()}
