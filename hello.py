@@ -22,7 +22,7 @@ executor.update_parameters(
         "job_name": "Submitit_test",
         "clusters": "wice",
         "partition": "interactive",
-        "account": "lp_hpcinfo",
+        "account": "intro_vsc37220",
         "nodes": 1,
         "cpus_per_gpu": 64,
         "gpus_per_node": 1,
