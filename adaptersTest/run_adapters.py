@@ -1,7 +1,7 @@
 from datasets import load_dataset
-from adapters.composition import Stack
+from run_adapters.composition import Stack
 from transformers import AutoConfig
-from adapters import AutoAdapterModel, AdapterConfig, AdapterTrainer
+from run_adapters import AutoAdapterModel, AdapterConfig, AdapterTrainer
 from transformers import AutoTokenizer
 from transformers import TrainingArguments
 from datasets import concatenate_datasets
@@ -169,7 +169,7 @@ def main():
         config=config,
     ).to(device)
 
-    # Load the language adapters
+    # Load the language adaptersTest
     lang_adapter_config = AdapterConfig.load("pfeiffer", reduction_factor=2)
     print(lang_adapter_config)
     model.load_adapter(f"{train_lang}/wiki@ukp", config=lang_adapter_config)

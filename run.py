@@ -3,9 +3,9 @@ import os
 
 
 def run_adapters_script():
-    # Define the command to run the adapters.py script with the specified arguments
+    # Define the command to run the adaptersTest.py script with the specified arguments
     command = (
-        "python adapters.py "
+        "python adaptersTest.py "
         "--task 'xnli' "
         "--data_setup 'all' "
         "--train_lang 'en' "

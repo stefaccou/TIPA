@@ -1,8 +1,8 @@
 import submitit
 import numpy as np
 import torch
-from adapters import AdapterTrainer, AutoAdapterModel
-from adapters.composition import Stack
+from adaptersTest import AdapterTrainer, AutoAdapterModel
+from adaptersTest.composition import Stack
 from datasets import concatenate_datasets, load_dataset
 from transformers import AutoTokenizer, AutoConfig, EvalPrediction, TrainingArguments
 
@@ -96,7 +96,7 @@ def main():
     )
     eval_trainer.evaluate()
 
-    # Save all adapters
+    # Save all adaptersTest
     for adapter_name in model.config.adapters.adapters:
         model.save_adapter(adapter_name, f"{adapter_name}_saved")
 

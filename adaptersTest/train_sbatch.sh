@@ -26,7 +26,7 @@ echo "EVAL_OUTPUT_DIR: $EVAL_OUTPUT_DIR"
 RUN_NAME="RUN_${TASK}_${DATA_SETUP}_${TRAIN_LANG}_${BASE_MODEL}_NONE_TR=${NONE_TR}_SEED=${SEED}_EPOCHS=${EPOCHS}_DATE=$(date +"%Y-%m-%d_%H:%M")"
 echo "RUN_NAME: $RUN_NAME"
 
-apptainer exec adapters-env.sif python adapters_run.py \
+apptainer exec adapters-env.sif python run_adapters.py \
     --task $TASK \
     --data_setup $DATA_SETUP \
     --train_lang $TRAIN_LANG \
