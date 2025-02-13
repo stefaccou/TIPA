@@ -1,21 +1,13 @@
-from datasets import load_dataset
-from adapters.composition import Stack
-from transformers import AutoConfig
-from adapters import AutoAdapterModel, AdapterConfig, AdapterTrainer
-from transformers import AutoTokenizer
-from transformers import TrainingArguments
-from datasets import concatenate_datasets
+from datasets import load_dataset, concatenate_datasets
+from transformers import AutoConfig, AutoTokenizer, TrainingArguments, EvalPrediction
+from transformers.adapters import AutoAdapterModel, AdapterConfig, AdapterTrainer, Stack
 import numpy as np
-from transformers import EvalPrediction
-
 import argparse
-
 import random
 import torch
-
 import os
-
 import submitit
+
 
 os.system("echo $HF_DATASETS_CACHE")
 
@@ -73,7 +65,7 @@ def main():
 
     # Set the seed for reproducibility
     set_seed(seed_value)
-
+    global eval_langs
     if eval_langs is None:
         if task == "xnli" and base_model == "bert-base-multilingual-cased":
             eval_langs = ["en", "ar", "de", "el", "es", "hi", "ru", "sw", "tr", "vi", "zh"]
@@ -283,7 +275,7 @@ if __name__ == "__main__":
     parameters = {
         "slurm_partition": "gpu_a100_debug",
         "slurm_time": "00:10:00",
-        "slurm_job_name": "cross_lingual_transfer",
+        "slurm_job_name": "test for adapter code from paper",
         "slurm_additional_parameters": {
             "clusters": "wice",
             "account": "intro_vsc37220",
