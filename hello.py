@@ -9,7 +9,7 @@ def expensive_function(a, b):
 parameters = {
     "slurm_partition": "gpu_a100_debug",
     "slurm_time": "00:10:00",
-    "slurm_job_name": "<experiment-id>",  # Put something informative here, it helps tracking down issues easier
+    "slurm_job_name": "test_debugging",  # Put something informative here, it helps tracking down issues easier
     "slurm_additional_parameters": {
         "clusters": "wice",
         "account": "intro_vsc37220",  # Your VSC account
