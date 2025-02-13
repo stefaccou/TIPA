@@ -97,7 +97,7 @@ def main():
         dataset = load_dataset(task, train_lang)
 
     tokenizer = AutoTokenizer.from_pretrained(base_model)
-
+    os.echo(f"Tokenizing with {base_model}")
     # batch encoders are dataset-specific
     if task == "paws-x":
 
@@ -178,7 +178,7 @@ def main():
         model.add_multiple_choice_head("xcopa", num_choices=2)
 
     model.train_adapter([task])
-
+    os.echo(f"Training adapter for {task}")
     if none_tr:
         model.active_adapters = task  # only task adapter activated for training (setup none_tr)
     else:
@@ -214,6 +214,7 @@ def main():
     )
 
     trainer.train()
+    os.echo("Training done")
 
     def compute_accuracy(p: EvalPrediction):
         preds = np.argmax(p.predictions, axis=1)
@@ -233,7 +234,7 @@ def main():
                 eval_dataset=data["test"],
                 compute_metrics=compute_accuracy,
             )
-            print(lang, ": ", eval_trainer.evaluate())
+            os.echo(lang, ": ", eval_trainer.evaluate())
 
             # With source adapter
             model.active_adapters = Stack(train_lang, task)
@@ -273,17 +274,17 @@ def main():
 
 if __name__ == "__main__":
     parameters = {
-        "slurm_partition": "gpu_a100_debug",
-        "slurm_time": "00:10:00",
-        "slurm_job_name": "test for adapter code from paper",
+        "slurm_partition": "gpu_a100",
+        "slurm_time": "03:15:00",
+        "slurm_job_name": "replication adapter code from paper",
         "slurm_additional_parameters": {
             "clusters": "wice",
             "account": "intro_vsc37220",
-            "nodes": 1,
+            "nodes": 2,
             "cpus_per_gpu": 64,
             "gpus_per_node": 1,
             "mail_type": "BEGIN,END,FAIL",
-            "mail_user": "",
+            "mail_user": "stef.accou@student.kuleuven.be",
         },
     }
 
