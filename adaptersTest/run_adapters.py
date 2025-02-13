@@ -1,6 +1,6 @@
 from datasets import load_dataset, concatenate_datasets
 from transformers import AutoConfig, AutoTokenizer, TrainingArguments, EvalPrediction
-from transformers.adapters import AutoAdapterModel, AdapterConfig, AdapterTrainer, Stack
+from adapters import AutoAdapterModel, AdapterConfig, AdapterTrainer, Stack
 import numpy as np
 import argparse
 import random
