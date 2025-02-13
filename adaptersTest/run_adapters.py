@@ -274,8 +274,8 @@ def main():
 
 if __name__ == "__main__":
     parameters = {
-        "slurm_partition": "gpu_a100_debug",
-        "slurm_time": "0:05:00",
+        "slurm_partition": "gpu_a100",
+        "slurm_time": "03:05:00",
         "slurm_job_name": "debug: replication adapter code from paper",
         "slurm_additional_parameters": {
             "clusters": "wice",
