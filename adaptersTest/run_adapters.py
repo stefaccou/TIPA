@@ -274,7 +274,7 @@ def main():
 
 if __name__ == "__main__":
     parameters = {
-        "slurm_partition": "wice_a100",
+        "slurm_partition": "gpu_a100",
         "slurm_time": "03:15:00",
         "slurm_job_name": "replication adapter code from paper",
         "slurm_additional_parameters": {
