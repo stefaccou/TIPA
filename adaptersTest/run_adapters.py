@@ -1,7 +1,7 @@
 from datasets import load_dataset
-from run_adapters.composition import Stack
+from adapters.composition import Stack
 from transformers import AutoConfig
-from run_adapters import AutoAdapterModel, AdapterConfig, AdapterTrainer
+from adapters import AutoAdapterModel, AdapterConfig, AdapterTrainer
 from transformers import AutoTokenizer
 from transformers import TrainingArguments
 from datasets import concatenate_datasets
