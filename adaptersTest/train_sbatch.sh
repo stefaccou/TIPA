@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --cluster=wice
-#SBATCH --partition=interactive
-#SBATCH --account=lp_hpcinfo
+#SBATCH --partition=gpu_a100
+#SBATCH --account=intro_vsc37220
 #SBATCH --nodes=1 --ntasks=1
-#SBATCH --time=2:00
+#SBATCH --time=10:00
 #SBATCH --job-name=test_for_adapters
 #SBATCH --output=%x.out
 
