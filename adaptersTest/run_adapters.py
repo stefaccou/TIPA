@@ -275,8 +275,8 @@ def main():
 if __name__ == "__main__":
     parameters = {
         "slurm_partition": "gpu_a100",
-        "slurm_time": "03:05:00",
-        "slurm_job_name": "eplication adapter code from paper",
+        "slurm_time": "03:00:00",
+        "slurm_job_name": "application adapter code from paper",
         "slurm_additional_parameters": {
             "clusters": "wice",
             "account": "intro_vsc37220",
