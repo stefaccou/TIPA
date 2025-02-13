@@ -274,13 +274,13 @@ def main():
 
 if __name__ == "__main__":
     parameters = {
-        "slurm_partition": "gpu_a100",
+        "slurm_partition": "wice_a100",
         "slurm_time": "03:15:00",
         "slurm_job_name": "replication adapter code from paper",
         "slurm_additional_parameters": {
             "clusters": "wice",
             "account": "intro_vsc37220",
-            "nodes": 2,
+            "nodes": 1,
             "cpus_per_gpu": 64,
             "gpus_per_node": 1,
             "mail_type": "BEGIN,END,FAIL",
