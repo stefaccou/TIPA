@@ -96,7 +96,9 @@ def main():
     )
     eval_trainer.evaluate()
 
-    model.save_adapter("copa", "copa_en_zh")
+    # Save all adapters
+    for adapter_name in model.config.adapters.adapters:
+        model.save_adapter(adapter_name, f"{adapter_name}_saved")
 
 
 if __name__ == "__main__":
