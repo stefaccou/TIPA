@@ -15,7 +15,10 @@ def get_files_with_sizes(directory):
 
 
 def main():
-    directory = input("Enter the directory path: ")
+    try:
+        directory = input("Enter the directory path: ")
+    except EOFError:
+        directory = "../Master_thesis"
     files = get_files_with_sizes(directory)
     files.sort(key=lambda x: x[1], reverse=True)
 
