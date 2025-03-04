@@ -75,7 +75,7 @@ if __name__ == "__main__":
         },
     }
 
-    executor = submitit.AutoExecutor(folder="experiment_folder")
+    executor = submitit.AutoExecutor(folder="xnli")
     executor.update_parameters(**parameters)
 
     job = executor.submit(main)
