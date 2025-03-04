@@ -1,4 +1,3 @@
-import pickle
 import torch
 import adapters.composition as composition
 from adapters import AutoAdapterModel, AdapterTrainer
@@ -39,15 +38,7 @@ def preprocess_dataset(dataset):
     return dataset
 
 
-"""
 dataset_eng = preprocess_dataset(dataset_en)
-#we save this dataset for later
-
-with open("pickles/dataset_eng.pkl", "wb") as f:
-    pickle.dump(dataset_eng, f)
-"""
-with open("pickles/dataset_eng.pkl", "rb") as f:
-    dataset_eng = pickle.load(f)
 
 
 model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer")
