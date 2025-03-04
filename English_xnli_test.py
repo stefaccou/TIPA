@@ -5,6 +5,7 @@ from transformers import AutoTokenizer
 from datasets import load_dataset
 from transformers import TrainingArguments
 import submitit
+
 # we will use XLM Roberta
 
 
@@ -34,10 +35,10 @@ def main():
     dataset_eng = preprocess_dataset(dataset_en)
 
     model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer")
-    model.add_adapter("xnli")
-    model.add_classification_head("xnli", num_labels=3)
-    model.train_adapter(["xnli"])
-    model.active_adapters = composition.Stack("en", "xnli")
+    model.add_adapter("xnli_adapter")
+    model.add_classification_head("xnli_adapter", num_labels=3)
+    model.train_adapter(["xnli_adapter"])
+    model.active_adapters = composition.Stack("en", "xnli_adapter")
 
     training_args = TrainingArguments(
         learning_rate=1e-4,
@@ -45,7 +46,7 @@ def main():
         per_device_train_batch_size=32,
         per_device_eval_batch_size=32,
         logging_steps=10,
-        output_dir="$VSC_DATA/xnli/training_output",
+        output_dir="$VSC_DATA/xnli_test/training_output",
         overwrite_output_dir=True,
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
@@ -75,7 +76,7 @@ if __name__ == "__main__":
         },
     }
 
-    executor = submitit.AutoExecutor(folder="xnli")
+    executor = submitit.AutoExecutor(folder="xnli_test")
     executor.update_parameters(**parameters)
 
     job = executor.submit(main)
