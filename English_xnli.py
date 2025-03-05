@@ -58,7 +58,7 @@ def main():
         train_dataset=dataset_eng["train"],
     )
     trainer.train()
-
+    model.save_adapter("xnli_adapter", "xnli_adapter")
 
 
 if __name__ == "__main__":
