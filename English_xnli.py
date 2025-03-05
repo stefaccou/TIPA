@@ -61,7 +61,7 @@ def main():
         train_dataset=dataset_eng["train"],
     )
     trainer.train()
-    model.save_adapter("xnli_adapter", "xnli_adapter")
+    model.save_adapter("$VSC_DATA/xnli_test/trained_adapters/xnli_adapter_v1", "xnli_adapter")
 
 
 if __name__ == "__main__":
