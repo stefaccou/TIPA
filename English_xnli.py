@@ -67,7 +67,7 @@ def main():
 if __name__ == "__main__":
     parameters = {
         "slurm_partition": "gpu_a100",
-        "slurm_time": "03:00:00",
+        "slurm_time": "01:00:00",
         "slurm_job_name": "training xnli adapter for english",
         "slurm_additional_parameters": {
             "clusters": "wice",
