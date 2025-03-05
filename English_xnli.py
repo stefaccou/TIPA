@@ -14,7 +14,10 @@ def main():
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
     # load the dataset
     dataset_en = load_dataset("xnli", "en")
-
+    # we shuffle
+    dataset_en = dataset_en["train"].shuffle(seed=0)
+    # we select the first 5000 examples
+    dataset_en = dataset_en.select(range(5000))
     def encode_batch(batch):
         all_encoded = {"input_ids": [], "attention_mask": []}
         for i in range(len(batch["premise"])):
