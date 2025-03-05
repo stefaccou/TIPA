@@ -43,8 +43,8 @@ def main():
     training_args = TrainingArguments(
         learning_rate=1e-4,
         num_train_epochs=8,
-        per_device_train_batch_size=32,
-        per_device_eval_batch_size=32,
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=8,
         logging_steps=10,
         output_dir="$VSC_DATA/xnli_test/training_output",
         overwrite_output_dir=True,
