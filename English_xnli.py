@@ -49,7 +49,7 @@ def main():
         per_device_train_batch_size=8,
         per_device_eval_batch_size=8,
         logging_steps=10,
-        output_dir="$VSC_DATA/xnli_test/training_output",
+        output_dir="./xnli_test/training_output",
         overwrite_output_dir=True,
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
