@@ -676,8 +676,7 @@ def get_default_args():
     ]
 if __name__ == "__main__":
     # If no extra arguments are provided, add the defaults.
-    if len(sys.argv) == 1:
-        sys.argv.extend(get_default_args())
+    sys.argv.extend(get_default_args())
     parameters = {
         "slurm_partition": "gpu_a100_debug",
         "slurm_time": "00:10:00",
