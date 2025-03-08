@@ -672,12 +672,12 @@ if __name__ == "__main__":
         "slurm_job_name": "hardcoded_run_mlm",
         "slurm_additional_parameters": {
             "clusters": "wice",
-            "account": "your_account",  # replace with your account
+            "account": "intro_vsc37220",  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 64,
             "gpus_per_node": 1,
             "mail_type": "BEGIN,END,FAIL",
-            "mail_user": "your_email@example.com",  # replace with your email
+            "mail_user": "",  # replace with your email
         },
     }
 
