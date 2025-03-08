@@ -680,17 +680,17 @@ def _mp_fn(index):
 
 if __name__ == "__main__":
     parameters = {
-        "slurm_partition": "gpu_a100_debug",
-        "slurm_time": "00:10:00",
+        "slurm_partition": "gpu_a100",
+        "slurm_time": "03:00:00",
         "slurm_job_name": "hardcoded_run_mlm",
         "slurm_additional_parameters": {
             "clusters": "wice",
             "account": "intro_vsc37220",  # replace with your account
-            "nodes": 1,
-            "cpus_per_gpu": 64,
+            "nodes": 2,
+            "cpus_per_gpu": 18,
             "gpus_per_node": 1,
             "mail_type": "BEGIN,END,FAIL",
-            "mail_user": "",  # replace with your email
+            "mail_user": "stef.accou@student.kuleuven.be",  # replace with your email
         },
     }
 
