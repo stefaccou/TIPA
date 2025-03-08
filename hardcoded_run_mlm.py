@@ -434,7 +434,7 @@ def main(*args):
         first_sample = next(iter(raw_datasets))
         column_names = list(first_sample.keys())
     text_column_name = "text" if "text" in column_names else column_names[0]
-
+    print("line 437")
     if data_args.max_seq_length is None:
         max_seq_length = tokenizer.model_max_length
         if max_seq_length > 1024:
@@ -625,6 +625,10 @@ def main(*args):
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
+        # we explicitly save the adapter
+        model.save_all_adapters(training_args.output_dir)
+        # we save the germanic adapter
+        model.save_adapter("germanic", training_args.output_dir)
         trainer.save_model()  # Saves the tokenizer too for easy upload
         metrics = train_result.metrics
 
