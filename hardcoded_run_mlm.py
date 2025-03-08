@@ -20,10 +20,9 @@ Here is the full list of checkpoints on the hub that can be fine-tuned by this s
 https://huggingface.co/models?filter=fill-mask
 """
 # You can also adapt this script on your own masked language modeling task. Pointers for this are left as comments.
-
+import submitit
 import logging
 import math
-import os
 import sys
 from dataclasses import dataclass, field
 from itertools import chain
@@ -667,4 +666,23 @@ def _mp_fn(index):
 
 
 if __name__ == "__main__":
-    main()
+    parameters = {
+        "slurm_partition": "gpu_a100_debug",
+        "slurm_time": "00:10:00",
+        "slurm_job_name": "hardcoded_run_mlm",
+        "slurm_additional_parameters": {
+            "clusters": "wice",
+            "account": "your_account",  # replace with your account
+            "nodes": 1,
+            "cpus_per_gpu": 64,
+            "gpus_per_node": 1,
+            "mail_type": "BEGIN,END,FAIL",
+            "mail_user": "your_email@example.com",  # replace with your email
+        },
+    }
+
+    executor = submitit.AutoExecutor(folder="experiment_folder")
+    executor.update_parameters(**parameters)
+
+    job = executor.submit(main)
+    job.result()
