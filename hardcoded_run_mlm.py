@@ -418,9 +418,13 @@ def main():
     # First we tokenize all the texts.
 
     if training_args.do_train:
-        column_names = list(raw_datasets["train"].features)
+        #column_names = list(raw_datasets["train"].features)
+        first_sample = next(iter(raw_datasets))
+        column_names = list(first_sample.keys())
     else:
-        column_names = list(raw_datasets["validation"].features)
+        #column_names = list(raw_datasets["validation"].features)
+        first_sample = next(iter(raw_datasets))
+        column_names = list(first_sample.keys())
     text_column_name = "text" if "text" in column_names else column_names[0]
 
     if data_args.max_seq_length is None:
