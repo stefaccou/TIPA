@@ -266,12 +266,14 @@ def main():
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
     sys.argv.extend(get_default_args())
+    filtered_args = [arg for arg in sys.argv if arg.startswith("--")]
+
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments, AdapterArguments))
-    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+    if len(filtered_args) == 2 and filtered_args[1].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
         # let's parse it to get our arguments.
         model_args, data_args, training_args, adapter_args = parser.parse_json_file(
-            json_file=os.path.abspath(sys.argv[1])
+            json_file=os.path.abspath(filtered_args[1])
         )
     else:
         model_args, data_args, training_args, adapter_args = parser.parse_args_into_dataclasses()
