@@ -358,14 +358,14 @@ def main():
     # ---------------------
     model = AutoModelForMaskedLM.from_pretrained("xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-    os.system("echo Model and tokenizer loaded")
+    print(" Model and tokenizer loaded")
     # We want to make a combined version of the two datasets,
     # consisting of 8 english articles, followed by 8 german articles
 
     # Load the English and German Wikipedia datasets in streaming mode
     dataset_eng = load_dataset("wikimedia/wikipedia", "20231101.en", streaming=True)
     dataset_ger = load_dataset("wikimedia/wikipedia", "20231101.de", streaming=True)
-    os.system("echo Datasets loaded")
+    print(" Datasets loaded")
     # Shuffle each language split (this returns an IterableDataset)
     dataset_english = dataset_eng["train"].shuffle(seed=0)
     dataset_german = dataset_ger["train"].shuffle(seed=0)
@@ -395,19 +395,19 @@ def main():
     # We combine these into a new iterable dataset
     def combined_gen():
         return alternating_iterator(dataset_english, dataset_german, lang_batch_size)
-    os.system("echo Combined generator created")
+    print(" Combined generator created")
     raw_datasets = datasets.IterableDataset.from_generator(combined_gen)
 
     # Convert the model into an adapter model
     adapters.init(model)
     model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", adapter_name="en")
     model.load_adapter("AdapterHub/xlm-roberta-base-de-wiki_pfeiffer", adapter_name="de")
-    os.system("echo downloaded adapters")
+    print(" downloaded adapters")
     model.load_adapter("trained_adapters/xnli_adapter", adapter_name="xnli_adapter")
     model.add_adapter("germanic", config="pfeiffer")
     model.train_adapter(["germanic"])
     model.active_adapters = ac.Stack("germanic", ac.BatchSplit("en", "de", batch_sizes=lang_batch_size), "xnli_adapter")
-    os.system("echo adapter activated", model.active_adapters)
+    print(" adapter activated", model.active_adapters)
     # We resize the embeddings only when necessary to avoid index errors. If you are creating a model from scratch
     # on a small vocab and want a smaller embedding size, remove this test.
     embedding_size = model.get_input_embeddings().weight.shape[0]
