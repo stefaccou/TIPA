@@ -32,7 +32,7 @@ from typing import Optional
 import datasets
 from datasets import load_dataset
 from itertools import islice
-
+import os
 import adapters
 import evaluate
 import transformers
@@ -358,14 +358,14 @@ def main():
     # ---------------------
     model = AutoModelForMaskedLM.from_pretrained("xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-    print("Model and tokenizer loaded")
+    os.system("echo Model and tokenizer loaded")
     # We want to make a combined version of the two datasets,
     # consisting of 8 english articles, followed by 8 german articles
 
     # Load the English and German Wikipedia datasets in streaming mode
     dataset_eng = load_dataset("wikimedia/wikipedia", "20231101.en", streaming=True)
     dataset_ger = load_dataset("wikimedia/wikipedia", "20231101.de", streaming=True)
-    print("Datasets loaded")
+    os.system("echo Datasets loaded")
     # Shuffle each language split (this returns an IterableDataset)
     dataset_english = dataset_eng["train"].shuffle(seed=0)
     dataset_german = dataset_ger["train"].shuffle(seed=0)
@@ -395,19 +395,19 @@ def main():
     # We combine these into a new iterable dataset
     def combined_gen():
         return alternating_iterator(dataset_english, dataset_german, lang_batch_size)
-    print("Combined generator created")
+    os.system("echo Combined generator created")
     raw_datasets = datasets.IterableDataset.from_generator(combined_gen)
 
     # Convert the model into an adapter model
     adapters.init(model)
     model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", adapter_name="en")
     model.load_adapter("AdapterHub/xlm-roberta-base-de-wiki_pfeiffer", adapter_name="de")
-    print("downloaded adapters")
+    os.system("echo downloaded adapters")
     model.load_adapter("xnli_adapter")
     model.add_adapter("germanic", config="pfeiffer")
     model.train_adapter(["germanic"])
     model.active_adapters = ac.Stack("germanic", ac.BatchSplit("en", "de", batch_sizes=lang_batch_size), "xnli_adapter")
-    print("adapter activated", model.active_adapters)
+    os.system("echo adapter activated", model.active_adapters)
     # We resize the embeddings only when necessary to avoid index errors. If you are creating a model from scratch
     # on a small vocab and want a smaller embedding size, remove this test.
     embedding_size = model.get_input_embeddings().weight.shape[0]
@@ -416,6 +416,7 @@ def main():
 
     # Preprocessing the datasets.
     # First we tokenize all the texts.
+
     if training_args.do_train:
         column_names = list(raw_datasets["train"].features)
     else:
@@ -535,11 +536,14 @@ def main():
                     group_texts,
                     batched=True,
                 )
-
+    # Change: we hard-coded this for now
     if training_args.do_train:
-        if "train" not in tokenized_datasets:
-            raise ValueError("--do_train requires a train dataset")
-        train_dataset = tokenized_datasets["train"]
+        train_dataset = tokenized_datasets
+
+    #if training_args.do_train:
+    #    if "train" not in tokenized_datasets:
+    #        raise ValueError("--do_train requires a train dataset")
+    #    train_dataset = tokenized_datasets["train"]
         if data_args.max_train_samples is not None:
             max_train_samples = min(len(train_dataset), data_args.max_train_samples)
             train_dataset = train_dataset.select(range(max_train_samples))
@@ -551,6 +555,7 @@ def main():
         if data_args.max_eval_samples is not None:
             max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
             eval_dataset = eval_dataset.select(range(max_eval_samples))
+
 
         def preprocess_logits_for_metrics(logits, labels):
             if isinstance(logits, tuple):
