@@ -25,13 +25,11 @@ import logging
 import math
 import os
 import sys
-import json
 from dataclasses import dataclass, field
 from itertools import chain
 from typing import Optional
 
 import datasets
-import torch
 from datasets import load_dataset
 from itertools import islice
 
@@ -41,9 +39,7 @@ import transformers
 from adapters import AdapterArguments, AdapterTrainer, setup_adapter_training
 import adapters.composition as ac
 from transformers import (
-    CONFIG_MAPPING,
     MODEL_FOR_MASKED_LM_MAPPING,
-    AutoConfig,
     AutoModelForMaskedLM,
     AutoTokenizer,
     DataCollatorForLanguageModeling,
@@ -102,9 +98,7 @@ class ModelArguments:
     lang_config: Optional[str] = field(
         default=None, metadata={"help": "The language configuration to use for the model."}
     )
-    lang_family: Optional[str] = field(
-        default=None, metadata={"help": "The language family to use for the model."}
-    )
+    lang_family: Optional[str] = field(default=None, metadata={"help": "The language family to use for the model."})
     tokenizer_name: Optional[str] = field(
         default=None, metadata={"help": "Pretrained tokenizer name or path if not the same as model_name"}
     )
@@ -185,14 +179,10 @@ class DataTrainingArguments:
         default=None,
         metadata={"help": "An optional input evaluation data file to evaluate the perplexity on (a text file)."},
     )
-    overwrite_cache: bool = field(
-        default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
-    )
+    overwrite_cache: bool = field(default=False, metadata={"help": "Overwrite the cached training and evaluation sets"})
     validation_split_percentage: Optional[int] = field(
         default=5,
-        metadata={
-            "help": "The percentage of the train set used as validation set in case there's no validation split"
-        },
+        metadata={"help": "The percentage of the train set used as validation set in case there's no validation split"},
     )
     max_seq_length: Optional[int] = field(
         default=None,
@@ -248,7 +238,7 @@ class DataTrainingArguments:
             require_version("datasets>=2.0.0", "The streaming feature requires `datasets>=2.0.0`")
 
         if self.dataset_name is None and self.train_file is None and self.validation_file is None:
-        #if self.dataset_name is None and self.train_file is None and self.train_files is None and self.validation_file is None:
+            # if self.dataset_name is None and self.train_file is None and self.train_files is None and self.validation_file is None:
             raise ValueError("Need either a dataset name or a training/validation file.")
         else:
             if self.train_file is not None:
@@ -287,7 +277,7 @@ def main():
         handlers=[logging.StreamHandler(sys.stdout)],
     )
 
-    #if training_args.should_log:
+    # if training_args.should_log:
     #    # The default of training_args.log_level is passive, so we set log level at info here to have that default.
     #    transformers.utils.logging.set_verbosity_info()
 
@@ -363,24 +353,19 @@ def main():
                 trust_remote_code=model_args.trust_remote_code,
             )
 
-
-
-
     # ---------------------
     # we hard-codedly add the model and adapter stack we require
     # ---------------------
     model = AutoModelForMaskedLM.from_pretrained("xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-
+    print("Model and tokenizer loaded")
     # We want to make a combined version of the two datasets,
     # consisting of 8 english articles, followed by 8 german articles
-
-
 
     # Load the English and German Wikipedia datasets in streaming mode
     dataset_eng = load_dataset("wikimedia/wikipedia", "20231101.en", streaming=True)
     dataset_ger = load_dataset("wikimedia/wikipedia", "20231101.de", streaming=True)
-
+    print("Datasets loaded")
     # Shuffle each language split (this returns an IterableDataset)
     dataset_english = dataset_eng["train"].shuffle(seed=0)
     dataset_german = dataset_ger["train"].shuffle(seed=0)
@@ -410,10 +395,8 @@ def main():
     # We combine these into a new iterable dataset
     def combined_gen():
         return alternating_iterator(dataset_english, dataset_german, lang_batch_size)
-
+    print("Combined generator created")
     raw_datasets = datasets.IterableDataset.from_generator(combined_gen)
-
-
 
     # Convert the model into an adapter model
     adapters.init(model)
@@ -422,26 +405,12 @@ def main():
     model.load_adapter("xnli_adapter")
     model.add_adapter("germanic", config="pfeiffer")
     model.train_adapter(["germanic"])
-    model.active_adapters = ac.Stack("germanic",
-                                     ac.BatchSplit("en", "de", batch_sizes=lang_batch_size),
-                                     "xnli_adapter")
+    model.active_adapters = ac.Stack("germanic", ac.BatchSplit("en", "de", batch_sizes=lang_batch_size), "xnli_adapter")
     # We resize the embeddings only when necessary to avoid index errors. If you are creating a model from scratch
     # on a small vocab and want a smaller embedding size, remove this test.
     embedding_size = model.get_input_embeddings().weight.shape[0]
     if len(tokenizer) > embedding_size:
         model.resize_token_embeddings(len(tokenizer))
-
-
-
-
-
-
-
-
-
-
-
-
 
     # Preprocessing the datasets.
     # First we tokenize all the texts.
