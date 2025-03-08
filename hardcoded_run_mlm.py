@@ -403,7 +403,7 @@ def main():
     model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", adapter_name="en")
     model.load_adapter("AdapterHub/xlm-roberta-base-de-wiki_pfeiffer", adapter_name="de")
     os.system("echo downloaded adapters")
-    model.load_adapter("xnli_adapter")
+    model.load_adapter("trained_adapters/xnli_adapter", adapter_name="xnli_adapter")
     model.add_adapter("germanic", config="pfeiffer")
     model.train_adapter(["germanic"])
     model.active_adapters = ac.Stack("germanic", ac.BatchSplit("en", "de", batch_sizes=lang_batch_size), "xnli_adapter")
