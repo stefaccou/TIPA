@@ -589,10 +589,11 @@ def main():
         mlm_probability=data_args.mlm_probability,
         pad_to_multiple_of=8 if pad_to_multiple_of_8 else None,
     )
-
+    print("we are right before the adapter setup")
     # Setup adapters
     setup_adapter_training(model, adapter_args, data_args.dataset_name or "mlm")
-
+    print("adapter setup done")
+    print(adapter_args)
     # Initialize our Trainer
     trainer_class = AdapterTrainer if adapter_args.train_adapter else Trainer
     trainer = trainer_class(
@@ -607,7 +608,7 @@ def main():
             preprocess_logits_for_metrics if training_args.do_eval and not is_torch_xla_available() else None
         ),
     )
-
+    print("trainer initialized")
     # Training
     if training_args.do_train:
         checkpoint = None
