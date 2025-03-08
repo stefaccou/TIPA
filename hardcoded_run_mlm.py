@@ -664,8 +664,20 @@ def _mp_fn(index):
     # For xla_spawn (TPUs)
     main()
 
-
+def get_default_args():
+    # Instead of relying on sys.argv, define the default arguments as a list.
+    # These are the arguments you used before:
+    return [
+        "--do_train",
+        "--do_eval",
+        "--output_dir", "./output",
+        "--per_device_train_batch_size", "8",
+        "--streaming"
+    ]
 if __name__ == "__main__":
+    # If no extra arguments are provided, add the defaults.
+    if len(sys.argv) == 1:
+        sys.argv.extend(get_default_args())
     parameters = {
         "slurm_partition": "gpu_a100_debug",
         "slurm_time": "00:10:00",
@@ -685,4 +697,4 @@ if __name__ == "__main__":
     executor.update_parameters(**parameters)
 
     job = executor.submit(main)
-    job.result()
+    #job.result()
