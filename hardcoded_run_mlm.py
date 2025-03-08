@@ -250,24 +250,11 @@ class DataTrainingArguments:
                     raise ValueError("`validation_file` should be a csv, a json or a txt file.")
 
 
-def get_default_args():
-    # Define the default command-line arguments as a list.
-    return [
-        "--do_train",
-        "--do_eval",
-        "--output_dir", "./output",
-        "--per_device_train_batch_size", "8",
-        "--streaming"
-    ]
-
-
 def main():
     # See all possible arguments in src/transformers/training_args.py
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
-    sys.argv.extend(get_default_args())
-    filtered_args = [arg for arg in sys.argv if arg.startswith("--")]
-    sys.argv = filtered_args
+
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments, AdapterArguments))
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
@@ -679,7 +666,6 @@ def _mp_fn(index):
 
 
 if __name__ == "__main__":
-    # If no extra arguments are provided, add the defaults.
     parameters = {
         "slurm_partition": "gpu_a100_debug",
         "slurm_time": "00:10:00",
