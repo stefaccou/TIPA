@@ -682,8 +682,8 @@ def _mp_fn(index):
 
 if __name__ == "__main__":
     parameters = {
-        "slurm_partition": "gpu_a100_debug",
-        "slurm_time": "00:10:00",
+        "slurm_partition": "gpu_a100",
+        "slurm_time": "01:00:00",
         "slurm_job_name": "hardcoded_run_mlm_debug",
         "slurm_additional_parameters": {
             "clusters": "wice",
