@@ -20,7 +20,7 @@ Here is the full list of checkpoints on the hub that can be fine-tuned by this s
 https://huggingface.co/models?filter=fill-mask
 """
 # You can also adapt this script on your own masked language modeling task. Pointers for this are left as comments.
-import submitit
+#import submitit
 import logging
 import math
 import sys
@@ -213,7 +213,7 @@ class DataTrainingArguments:
         },
     )
     max_train_samples: Optional[int] = field(
-        default=None,
+        default=100,
         metadata={
             "help": (
                 "For debugging purposes or quicker training, truncate the number of training examples to this "
@@ -221,6 +221,7 @@ class DataTrainingArguments:
             )
         },
     )
+
     max_eval_samples: Optional[int] = field(
         default=None,
         metadata={
@@ -559,9 +560,9 @@ def main(*args):
     #        raise ValueError("--do_train requires a train dataset")
     #    train_dataset = tokenized_datasets["train"]
         if data_args.max_train_samples is not None:
-            max_train_samples = min(len(train_dataset), data_args.max_train_samples)
-            train_dataset = train_dataset.select(range(max_train_samples))
-
+        #    max_train_samples = min(len(train_dataset), data_args.max_train_samples)
+        #    train_dataset = train_dataset.select(range(max_train_samples))
+            train_dataset = train_dataset.take(data_args.max_train_samples)
     if training_args.do_eval:
         if "validation" not in tokenized_datasets:
             raise ValueError("--do_eval requires a validation dataset")
@@ -610,7 +611,6 @@ def main(*args):
         model=model,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
-        max_steps=1000 if training_args.streaming and training_args.do_train else None,
         eval_dataset=eval_dataset if training_args.do_eval else None,
         tokenizer=tokenizer,
         data_collator=data_collator,
@@ -679,7 +679,6 @@ def main(*args):
 def _mp_fn(index):
     # For xla_spawn (TPUs)
     main()
-
 
 if __name__ == "__main__":
     parameters = {
