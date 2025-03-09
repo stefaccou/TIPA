@@ -410,11 +410,13 @@ def main(*args):
     adapters.init(model)
     model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", adapter_name="en")
     model.load_adapter("AdapterHub/xlm-roberta-base-de-wiki_pfeiffer", adapter_name="de")
-    print(" downloaded adapters")
-    model.load_adapter("trained_adapters/xnli_adapter", adapter_name="xnli_adapter")
+    print("downloaded adapters")
+    #model.load_adapter("trained_adapters/xnli_adapter", adapter_name="xnli_adapter")
     model.add_adapter("germanic", config="pfeiffer")
     model.train_adapter(["germanic"])
-    model.active_adapters = ac.Stack("germanic", ac.BatchSplit("en", "de", batch_sizes=lang_batch_size), "xnli_adapter")
+    #model.active_adapters = ac.Stack("germanic", ac.BatchSplit("en", "de", batch_sizes=lang_batch_size), "xnli_adapter")
+    model.active_adapters = ac.Stack("germanic", ac.BatchSplit("en", "de", batch_sizes=lang_batch_size))
+
     print(" adapter activated", model.active_adapters)
     # We resize the embeddings only when necessary to avoid index errors. If you are creating a model from scratch
     # on a small vocab and want a smaller embedding size, remove this test.
