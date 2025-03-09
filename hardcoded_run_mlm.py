@@ -610,7 +610,7 @@ def main(*args):
         model=model,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
-        max_steps=1000,
+        max_steps=1000 if training_args.streaming and training_args.do_train else None,
         eval_dataset=eval_dataset if training_args.do_eval else None,
         tokenizer=tokenizer,
         data_collator=data_collator,
