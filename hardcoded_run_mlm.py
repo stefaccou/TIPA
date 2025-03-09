@@ -628,7 +628,7 @@ def main(*args):
         # we explicitly save the adapter
         model.save_all_adapters(training_args.output_dir)
         # we save the germanic adapter
-        model.save_adapter("germanic", training_args.output_dir)
+        model.save_adapter("germanic", "trained_adapters/germanic_adapter")
         trainer.save_model()  # Saves the tokenizer too for easy upload
         metrics = train_result.metrics
 
@@ -686,7 +686,7 @@ if __name__ == "__main__":
         "slurm_additional_parameters": {
             "clusters": "wice",
             "account": "intro_vsc37220",  # replace with your account
-            "nodes": 2,
+            "nodes": 1,
             "cpus_per_gpu": 18,
             "gpus_per_node": 1,
             "mail_type": "BEGIN,END,FAIL",
