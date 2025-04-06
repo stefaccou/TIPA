@@ -7,6 +7,7 @@ import pandas as pd
 import submitit
 import os
 import math
+import pprint
 
 
 def main():
@@ -74,6 +75,7 @@ def main():
         )
 
         eval_result = trainer.evaluate()
+        pprint.pprint(eval_result)
         try:
             perplexity = math.exp(eval_result["eval_loss"])
         except OverflowError:
