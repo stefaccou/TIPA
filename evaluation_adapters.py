@@ -53,6 +53,14 @@ def main():
 
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15)
 
+    def compute_metrics(eval_pred):
+        loss, _ = eval_pred
+        try:
+            perplexity = math.exp(loss)
+        except OverflowError:
+            perplexity = float("inf")
+        return {"perplexity": perplexity}
+
     results = {}
     print("starting checkpoint loop")
     for checkpoint_path in checkpoints:
@@ -73,6 +81,7 @@ def main():
             args=training_args,
             eval_dataset=tokenized_dataset,
             tokenizer=tokenizer,
+            compute_metrics=compute_metrics,
             data_collator=data_collator,
         )
 
