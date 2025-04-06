@@ -6,6 +6,7 @@ from datasets import load_dataset, Dataset
 import pandas as pd
 import submitit
 
+EVAL_FILE = "$VSC_DATA/Data/nl_val.txt"
 
 def main():
     checkpoints = [
@@ -27,7 +28,7 @@ def main():
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
     adapters.init(model)
 
-    with open("$VSC_DATA/Data/nl_val.txt", "r", encoding="utf-8") as f:
+    with open(EVAL_FILE, "r", encoding="utf-8") as f:
         lines = f.readlines()
     # Strip and wrap into a DataFrame
     data = pd.DataFrame({"text": [line.strip() for line in lines if line.strip()]})
