@@ -3,7 +3,7 @@ from transformers import Trainer, TrainingArguments, DataCollatorForLanguageMode
 import adapters
 from adapters import AutoAdapterModel
 from datasets import load_dataset, Dataset
-
+import pandas as pd
 import submitit
 
 
@@ -23,7 +23,7 @@ def main():
 
     # Load validation set
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-    dataset = load_dataset("$VSC_DATA/Data/nl_val.txt")
+    #dataset = load_dataset("$VSC_DATA/Data/nl_val.txt")
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
     adapters.init(model)
 
