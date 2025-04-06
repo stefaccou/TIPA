@@ -2,7 +2,8 @@ from transformers import AutoTokenizer
 from transformers import Trainer, TrainingArguments, DataCollatorForLanguageModeling
 import adapters
 from adapters import AutoAdapterModel
-from datasets import load_dataset
+from datasets import load_dataset, Dataset
+
 import submitit
 
 
@@ -26,10 +27,20 @@ def main():
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
     adapters.init(model)
 
-    def tokenize_function(examples):
-        return tokenizer(examples["text"], truncation=True, padding="max_length", max_length=128)
+    with open("$VSC_DATA/Data/nl_val.txt", "r", encoding="utf-8") as f:
+        lines = f.readlines()
+    # Strip and wrap into a DataFrame
+    data = pd.DataFrame({"text": [line.strip() for line in lines if line.strip()]})
 
-    tokenized_dataset = dataset.map(tokenize_function, batched=True)
+    # Convert to Hugging Face Dataset
+    eval_dataset = Dataset.from_pandas(data)
+
+    # Tokenize
+    tokenized_dataset = eval_dataset.map(
+        lambda examples: tokenizer(examples["text"], truncation=True, padding="max_length", max_length=128),
+        batched=True,
+    )
+
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15)
 
     results = {}
