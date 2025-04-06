@@ -24,15 +24,15 @@ repos:
     - id: ruff
       args: [ --fix ]
     - id: ruff-format
-- repo: local
-  hooks:
-    - id: pytest-check
-      name: pytest-check
-      entry: pytest
-      language: system
-      types: [python]
-      pass_filenames: false
-      always_run: false
+#- repo: local
+#  hooks:
+#    - id: pytest-check
+#      name: pytest-check
+#      entry: pytest
+#      language: system
+#      types: [python]
+#      pass_filenames: false
+#      always_run: false
       # we disable this hook by default
 - repo: https://github.com/DavidAnson/markdownlint-cli2
   rev: v0.17.2

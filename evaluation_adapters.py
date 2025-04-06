@@ -2,8 +2,6 @@ from transformers import XLMRobertaTokenizer, XLMRobertaForMaskedLM
 from transformers import Trainer, TrainingArguments, DataCollatorForLanguageModeling
 import adapters
 from datasets import load_dataset
-import torch
-import os
 
 checkpoints = [
     "$VSC_SCRATCH/test-mlm/mlm",
@@ -23,8 +21,11 @@ tokenizer = XLMRobertaTokenizer.from_pretrained("xlm-roberta-base")
 dataset = load_dataset("$VSC_DATA/Data/nl_val.txt")
 model = XLMRobertaForMaskedLM.from_pretrained("xlm-roberta-base")
 adapters.init(model)
+
+
 def tokenize_function(examples):
     return tokenizer(examples["text"], truncation=True, padding="max_length", max_length=128)
+
 
 tokenized_dataset = dataset.map(tokenize_function, batched=True)
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15)
