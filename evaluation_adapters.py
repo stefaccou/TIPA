@@ -101,9 +101,9 @@ def main():
 
 if __name__ == "__main__":
     parameters = {
-        "slurm_partition": "gpu_a100_debug",
-        "slurm_time": "00:10:00",
-        "slurm_job_name": "adapter evaluation final debug",
+        "slurm_partition": "gpu_a100",
+        "slurm_time": "00:25:00",
+        "slurm_job_name": "adapter evaluation debug on real cluster",
         "slurm_additional_parameters": {
             "clusters": "wice",
             "account": "intro_vsc37220",  # replace with your account
