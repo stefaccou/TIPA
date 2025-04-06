@@ -5,21 +5,26 @@ from adapters import AutoAdapterModel
 from datasets import load_dataset, Dataset
 import pandas as pd
 import submitit
+import os
 
-EVAL_FILE = "$VSC_DATA/Data/nl_val.txt"
+
+VSC_DATA = os.environ["VSC_DATA"]
+print(VSC_DATA)
+VSC_SCRATCH = os.environ["VSC_SCRATCH"]
+EVAL_FILE = VSC_DATA+"/Data/nl_val.txt"
 
 def main():
     checkpoints = [
-        "$VSC_SCRATCH/test-mlm/mlm",
-        "$VSC_SCRATCH/test-mlm/checkpoint-19000/mlm",
-        "$VSC_SCRATCH/test-mlm/checkpoint-500/mlm",
-        "$VSC_SCRATCH/test-mlm/checkpoint-17500/mlm",
-        "$VSC_SCRATCH/test-mlm/checkpoint-26000/mlm",
-        "$VSC_SCRATCH/test-mlm/checkpoint-14500/mlm",
-        "$VSC_SCRATCH/test-mlm/checkpoint-21000/mlm",
-        "$VSC_SCRATCH/test-mlm/checkpoint-5500/mlm",
-        "$VSC_SCRATCH/test-mlm/checkpoint-4000/mlm",
-        "$VSC_SCRATCH/test-mlm/checkpoint-22000/mlm",
+        VSC_SCRATCH+"/test-mlm/mlm",
+        VSC_SCRATCH+"/test-mlm/checkpoint-19000/mlm",
+        VSC_SCRATCH+"/test-mlm/checkpoint-500/mlm",
+        VSC_SCRATCH+"/test-mlm/checkpoint-17500/mlm",
+        VSC_SCRATCH+"/test-mlm/checkpoint-26000/mlm",
+        VSC_SCRATCH+"/test-mlm/checkpoint-14500/mlm",
+        VSC_SCRATCH+"/test-mlm/checkpoint-21000/mlm",
+        VSC_SCRATCH+"/test-mlm/checkpoint-5500/mlm",
+        VSC_SCRATCH+"/test-mlm/checkpoint-4000/mlm",
+        VSC_SCRATCH+"/test-mlm/checkpoint-22000/mlm",
     ]
 
     # Load validation set
