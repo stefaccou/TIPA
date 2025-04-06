@@ -37,11 +37,11 @@ def main():
     with open(EVAL_FILE, "r", encoding="utf-8") as f:
         lines = f.readlines()
     # Strip and wrap into a DataFrame
-    data = pd.DataFrame({"text": [line.strip() for line in lines[:500] if line.strip()]})
+    data = pd.DataFrame({"text": [line.strip() for line in lines if line.strip()]})
 
     # Convert to Hugging Face Dataset
-    eval_dataset = Dataset.from_pandas(data)
-
+    dataset = Dataset.from_pandas(data)
+    eval_dataset = dataset.select(range(500))
     print("Tokenizing dataset")
     # Tokenize
     tokenized_dataset = eval_dataset.map(
