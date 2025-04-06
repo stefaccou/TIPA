@@ -74,7 +74,7 @@ if __name__ == "__main__":
             "account": "intro_vsc37220",  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
-            "gpus_per_node": 0,
+            "gpus_per_node": 1,
             "mail_type": "BEGIN,END,FAIL",
             "mail_user": "",
         },
