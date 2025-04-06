@@ -6,6 +6,7 @@ from datasets import load_dataset, Dataset
 import pandas as pd
 import submitit
 import os
+import math
 
 
 def main():
@@ -73,9 +74,12 @@ def main():
         )
 
         eval_result = trainer.evaluate()
-        loss = eval_result["eval_loss"]
-        results[checkpoint_path] = loss
-        print(f"Loss for {checkpoint_path}: {loss}")
+        try:
+            perplexity = math.exp(eval_result["eval_loss"])
+        except OverflowError:
+            perplexity = float("inf")
+        results[checkpoint_path] = perplexity
+        print(f"Perplexity for {checkpoint_path}: {perplexity}")
 
     # Find best model
     best_checkpoint = min(results, key=results.get)
