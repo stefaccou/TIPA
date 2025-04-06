@@ -86,7 +86,7 @@ if __name__ == "__main__":
     parameters = {
         "slurm_partition": "gpu_a100_debug",
         "slurm_time": "00:10:00",
-        "slurm_job_name": "adapter evaluation debug",
+        "slurm_job_name": "adapter evaluation final debug",
         "slurm_additional_parameters": {
             "clusters": "wice",
             "account": "intro_vsc37220",  # replace with your account
@@ -98,6 +98,6 @@ if __name__ == "__main__":
         },
     }
 
-    executor = submitit.AutoExecutor(folder="experiment_folder")
+    executor = submitit.AutoExecutor(folder="experiment_folder/eval")
     executor.update_parameters(**parameters)
     job = executor.submit(main)
