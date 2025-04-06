@@ -1,6 +1,7 @@
-from transformers import XLMRobertaTokenizer, XLMRobertaForMaskedLM
+from transformers import AutoTokenizer
 from transformers import Trainer, TrainingArguments, DataCollatorForLanguageModeling
 import adapters
+from adapters import AutoAdapterModel
 from datasets import load_dataset
 import submitit
 
@@ -20,9 +21,9 @@ def main():
     ]
 
     # Load validation set
-    tokenizer = XLMRobertaTokenizer.from_pretrained("xlm-roberta-base")
+    tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
     dataset = load_dataset("$VSC_DATA/Data/nl_val.txt")
-    model = XLMRobertaForMaskedLM.from_pretrained("xlm-roberta-base")
+    model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
     adapters.init(model)
 
     def tokenize_function(examples):
