@@ -8,12 +8,11 @@ import submitit
 import os
 
 
-VSC_DATA = os.environ["VSC_DATA"]
-print(VSC_DATA)
-VSC_SCRATCH = os.environ["VSC_SCRATCH"]
-EVAL_FILE = VSC_DATA+"/Data/nl_val.txt"
-
 def main():
+    VSC_DATA = os.environ["VSC_DATA"]
+    print(VSC_DATA)
+    VSC_SCRATCH = os.environ["VSC_SCRATCH"]
+    EVAL_FILE = VSC_DATA + "/Data/nl_val.txt"
     checkpoints = [
         VSC_SCRATCH+"/test-mlm/mlm",
         VSC_SCRATCH+"/test-mlm/checkpoint-19000/mlm",
@@ -41,6 +40,7 @@ def main():
     # Convert to Hugging Face Dataset
     eval_dataset = Dataset.from_pandas(data)
 
+    print("Tokenizing dataset")
     # Tokenize
     tokenized_dataset = eval_dataset.map(
         lambda examples: tokenizer(examples["text"], truncation=True, padding="max_length", max_length=128),
@@ -50,7 +50,7 @@ def main():
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15)
 
     results = {}
-
+    print("starting checkpoint loop")
     for checkpoint_path in checkpoints:
         print(f"Evaluating {checkpoint_path}...")
         adapter = model.load_adapter(checkpoint_path)
