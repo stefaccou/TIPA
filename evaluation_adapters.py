@@ -2,14 +2,12 @@ from transformers import AutoTokenizer
 from transformers import Trainer, TrainingArguments, DataCollatorForLanguageModeling
 import adapters
 from adapters import AutoAdapterModel
-from datasets import load_dataset, Dataset
+from datasets import Dataset
 import pandas as pd
 import submitit
 import os
 import math
 import pprint
-import evaluate
-
 
 
 def main():
@@ -18,21 +16,21 @@ def main():
     VSC_SCRATCH = os.environ["VSC_SCRATCH"]
     EVAL_FILE = VSC_DATA + "/Data/nl_val.txt"
     checkpoints = [
-        VSC_SCRATCH+"/test-mlm/mlm",
-        VSC_SCRATCH+"/test-mlm/checkpoint-19000/mlm",
-        VSC_SCRATCH+"/test-mlm/checkpoint-500/mlm",
-        VSC_SCRATCH+"/test-mlm/checkpoint-17500/mlm",
-        VSC_SCRATCH+"/test-mlm/checkpoint-26000/mlm",
-        VSC_SCRATCH+"/test-mlm/checkpoint-14500/mlm",
-        VSC_SCRATCH+"/test-mlm/checkpoint-21000/mlm",
-        VSC_SCRATCH+"/test-mlm/checkpoint-5500/mlm",
-        VSC_SCRATCH+"/test-mlm/checkpoint-4000/mlm",
-        VSC_SCRATCH+"/test-mlm/checkpoint-22000/mlm",
+        VSC_SCRATCH + "/test-mlm/mlm",
+        VSC_SCRATCH + "/test-mlm/checkpoint-19000/mlm",
+        VSC_SCRATCH + "/test-mlm/checkpoint-500/mlm",
+        VSC_SCRATCH + "/test-mlm/checkpoint-17500/mlm",
+        VSC_SCRATCH + "/test-mlm/checkpoint-26000/mlm",
+        VSC_SCRATCH + "/test-mlm/checkpoint-14500/mlm",
+        VSC_SCRATCH + "/test-mlm/checkpoint-21000/mlm",
+        VSC_SCRATCH + "/test-mlm/checkpoint-5500/mlm",
+        VSC_SCRATCH + "/test-mlm/checkpoint-4000/mlm",
+        VSC_SCRATCH + "/test-mlm/checkpoint-22000/mlm",
     ]
 
     # Load validation set
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-    #dataset = load_dataset("$VSC_DATA/Data/nl_val.txt")
+    # dataset = load_dataset("$VSC_DATA/Data/nl_val.txt")
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
     adapters.init(model)
 
@@ -70,7 +68,7 @@ def main():
 
         training_args = TrainingArguments(
             output_dir="/tmp/eval",
-            per_device_eval_batch_size=8,
+            per_device_eval_batch_size=4,
             do_train=False,
             do_eval=True,
             report_to=[],
@@ -100,10 +98,11 @@ def main():
 
 
 if __name__ == "__main__":
+    job_name = "adapter_eval_h100"
     parameters = {
         "slurm_partition": "gpu_h100",
         "slurm_time": "00:25:00",
-        "slurm_job_name": "adapter evaluation debug on h100 cluster",
+        "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": "wice",
             "account": "intro_vsc37220",  # replace with your account
@@ -115,6 +114,6 @@ if __name__ == "__main__":
         },
     }
 
-    executor = submitit.AutoExecutor(folder="experiment_folder/eval")
+    executor = submitit.AutoExecutor(folder="experiment_folder/"+job_name)
     executor.update_parameters(**parameters)
     job = executor.submit(main)
