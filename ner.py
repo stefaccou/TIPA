@@ -13,7 +13,7 @@ def main():
     num_labels = len(label_list)
 
     # Load a pre-trained tokenizer (using a RoBERTa-based model)
-    tokenizer = AutoTokenizer.from_pretrained("roberta-base")
+    tokenizer = AutoTokenizer.from_pretrained("roberta-base", add_prefix_space=True)
 
     # Function to tokenize texts and align labels with tokens
     def tokenize_and_align_labels(examples, label_all_tokens=True):
