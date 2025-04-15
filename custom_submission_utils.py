@@ -1,4 +1,6 @@
 from pathlib import Path
+import torch.nn as nn
+from transformers.modeling_outputs import TokenClassifierOutput
 
 
 def find_master(par="Master_thesis"):
@@ -44,3 +46,22 @@ def update_submission_log(experiments_dir: Path, submission_text: str) -> int:
         f.write(f"{submission_text} #{run_count}: Run {run_count:03d}\n")
 
     return run_count
+
+
+class CustomTokenClassificationHead(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+        self.config = config
+
+    def forward(self, hidden_states, labels=None):
+        hidden_states = self.dropout(hidden_states)
+        logits = self.classifier(hidden_states)
+        loss = None
+        if labels is not None:
+            loss_fct = nn.CrossEntropyLoss(ignore_index=-100)
+            # logits shape: (batch_size, sequence_length, num_labels)
+            # labels shape: (batch_size, sequence_length)
+            loss = loss_fct(logits.view(-1, self.config.num_labels), labels.view(-1))
+        return TokenClassifierOutput(loss=loss, logits=logits)

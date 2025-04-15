@@ -6,6 +6,7 @@ def main():
     from adapters import AutoAdapterModel, AdapterTrainer
     from transformers import AutoConfig, AutoTokenizer, DataCollatorForTokenClassification
     from datasets import load_dataset
+    from custom_submission_utils import CustomTokenClassificationHead
 
     # Load the CoNLL-2003 dataset for NER
     dataset = load_dataset("wikiann", "en")
@@ -56,7 +57,10 @@ def main():
 
     # Add a new task adapter for NER and a token classification head
     model.add_adapter("ner")
-    model.add_classification_head("ner", num_labels=num_labels)
+    # we cannot use the classic add_token_classification_head with non-BERT-based models
+    # model.add_classification_head("ner", num_labels=num_labels)
+    # Instead of using add_classification_head, manually attach a token classification head
+    model.token_classification_head = CustomTokenClassificationHead(config)
 
     # Activate training for the NER adapter
     model.train_adapter(["ner"])
@@ -104,7 +108,7 @@ if __name__ == "__main__":
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     parameters = {
         "slurm_partition": "gpu_a100_debug",
-        "slurm_time": "00:05:00",
+        "slurm_time": "00:15:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": "wice",
