@@ -1,5 +1,4 @@
 import submitit
-import sys
 from custom_submission_utils import find_master, update_submission_log
 
 
@@ -93,7 +92,7 @@ def main():
 
 
 if __name__ == "__main__":
-    job_name = "multilingual_debug"
+    job_name = "ner_training debug"
 
     master_dir = find_master()
 
@@ -122,7 +121,8 @@ if __name__ == "__main__":
     executor = submitit.AutoExecutor(folder=str(experiments_dir))
     executor.update_parameters(**parameters)
 
-    text = sys.argv[1:] if len(sys.argv) > 1 else "default text"
+    # job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
 
-    job = executor.submit(main, text)
+    # job = executor.submit(main, job_input)
+    job = executor.submit(main)
     print("job submitted")
