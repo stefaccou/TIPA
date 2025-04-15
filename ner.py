@@ -13,7 +13,7 @@ def main():
     num_labels = len(label_list)
 
     # Load a pre-trained tokenizer (using a RoBERTa-based model)
-    tokenizer = AutoTokenizer.from_pretrained("roberta-base", add_prefix_space=True)
+    tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base", add_prefix_space=True)
 
     # Function to tokenize texts and align labels with tokens
     def tokenize_and_align_labels(examples, label_all_tokens=True):
@@ -48,15 +48,15 @@ def main():
     tokenized_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
     # Load the model configuration and adapter model
-    config = AutoConfig.from_pretrained("roberta-base", num_labels=num_labels)
-    model = AutoAdapterModel.from_pretrained("roberta-base", config=config)
+    config = AutoConfig.from_pretrained("xlm-roberta-base", num_labels=num_labels)
+    model = AutoAdapterModel.from_pretrained("xlm-roberta-base", config=config)
 
     # (Optionally) load language adapters if needed
     model.load_adapter("trained_adapters/en")
 
     # Add a new task adapter for NER and a token classification head
     model.add_adapter("ner")
-    model.add_token_classification_head("ner", num_labels=num_labels)
+    model.add_classification_head("ner", num_labels=num_labels)
 
     # Activate training for the NER adapter
     model.train_adapter(["ner"])
