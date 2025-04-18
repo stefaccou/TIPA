@@ -831,7 +831,7 @@ def _mp_fn(index):
 
 
 if __name__ == "__main__":
-    job_name = "multilingual_ner_debug"
+    job_name = "multilingual_adapter_training"
 
     master_dir = find_master()
 
@@ -842,11 +842,11 @@ if __name__ == "__main__":
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     parameters = {
-        "slurm_partition": "gpu_a100_debug",
-        "slurm_time": "00:05:00",
+        "slurm_partition": "gpu_p100",
+        "slurm_time": "03:00:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
-            "clusters": "wice",
+            "clusters": "genius",
             "account": "intro_vsc37220",  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
