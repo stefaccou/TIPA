@@ -718,17 +718,28 @@ def main(submit_arguments):
         if "train" not in tokenized_datasets:
             raise ValueError("--do_train requires a train dataset")
         train_dataset = tokenized_datasets["train"]
+        # Use of IterableDataset breaks len(train_dataset)
+        try:
+            total_examples = len(train_dataset)
+        except TypeError:
+            # fall back to the total number of samples we requested
+            total_examples = data_args.max_train_samples or data_args.max_sample_length
+
         if data_args.max_train_samples is not None:
-            max_train_samples = min(len(train_dataset), data_args.max_train_samples)
-            train_dataset = train_dataset.select(range(max_train_samples))
+            train_samples = min(data_args.max_train_samples, total_examples)
+        else:
+            train_samples = total_examples
+        if data_args.max_train_samples is not None:
+            train_dataset = train_dataset.select(range(train_samples))
 
     if training_args.do_eval:
         if "validation" not in tokenized_datasets:
             raise ValueError("--do_eval requires a validation dataset")
         eval_dataset = tokenized_datasets["validation"]
         if data_args.max_eval_samples is not None:
-            max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
-            eval_dataset = eval_dataset.select(range(max_eval_samples))
+            # max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
+            # this can break, but then we will solve it
+            eval_dataset = eval_dataset.select(range(data_args.max_eval_samples))
 
         def preprocess_logits_for_metrics(logits, labels):
             if isinstance(logits, tuple):
@@ -777,6 +788,8 @@ def main(submit_arguments):
         ),
     )
 
+    # We use an IterableDataset now, so we cannot ask for len(dataset) anymore. we have to change this
+
     # Training
     if training_args.do_train:
         checkpoint = None
@@ -788,10 +801,24 @@ def main(submit_arguments):
         trainer.save_model()  # Saves the tokenizer too for easy upload
         metrics = train_result.metrics
 
-        max_train_samples = (
-            data_args.max_train_samples if data_args.max_train_samples is not None else len(train_dataset)
-        )
-        metrics["train_samples"] = min(max_train_samples, len(train_dataset))
+        try:
+            total_examples = len(train_dataset)
+        except TypeError:
+            # fall back to the total number of samples we requested
+            total_examples = data_args.max_train_samples or data_args.max_sample_length
+
+        if data_args.max_train_samples is not None:
+            train_samples = min(data_args.max_train_samples, total_examples)
+        else:
+            train_samples = total_examples
+
+        metrics["train_samples"] = train_samples
+
+        # old code that breaks:
+        # max_train_samples = (
+        #    data_args.max_train_samples if data_args.max_train_samples is not None else len(train_dataset)
+        # )
+        # metrics["train_samples"] = min(max_train_samples, len(train_dataset))
 
         trainer.log_metrics("train", metrics)
         trainer.save_metrics("train", metrics)
@@ -803,8 +830,9 @@ def main(submit_arguments):
 
         metrics = trainer.evaluate()
 
-        max_eval_samples = data_args.max_eval_samples if data_args.max_eval_samples is not None else len(eval_dataset)
-        metrics["eval_samples"] = min(max_eval_samples, len(eval_dataset))
+        # max_eval_samples = data_args.max_eval_samples if data_args.max_eval_samples is not None else len(eval_dataset)
+        # metrics["eval_samples"] = min(max_eval_samples, len(eval_dataset))
+        metrics["eval_samples"] = data_args.max_eval_samples
         try:
             perplexity = math.exp(metrics["eval_loss"])
         except OverflowError:
