@@ -835,7 +835,7 @@ def _mp_fn(index):
 
 
 if __name__ == "__main__":
-    job_name = "multilingual_adapter_training_debug"
+    job_name = "multilingual_adapter_training"
 
     master_dir = find_master()
 
