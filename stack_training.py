@@ -729,8 +729,12 @@ def main(submit_arguments):
             train_samples = min(data_args.max_train_samples, total_examples)
         else:
             train_samples = total_examples
+
         if data_args.max_train_samples is not None:
-            train_dataset = train_dataset.select(range(train_samples))
+            if data_args.streaming:
+                train_dataset = train_dataset.take(train_samples)
+            else:
+                train_dataset = train_dataset.select(range(train_samples))
 
     if training_args.do_eval:
         if "validation" not in tokenized_datasets:
@@ -739,7 +743,10 @@ def main(submit_arguments):
         if data_args.max_eval_samples is not None:
             # max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
             # this can break, but then we will solve it
-            eval_dataset = eval_dataset.select(range(data_args.max_eval_samples))
+            if data_args.streaming:
+                eval_dataset = eval_dataset.take(data_args.max_eval_samples)
+            else:
+                eval_dataset = eval_dataset.select(range(data_args.max_eval_samples))
 
         def preprocess_logits_for_metrics(logits, labels):
             if isinstance(logits, tuple):
