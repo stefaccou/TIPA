@@ -8,7 +8,7 @@ import submitit
 from custom_submission_utils import find_master, update_submission_log
 
 
-def main():
+def main(submit_arguments):
     #!/usr/bin/env python
     # coding=utf-8
     # Copyright 2020 The HuggingFace Team All rights reserved.
@@ -307,14 +307,18 @@ def main():
     # We now keep distinct sets of args, for a cleaner separation of concerns.
 
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments, AdapterArguments))
-    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+    # we remove sys.argv as it interferes with parsing
+    sys.argv = ""
+    # if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+    if len(submit_arguments) == 1 and submit_arguments[0].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
         # let's parse it to get our arguments.
         model_args, data_args, training_args, adapter_args = parser.parse_json_file(
-            json_file=os.path.abspath(sys.argv[1])
+            json_file=os.path.abspath(submit_arguments[0])
         )
     else:
-        model_args, data_args, training_args, adapter_args = parser.parse_args_into_dataclasses()
+        print("calling parser")
+        model_args, data_args, training_args, adapter_args = parser.parse_args_into_dataclasses(submit_arguments)
 
     # Sending telemetry. Tracking the example usage helps us better allocate resources to maintain them. The
     # information sent is the one passed as arguments along with your Python/PyTorch versions.
