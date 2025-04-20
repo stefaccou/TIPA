@@ -16,6 +16,10 @@ def main(submit_arguments):
     from datasets import load_dataset
     from typing import Optional
     from dataclasses import dataclass, field
+    import torch
+
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+    torch.cuda.empty_cache()
 
     @dataclass
     class CustomArguments:
