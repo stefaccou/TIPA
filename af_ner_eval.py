@@ -43,7 +43,28 @@ def main(submit_arguments):
             },
         )
 
-    parser = HfArgumentParser((EvalArguments))
+        def __post_init__(self):
+            if self.language_adapter_path_template is None:
+                raise ValueError("language_adapter_path_template must be provided")
+            if self.language_adapter_name is None:
+                raise ValueError("language_adapter_name must be provided")
+            if self.task_adapter_path is None:
+                raise ValueError("task_adapter_path must be provided")
+
+    @dataclass
+    class TrainingArguments(TrainingArguments):
+        """
+        Arguments pertaining to what data we are going to input our model for training and eval.
+        """
+
+        output_dir: Optional[str] = field(
+            default=None,
+            metadata={
+                "help": ("The output directory where the model predictions and checkpoints will be written."),
+            },
+        )
+
+    parser = HfArgumentParser((EvalArguments, TrainingArguments))
     # we remove sys.argv as it interferes with parsing
     sys.argv = ""
     # if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
@@ -53,8 +74,9 @@ def main(submit_arguments):
         eval_args = parser.parse_json_file(json_file=os.path.abspath(submit_arguments[0]))
     else:
         print("calling parser")
-        eval_args = parser.parse_args_into_dataclasses(submit_arguments)
-    print(eval_args)
+        eval_args, training_args = parser.parse_args_into_dataclasses(submit_arguments)
+    print("eval args", eval_args)
+    print("training args", training_args)
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
     # If True, all tokens of a word will be labeled, otherwise only the first token
@@ -123,7 +145,7 @@ def main(submit_arguments):
     eval_trainer = AdapterTrainer(
         model=model,
         args=TrainingArguments(
-            output_dir=f"./eval_output/{eval_args.language_adapter_name}",
+            output_dir=training_args.output_dir,
             remove_unused_columns=False,
         ),
         eval_dataset=dataset_af,
