@@ -176,7 +176,7 @@ if __name__ == "__main__":
             "nodes": 1,
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,
-            "mail_type": "END, FAIL",
+            "mail_type": "END",
             "mail_user": "stef.accou@student.kuleuven.be",
         },
     }
