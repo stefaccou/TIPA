@@ -8,6 +8,7 @@ from custom_submission_utils import find_master, update_submission_log
 
 
 def main(FAMILY_ADAPTER):
+    import os
     import numpy as np
     from transformers import EvalPrediction, TrainingArguments, AutoTokenizer
     from adapters import AutoAdapterModel, AdapterTrainer
@@ -66,6 +67,8 @@ def main(FAMILY_ADAPTER):
     dataset_af = preprocess_dataset(dataset_af["validation"])
 
     # we load in the adapters
+    # we print the current directory
+    print(f"Current directory: {os.getcwd()}")
     model.load_adapter("/trained_adapters/ner/ner")
     model.load_adapter(f"/trained_adapters/family/{FAMILY_ADAPTER}/mlm", load_as=FAMILY_ADAPTER)
     model.active_adapters = Stack(FAMILY_ADAPTER, "ner")
