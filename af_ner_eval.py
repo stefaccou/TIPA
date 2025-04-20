@@ -62,8 +62,11 @@ def main(submit_arguments):
     else:
         print("calling parser")
         custom_args, training_args = parser.parse_args_into_dataclasses(submit_arguments)
-    print("eval args", custom_args)
-    print("training args", training_args)
+    print("custom args", custom_args)
+    print(custom_args.language_adapter_name)
+    print(custom_args.language_adapter_path_template)
+    print(custom_args.task_adapter_path)
+
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
     # If True, all tokens of a word will be labeled, otherwise only the first token
@@ -119,7 +122,7 @@ def main(submit_arguments):
     print(f"Current directory: {os.getcwd()}")
     model.load_adapter(adapter_name_or_path=custom_args.task_adapter_path, load_as="ner")
     model.load_adapter(
-        custom_args.language_adapter_path_template.format(custom_args.language_adapter_name),
+        custom_args.language_adapter_path_template.format(lang=custom_args.language_adapter_name),
         load_as=custom_args.language_adapter_name,
     )
     model.active_adapters = Stack(custom_args.language_adapter_name, "ner")
