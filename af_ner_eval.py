@@ -121,8 +121,8 @@ def main(submit_arguments):
     # Choose train split (or validation/test as needed)
     dataset_af = preprocess_dataset(dataset_af["validation"])
     """
-    dataset = load_dataset("wikiann", "af")
-    label_list = dataset["validation"].features["ner_tags"].feature.names
+    dataset = load_dataset("wikiann", "af")["validation"]
+    label_list = dataset.features["ner_tags"].feature.names
     num_labels = len(label_list)
 
     # Load a pre-trained tokenizer (using a RoBERTa-based model)
@@ -184,14 +184,14 @@ def main(submit_arguments):
         per_device_eval_batch_size=pdbs,
         do_train=False,
         do_eval=True,
-        remove_unused_columns=False,
+        dataloader_num_workers=0,  # ← no extra worker processes
+        remove_unused_columns=True,
         eval_accumulation_steps=2,
     )
     eval_trainer = AdapterTrainer(
         model=model,
-        # args=eval_args,
-        args=TrainingArguments(output_dir=training_args.output_dir, remove_unused_columns=False),
-        eval_dataset=tokenized_dataset["test"],
+        args=eval_args,
+        eval_dataset=tokenized_dataset,
         compute_metrics=compute_accuracy,
     )
     eval_trainer.evaluate()
