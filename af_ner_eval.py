@@ -7,13 +7,53 @@ import submitit
 from custom_submission_utils import find_master, update_submission_log
 
 
-def main(FAMILY_ADAPTER):
+def main(submit_arguments):
     import os
     import numpy as np
-    from transformers import EvalPrediction, TrainingArguments, AutoTokenizer
+    from transformers import EvalPrediction, TrainingArguments, AutoTokenizer, HfArgumentParser
     from adapters import AutoAdapterModel, AdapterTrainer
     from adapters.composition import Stack
     from datasets import load_dataset
+    from typing import Optional
+    from dataclasses import dataclass, field
+
+    @dataclass
+    class EvalArguments:
+        """
+        Arguments pertaining to what data we are going to input our model for training and eval.
+        """
+
+        # METHOD IMPLEMENTATION
+        task_adapter_path: Optional[str] = field(
+            default=None,
+            metadata={
+                "help": ("path for pre-trained task adapter"),
+            },
+        )
+        language_adapter_path_template: Optional[str] = field(
+            default=None,
+            metadata={
+                "help": ("path for pre-trained language adapter"),
+            },
+        )
+        language_adapter_name: Optional[str] = field(
+            default=None,
+            metadata={
+                "help": ("name of the language adapter"),
+            },
+        )
+
+    parser = HfArgumentParser((EvalArguments))
+    # we remove sys.argv as it interferes with parsing
+    sys.argv = ""
+    # if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+    if len(submit_arguments) == 1 and submit_arguments[0].endswith(".json"):
+        # If we pass only one argument to the script and it's the path to a json file,
+        # let's parse it to get our arguments.
+        eval_args = parser.parse_json_file(json_file=os.path.abspath(submit_arguments[0]))
+    else:
+        print("calling parser")
+        eval_args = parser.parse_args_into_dataclasses(submit_arguments)
 
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
@@ -69,9 +109,12 @@ def main(FAMILY_ADAPTER):
     # we load in the adapters
     # we print the current directory
     print(f"Current directory: {os.getcwd()}")
-    model.load_adapter(adapter_name_or_path="/trained_adapters/ner/ner", load_as="ner")
-    model.load_adapter(f"/trained_adapters/family/{FAMILY_ADAPTER}/mlm", load_as=FAMILY_ADAPTER)
-    model.active_adapters = Stack(FAMILY_ADAPTER, "ner")
+    model.load_adapter(adapter_name_or_path=eval_args.task_adapter_path, load_as="ner")
+    model.load_adapter(
+        eval_args.language_adapter_path_template.format(eval_args.language_adapter_name),
+        load_as=eval_args.language_adapter_name,
+    )
+    model.active_adapters = Stack(eval_args.language_adapter_name, "ner")
     print(model.active_adapters)
 
     def compute_accuracy(p: EvalPrediction):
@@ -81,7 +124,7 @@ def main(FAMILY_ADAPTER):
     eval_trainer = AdapterTrainer(
         model=model,
         args=TrainingArguments(
-            output_dir=f"./eval_output/{FAMILY_ADAPTER}",
+            output_dir=f"./eval_output/{eval_args.language_adapter_name}",
             remove_unused_columns=False,
         ),
         eval_dataset=dataset_af,
@@ -92,16 +135,15 @@ def main(FAMILY_ADAPTER):
 
 if __name__ == "__main__":
     # we want just the one argument as a string here
-    submitit_input = sys.argv[1] if len(sys.argv) > 1 else "No input passed"
-    job_name = "af_ner_eval"
 
+    job_name = "af_ner_eval"
     master_dir = find_master()
 
     # Set the experiment folder as a subdirectory of 'Master_thesis'
     experiments_dir = master_dir / "experiment_folder"
 
     run_count = update_submission_log(experiments_dir, job_name)
-    experiments_dir = experiments_dir / job_name / submitit_input / f"{run_count:03d}"
+    experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     parameters = {
         "slurm_partition": "gpu_p100_debug",
@@ -121,6 +163,6 @@ if __name__ == "__main__":
     # Initialize the Submitit executor with the new experiments_dir
     executor = submitit.AutoExecutor(folder=str(experiments_dir))
     executor.update_parameters(**parameters)
-
+    submitit_input = sys.argv[1:] if len(sys.argv) > 1 else "No input passed"
     job = executor.submit(main, submitit_input)
     print(f"{submitit_input} eval submitted")
