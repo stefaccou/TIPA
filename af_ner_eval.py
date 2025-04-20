@@ -165,4 +165,4 @@ if __name__ == "__main__":
     executor.update_parameters(**parameters)
     submitit_input = sys.argv[1:] if len(sys.argv) > 1 else "No input passed"
     job = executor.submit(main, submitit_input)
-    print(f"{submitit_input} eval submitted")
+    print("eval submitted")
