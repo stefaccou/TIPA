@@ -66,9 +66,9 @@ def main(FAMILY_ADAPTER):
     dataset_af = preprocess_dataset(dataset_af["validation"])
 
     # we load in the adapters
-    model.load_adapter("../trained_adapters/en")
-    model.load_adapter(f"../trained_adapters/family/{FAMILY_ADAPTER}/mlm", load_as="en-af")
-    model.active_adapters = Stack("en-af", "en")
+    model.load_adapter("/trained_adapters/ner")
+    model.load_adapter(f"/trained_adapters/family/{FAMILY_ADAPTER}/mlm", load_as=FAMILY_ADAPTER)
+    model.active_adapters = Stack(FAMILY_ADAPTER, "ner")
     print(model.active_adapters)
 
     def compute_accuracy(p: EvalPrediction):
