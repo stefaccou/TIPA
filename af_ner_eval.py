@@ -18,7 +18,7 @@ def main(submit_arguments):
     from dataclasses import dataclass, field
 
     @dataclass
-    class EvalArguments:
+    class CustomArguments:
         """
         Arguments pertaining to what data we are going to input our model for training and eval.
         """
@@ -51,31 +51,18 @@ def main(submit_arguments):
             if self.task_adapter_path is None:
                 raise ValueError("task_adapter_path must be provided")
 
-    @dataclass
-    class TrainingArguments(TrainingArguments):
-        """
-        Arguments pertaining to what data we are going to input our model for training and eval.
-        """
-
-        output_dir: Optional[str] = field(
-            default=None,
-            metadata={
-                "help": ("The output directory where the model predictions and checkpoints will be written."),
-            },
-        )
-
-    parser = HfArgumentParser((EvalArguments, TrainingArguments))
+    parser = HfArgumentParser((CustomArguments, TrainingArguments))
     # we remove sys.argv as it interferes with parsing
     sys.argv = ""
     # if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
     if len(submit_arguments) == 1 and submit_arguments[0].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
         # let's parse it to get our arguments.
-        eval_args = parser.parse_json_file(json_file=os.path.abspath(submit_arguments[0]))
+        custom_args, training_args = parser.parse_json_file(json_file=os.path.abspath(submit_arguments[0]))
     else:
         print("calling parser")
-        eval_args, training_args = parser.parse_args_into_dataclasses(submit_arguments)
-    print("eval args", eval_args)
+        custom_args, training_args = parser.parse_args_into_dataclasses(submit_arguments)
+    print("eval args", custom_args)
     print("training args", training_args)
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
@@ -130,12 +117,12 @@ def main(submit_arguments):
     # we load in the adapters
     # we print the current directory
     print(f"Current directory: {os.getcwd()}")
-    model.load_adapter(adapter_name_or_path=eval_args.task_adapter_path, load_as="ner")
+    model.load_adapter(adapter_name_or_path=custom_args.task_adapter_path, load_as="ner")
     model.load_adapter(
-        eval_args.language_adapter_path_template.format(eval_args.language_adapter_name),
-        load_as=eval_args.language_adapter_name,
+        custom_args.language_adapter_path_template.format(custom_args.language_adapter_name),
+        load_as=custom_args.language_adapter_name,
     )
-    model.active_adapters = Stack(eval_args.language_adapter_name, "ner")
+    model.active_adapters = Stack(custom_args.language_adapter_name, "ner")
     print(model.active_adapters)
 
     def compute_accuracy(p: EvalPrediction):
