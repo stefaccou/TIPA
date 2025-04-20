@@ -88,7 +88,8 @@ def main(FAMILY_ADAPTER):
 
 
 if __name__ == "__main__":
-    submitit_input = sys.argv[1:] if len(sys.argv) > 1 else "No input passed"
+    # we want just the one argument as a string here
+    submitit_input = sys.argv[1] if len(sys.argv) > 1 else "No input passed"
     job_name = f"af_ner_eval_{submitit_input}"
 
     master_dir = find_master()
