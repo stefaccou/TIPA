@@ -69,7 +69,7 @@ def main(FAMILY_ADAPTER):
     # we load in the adapters
     # we print the current directory
     print(f"Current directory: {os.getcwd()}")
-    model.load_adapter("/trained_adapters/ner/ner")
+    model.load_adapter(adapter_name_or_path="/trained_adapters/ner/ner", load_as="ner")
     model.load_adapter(f"/trained_adapters/family/{FAMILY_ADAPTER}/mlm", load_as=FAMILY_ADAPTER)
     model.active_adapters = Stack(FAMILY_ADAPTER, "ner")
     print(model.active_adapters)
