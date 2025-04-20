@@ -136,11 +136,10 @@ def main(submit_arguments):
         preds = np.argmax(p.predictions, axis=1)
         return {"acc": (preds == p.label_ids).mean()}
 
+    pdbs = training_args.per_device_eval_batch_size if training_args.per_device_eval_batch_size else 8
     eval_args = TrainingArguments(
         output_dir=training_args.output_dir,
-        per_device_eval_batch_size=training_args.per_device_eval_batch_size
-        if training_args.per_device_eval_batch_size
-        else 8,
+        per_device_eval_batch_size=pdbs,
         do_train=False,
         do_eval=True,
         remove_unused_columns=False,
