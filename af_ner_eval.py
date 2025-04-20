@@ -174,6 +174,8 @@ def main(submit_arguments):
     model.active_adapters = Stack(custom_args.language_adapter_name, "ner")
     print(model.active_adapters)
 
+    # Set the model to evaluation mode
+    model.eval()
     def compute_accuracy(p: EvalPrediction):
         preds = np.argmax(p.predictions, axis=1)
         return {"acc": (preds == p.label_ids).mean()}
@@ -186,7 +188,6 @@ def main(submit_arguments):
         do_eval=True,
         dataloader_num_workers=0,  # ← no extra worker processes
         remove_unused_columns=True,
-        eval_accumulation_steps=None,
         fp16=training_args.fp16,
     )
     eval_trainer = AdapterTrainer(
