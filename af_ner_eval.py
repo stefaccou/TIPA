@@ -213,7 +213,7 @@ def main(submit_arguments):
     model.eval()
     total_correct, total_tokens = 0, 0
     with torch.no_grad():
-        for batch in DataLoader(tokenized_dataset, batch_size=4):
+        for batch in eval_loader:
             # move inputs to GPU, get logits, then immediately .cpu()
             logits = model(**{k: v.cuda() for k, v in batch.items()}).logits.cpu()
             labels = batch["labels"]
