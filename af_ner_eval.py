@@ -90,7 +90,7 @@ def main(FAMILY_ADAPTER):
 if __name__ == "__main__":
     # we want just the one argument as a string here
     submitit_input = sys.argv[1] if len(sys.argv) > 1 else "No input passed"
-    job_name = f"af_ner_eval_{submitit_input}"
+    job_name = "af_ner_eval"
 
     master_dir = find_master()
 
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     experiments_dir = master_dir / "experiment_folder"
 
     run_count = update_submission_log(experiments_dir, job_name)
-    experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
+    experiments_dir = experiments_dir / job_name / submitit_input / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     parameters = {
         "slurm_partition": "gpu_p100_debug",
