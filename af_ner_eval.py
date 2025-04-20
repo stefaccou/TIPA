@@ -176,6 +176,7 @@ def main(submit_arguments):
 
     # Set the model to evaluation mode
     model.eval()
+    """ Old code that didnt work, as it accumulated too much memory
     def compute_accuracy(p: EvalPrediction):
         preds = np.argmax(p.predictions, axis=1)
         return {"acc": (preds == p.label_ids).mean()}
@@ -197,7 +198,31 @@ def main(submit_arguments):
         compute_metrics=compute_accuracy,
     )
     eval_trainer.evaluate()
+    """
+    from torch.utils.data import DataLoader
+    from transformers import default_data_collator
 
+    # assuming you’ve already done:
+    # tokenized_dataset.set_format(type="torch", columns=["input_ids","attention_mask","labels"])
+    eval_loader = DataLoader(
+        tokenized_dataset,
+        batch_size=4,
+        collate_fn=default_data_collator,  # this will stack your dicts into a single batch
+        shuffle=False
+    )
+    model.eval()
+    total_correct, total_tokens = 0, 0
+    with torch.no_grad():
+        for batch in DataLoader(tokenized_dataset, batch_size=4):
+            # move inputs to GPU, get logits, then immediately .cpu()
+            logits = model(**{k: v.cuda() for k, v in batch.items()}).logits.cpu()
+            labels = batch["labels"]
+            preds = logits.argmax(-1)
+            mask = labels != -100
+            total_correct += (preds[mask] == labels[mask]).sum().item()
+            total_tokens += int(mask.sum())
+            torch.cuda.empty_cache()
+    print("Accuracy:", total_correct / total_tokens)
 
 if __name__ == "__main__":
     # we want just the one argument as a string here
