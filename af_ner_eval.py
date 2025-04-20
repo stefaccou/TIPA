@@ -54,10 +54,9 @@ def main(submit_arguments):
     else:
         print("calling parser")
         eval_args = parser.parse_args_into_dataclasses(submit_arguments)
-
+    print(eval_args)
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-    dataset_af = load_dataset("wikiann", "af")
     # If True, all tokens of a word will be labeled, otherwise only the first token
     label_all_tokens = True
 
