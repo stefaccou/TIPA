@@ -142,9 +142,8 @@ def main(submit_arguments):
         per_device_eval_batch_size=pdbs,
         do_train=False,
         do_eval=True,
-        gradient_checkpointing=True,
-        remove_unused_columns=True,
-        eval_accumulation_steps=2,
+        remove_unused_columns=False,
+        eval_accumulation_steps=4,
     )
     eval_trainer = AdapterTrainer(
         model=model,
