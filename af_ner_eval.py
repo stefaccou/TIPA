@@ -143,7 +143,7 @@ def main(submit_arguments):
         do_train=False,
         do_eval=True,
         remove_unused_columns=False,
-        eval_accumulation_steps=4,
+        eval_accumulation_steps=2,
     )
     eval_trainer = AdapterTrainer(
         model=model,
