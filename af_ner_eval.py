@@ -186,7 +186,8 @@ def main(submit_arguments):
         do_eval=True,
         dataloader_num_workers=0,  # ← no extra worker processes
         remove_unused_columns=True,
-        eval_accumulation_steps=2,
+        eval_accumulation_steps=None,
+        fp16=training_args.fp16,
     )
     eval_trainer = AdapterTrainer(
         model=model,
