@@ -132,12 +132,18 @@ def main(submit_arguments):
         preds = np.argmax(p.predictions, axis=1)
         return {"acc": (preds == p.label_ids).mean()}
 
+    eval_args = TrainingArguments(
+        output_dir=training_args.output_dir,
+        per_device_eval_batch_size=training_args.per_device_eval_batch_size
+        if training_args.per_device_eval_batch_size
+        else 8,
+        do_train=False,
+        do_eval=True,
+        remove_unused_columns=False,
+    )
     eval_trainer = AdapterTrainer(
         model=model,
-        args=TrainingArguments(
-            output_dir=training_args.output_dir,
-            remove_unused_columns=False,
-        ),
+        args=eval_args,
         eval_dataset=dataset_af,
         compute_metrics=compute_accuracy,
     )
