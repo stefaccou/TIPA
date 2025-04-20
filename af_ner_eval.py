@@ -10,7 +10,7 @@ from custom_submission_utils import find_master, update_submission_log
 def main(submit_arguments):
     import os
     import numpy as np
-    from transformers import EvalPrediction, TrainingArguments, AutoTokenizer, HfArgumentParser
+    from transformers import AutoConfig, EvalPrediction, TrainingArguments, AutoTokenizer, HfArgumentParser
     from adapters import AutoAdapterModel, AdapterTrainer
     from adapters.composition import Stack
     from datasets import load_dataset
@@ -18,7 +18,7 @@ def main(submit_arguments):
     from dataclasses import dataclass, field
     import torch
 
-    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "garbage_collection_threshold:0.6,max_split_size_mb:128"
     torch.cuda.empty_cache()
 
     @dataclass
@@ -71,11 +71,11 @@ def main(submit_arguments):
     print(custom_args.language_adapter_path_template)
     print(custom_args.task_adapter_path)
 
+    """"
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
     # If True, all tokens of a word will be labeled, otherwise only the first token
     label_all_tokens = True
-
     # Batch encoding function for NER
     def encode_batch(examples):
         # Tokenize word-level inputs
@@ -120,6 +120,48 @@ def main(submit_arguments):
     dataset_af = load_dataset("wikiann", "af", trust_remote_code=True)
     # Choose train split (or validation/test as needed)
     dataset_af = preprocess_dataset(dataset_af["validation"])
+    """
+    dataset = load_dataset("wikiann", "af")
+    label_list = dataset["validation"].features["ner_tags"].feature.names
+    num_labels = len(label_list)
+
+    # Load a pre-trained tokenizer (using a RoBERTa-based model)
+    tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base", add_prefix_space=True)
+
+    # Function to tokenize texts and align labels with tokens
+    def tokenize_and_align_labels(examples, label_all_tokens=True):
+        tokenized_inputs = tokenizer(
+            examples["tokens"],
+            truncation=True,
+            is_split_into_words=True,
+            padding="max_length",
+            max_length=128,  # adjust max_length as needed
+        )
+        all_labels = []
+        for i, labels in enumerate(examples["ner_tags"]):
+            word_ids = tokenized_inputs.word_ids(batch_index=i)
+            previous_word_idx = None
+            label_ids = []
+            for word_idx in word_ids:
+                # Special tokens have a word id of None
+                if word_idx is None:
+                    label_ids.append(-100)
+                # Only label the first token of a given word, unless label_all_tokens is set to True
+                elif word_idx != previous_word_idx:
+                    label_ids.append(labels[word_idx])
+                else:
+                    label_ids.append(labels[word_idx] if label_all_tokens else -100)
+                previous_word_idx = word_idx
+            all_labels.append(label_ids)
+        tokenized_inputs["labels"] = all_labels
+        return tokenized_inputs
+
+    # Preprocess the dataset using the tokenization function above
+    tokenized_dataset = dataset.map(tokenize_and_align_labels, batched=True)
+    tokenized_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
+    # Load the model configuration and adapter model
+    config = AutoConfig.from_pretrained("xlm-roberta-base", num_labels=num_labels)
+    model = AutoAdapterModel.from_pretrained("xlm-roberta-base", config=config)
 
     # we load in the adapters
     # we print the current directory
@@ -147,8 +189,9 @@ def main(submit_arguments):
     )
     eval_trainer = AdapterTrainer(
         model=model,
-        args=eval_args,
-        eval_dataset=dataset_af,
+        # args=eval_args,
+        args=TrainingArguments(output_dir=training_args.output_dir, remove_unused_columns=False),
+        eval_dataset=tokenized_dataset["test"],
         compute_metrics=compute_accuracy,
     )
     eval_trainer.evaluate()
@@ -177,7 +220,7 @@ if __name__ == "__main__":
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,
             "mail_type": "END",
-            "mail_user": "stef.accou@student.kuleuven.be",
+            "mail_user": "",
         },
     }
 
