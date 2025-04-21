@@ -203,7 +203,7 @@ def main(submit_arguments):
 if __name__ == "__main__":
     # we want just the one argument as a string here
 
-    job_name = "af_ner_eval"
+    job_name = "af_ner_eval_wice"
     master_dir = find_master()
 
     # Set the experiment folder as a subdirectory of 'Master_thesis'
@@ -213,11 +213,11 @@ if __name__ == "__main__":
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     parameters = {
-        "slurm_partition": "gpu_p100",
+        "slurm_partition": "gpu_a100",
         "slurm_time": "00:30:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
-            "clusters": "genius",
+            "clusters": "wice",
             "account": "intro_vsc37220",  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
