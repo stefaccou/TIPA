@@ -103,7 +103,7 @@ def main():
     print(model.active_adapters)
 
     training_args = TrainingArguments(
-        output_dir="./ner_adapter",
+        output_dir="./trained_adapters/custom_ner_adapter",
         evaluation_strategy="epoch",
         learning_rate=1e-4,
         per_device_train_batch_size=32,
@@ -112,7 +112,9 @@ def main():
         weight_decay=0.01,
         logging_dir="./logs",
         logging_steps=250,
-        save_steps=10,
+        overwrite_output_dir=True,
+        # The next line is important to ensure the dataset labels are properly passed to the model
+        remove_unused_columns=False,
     )
     trainer = AdapterTrainer(
         model=model,
