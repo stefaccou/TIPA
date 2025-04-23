@@ -5,6 +5,7 @@
 
 import sys
 import submitit
+import os
 from custom_submission_utils import find_master, update_submission_log
 
 
@@ -886,7 +887,7 @@ if __name__ == "__main__":
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": "genius",
-            "account": "intro_vsc37220",  # replace with your account
+            "account": os.environ["ACCOUNT_INFO"],  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,

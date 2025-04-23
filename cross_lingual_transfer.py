@@ -6,6 +6,8 @@ from adaptersTest.composition import Stack
 from datasets import concatenate_datasets, load_dataset
 from transformers import AutoTokenizer, AutoConfig, EvalPrediction, TrainingArguments
 
+import os
+
 
 def main():
     # Make sure we use a GPU if available
@@ -108,7 +110,7 @@ if __name__ == "__main__":
         "slurm_job_name": "cross_lingual_transfer",
         "slurm_additional_parameters": {
             "clusters": "wice",
-            "account": "intro_vsc37220",
+            "account": os.environ["ACCOUNT_INFO"],
             "nodes": 1,
             "cpus_per_gpu": 64,
             "gpus_per_node": 1,

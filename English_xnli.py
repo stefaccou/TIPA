@@ -5,6 +5,7 @@ from transformers import AutoTokenizer
 from datasets import load_dataset
 from transformers import TrainingArguments
 import submitit
+import os
 
 # we will use XLM Roberta
 
@@ -18,6 +19,7 @@ def main():
     dataset_en = dataset_en["train"].shuffle(seed=0)
     # we select the first 5000 examples
     dataset_en = dataset_en.select(range(5000))
+
     def encode_batch(batch):
         all_encoded = {"input_ids": [], "attention_mask": []}
         for i in range(len(batch["premise"])):
@@ -71,7 +73,7 @@ if __name__ == "__main__":
         "slurm_job_name": "training xnli adapter for english",
         "slurm_additional_parameters": {
             "clusters": "wice",
-            "account": "intro_vsc37220",
+            "account": os.environ["ACCOUNT_INFO"],
             "nodes": 1,
             "cpus_per_gpu": 18,
             "gpus_per_node": 1,

@@ -105,7 +105,7 @@ if __name__ == "__main__":
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": "wice",
-            "account": "intro_vsc37220",  # replace with your account
+            "account": os.environ["ACCOUNT_INFO"],  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,
@@ -114,6 +114,6 @@ if __name__ == "__main__":
         },
     }
 
-    executor = submitit.AutoExecutor(folder="experiment_folder/"+job_name)
+    executor = submitit.AutoExecutor(folder="experiment_folder/" + job_name)
     executor.update_parameters(**parameters)
     job = executor.submit(main)

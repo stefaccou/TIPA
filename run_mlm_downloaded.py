@@ -23,6 +23,7 @@ https://huggingface.co/models?filter=fill-mask
 # You can also adapt this script on your own masked language modeling task. Pointers for this are left as comments.
 import submitit
 import sys
+import os
 
 
 def main(submit_arguments):
@@ -716,7 +717,7 @@ if __name__ == "__main__":
         "slurm_job_name": "training dutch mlm adapter",
         "slurm_additional_parameters": {
             "clusters": "wice",
-            "account": "intro_vsc37220",  # replace with your account
+            "account": os.environ["ACCOUNT_INFO"],  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,

@@ -19,11 +19,11 @@ Fine-tuning the library models for masked language modeling (BERT, ALBERT, RoBER
 Here is the full list of checkpoints on the hub that can be fine-tuned by this script:
 https://huggingface.co/models?filter=fill-mask
 """
+
 # You can also adapt this script on your own masked language modeling task. Pointers for this are left as comments.
 import submitit
 import sys
-    
-
+import os
 
 def main(submit_arguments):
     print("starting main")
@@ -33,11 +33,11 @@ def main(submit_arguments):
     from dataclasses import dataclass, field
     from itertools import chain
     from typing import Optional
-    
+
     import datasets
     import torch
     from datasets import load_dataset
-    
+
     import adapters
     import evaluate
     import transformers
@@ -58,26 +58,24 @@ def main(submit_arguments):
     from transformers.trainer_utils import get_last_checkpoint
     from transformers.utils import check_min_version, send_example_telemetry
     from transformers.utils.versions import require_version
-    
-    
+
     # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
     check_min_version("4.44.0")
-    
+
     require_version("datasets>=2.14.0", "To fix: pip install -r examples/pytorch/language-modeling/requirements.txt")
-    
+
     logger = logging.getLogger(__name__)
-    
+
     MODEL_CONFIG_CLASSES = list(MODEL_FOR_MASKED_LM_MAPPING.keys())
-    
+
     MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
-    
-    
+
     @dataclass
     class ModelArguments:
         """
         Arguments pertaining to which model/config/tokenizer we are going to fine-tune, or train from scratch.
         """
-    
+
         model_name_or_path: Optional[str] = field(
             default=None,
             metadata={
@@ -155,27 +153,30 @@ def main(submit_arguments):
                 )
             },
         )
-    
+
         def __post_init__(self):
-            if self.config_overrides is not None and (self.config_name is not None or self.model_name_or_path is not None):
+            if self.config_overrides is not None and (
+                self.config_name is not None or self.model_name_or_path is not None
+            ):
                 raise ValueError(
                     "--config_overrides can't be used in combination with --config_name or --model_name_or_path"
                 )
-    
-    
+
     @dataclass
     class DataTrainingArguments:
         """
         Arguments pertaining to what data we are going to input our model for training and eval.
         """
-    
+
         dataset_name: Optional[str] = field(
             default=None, metadata={"help": "The name of the dataset to use (via the datasets library)."}
         )
         dataset_config_name: Optional[str] = field(
             default=None, metadata={"help": "The configuration name of the dataset to use (via the datasets library)."}
         )
-        train_file: Optional[str] = field(default=None, metadata={"help": "The input training data file (a text file)."})
+        train_file: Optional[str] = field(
+            default=None, metadata={"help": "The input training data file (a text file)."}
+        )
         validation_file: Optional[str] = field(
             default=None,
             metadata={"help": "An optional input evaluation data file to evaluate the perplexity on (a text file)."},
@@ -237,11 +238,11 @@ def main(submit_arguments):
             },
         )
         streaming: bool = field(default=False, metadata={"help": "Enable streaming mode"})
-    
+
         def __post_init__(self):
             if self.streaming:
                 require_version("datasets>=2.0.0", "The streaming feature requires `datasets>=2.0.0`")
-    
+
             if self.dataset_name is None and self.train_file is None and self.validation_file is None:
                 raise ValueError("Need either a dataset name or a training/validation file.")
             else:
@@ -253,9 +254,7 @@ def main(submit_arguments):
                     extension = self.validation_file.split(".")[-1]
                     if extension not in ["csv", "json", "txt"]:
                         raise ValueError("`validation_file` should be a csv, a json or a txt file.")
-    
-    
-    
+
     print("received:", submit_arguments)
     # See all possible arguments in src/transformers/training_args.py
     # or by passing the --help flag to this script.
@@ -264,7 +263,7 @@ def main(submit_arguments):
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments, AdapterArguments))
     # we remove sys.argv as it interferes with parsing
     sys.argv = ""
-    #if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+    # if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
     if len(submit_arguments) == 1 and submit_arguments[0].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
         # let's parse it to get our arguments.
@@ -705,12 +704,11 @@ def main(submit_arguments):
         trainer.create_model_card(**kwargs)
 
 
-#def _mp_fn(index):
-    # For xla_spawn (TPUs)
-    #main()
+# def _mp_fn(index):
+# For xla_spawn (TPUs)
+# main()
 
 
-    
 if __name__ == "__main__":
     parameters = {
         "slurm_partition": "gpu_h100",
@@ -718,7 +716,7 @@ if __name__ == "__main__":
         "slurm_job_name": "eval dutch mlm adapter",
         "slurm_additional_parameters": {
             "clusters": "wice",
-            "account": "intro_vsc37220",  # replace with your account
+            "account": os.environ["ACCOUNT_INFO"],  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,
