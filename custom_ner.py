@@ -1,11 +1,9 @@
-
 import sys
 import submitit
 from custom_submission_utils import find_master, update_submission_log
 
 
 def main():
-
     from datasets import load_dataset
     from transformers import AutoModelForTokenClassification, TrainingArguments, AutoTokenizer
     from adapters import AdapterTrainer, init
@@ -19,10 +17,10 @@ def main():
     raw_datasets = load_dataset("wikiann", "en")
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 
-
     ner_feature = raw_datasets["train"].features["ner_tags"]
 
     label_names = ner_feature.feature.names
+
     def align_labels_with_tokens(labels, word_ids):
         new_labels = []
         current_word = None
@@ -46,9 +44,7 @@ def main():
         return new_labels
 
     def tokenize_and_align_labels(examples):
-        tokenized_inputs = tokenizer(
-            examples["tokens"], truncation=True, is_split_into_words=True
-        )
+        tokenized_inputs = tokenizer(examples["tokens"], truncation=True, is_split_into_words=True)
         all_labels = examples["ner_tags"]
         new_labels = []
         for i, labels in enumerate(all_labels):
@@ -64,16 +60,14 @@ def main():
         remove_columns=raw_datasets["train"].column_names,
     )
 
-
-
     def compute_metrics(eval_preds):
         logits, labels = eval_preds
         predictions = np.argmax(logits, axis=-1)
 
         # Remove ignored index (special tokens) and convert to labels
-        true_labels = [[label_names[l] for l in label if l != -100] for label in labels]
+        true_labels = [[label_names[lab] for lab in label if lab != -100] for label in labels]
         true_predictions = [
-            [label_names[p] for (p, l) in zip(prediction, label) if l != -100]
+            [label_names[pred] for (pred, lab) in zip(prediction, label) if lab != -100]
             for prediction, label in zip(predictions, labels)
         ]
         all_metrics = metric.compute(predictions=true_predictions, references=true_labels)
@@ -87,10 +81,8 @@ def main():
     id2label = {i: label for i, label in enumerate(label_names)}
     label2id = {v: k for k, v in id2label.items()}
 
-
-
     model = AutoModelForTokenClassification.from_pretrained(
-        'xlm-roberta-base',
+        "xlm-roberta-base",
         id2label=id2label,
         label2id=label2id,
     )
@@ -128,10 +120,11 @@ def main():
     trainer.train()
     # we save the ner adapter as "ner_adapter"
 
+
 if __name__ == "__main__":
     # we want just the one argument as a string here
 
-    job_name = "af_ner_eval_wice"
+    job_name = "training custom_ner_adapter"
     master_dir = find_master()
 
     # Set the experiment folder as a subdirectory of 'Master_thesis'
