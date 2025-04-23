@@ -2,6 +2,13 @@ import submitit
 import os
 from custom_submission_utils import find_master, update_submission_log
 
+"""
+!!!
+This file uses a wrong encoding for NER task and should be disregarded.
+Will be replaced by custom_ner.py
+!!!
+"""
+
 
 def main():
     from adapters import AutoAdapterModel, AdapterTrainer
