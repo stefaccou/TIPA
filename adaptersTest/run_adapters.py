@@ -279,7 +279,7 @@ if __name__ == "__main__":
         "slurm_job_name": "application adapter code from paper",
         "slurm_additional_parameters": {
             "clusters": "wice",
-            "account": "intro_vsc37220",
+            "account": os.environ["ACCOUNT_INFO"],
             "nodes": 1,
             "cpus_per_gpu": 18,
             "gpus_per_node": 1,
