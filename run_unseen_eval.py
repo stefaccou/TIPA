@@ -45,7 +45,7 @@ def main(job_input):
     except:
         print("already using Glottocodes")
 
-    eval_languages = get_dataset_config_names("wikiann")
+    eval_languages = get_dataset_config_names("unimelb-nlp/wikiann")
 
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
@@ -218,7 +218,7 @@ def main(job_input):
 
 
 if __name__ == "__main__":
-    job_name = "unseen_eval_random_debug"
+    job_name = "unseen_eval_random"
 
     master_dir = find_master()
 
@@ -229,8 +229,8 @@ if __name__ == "__main__":
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     parameters = {
-        "slurm_partition": "gpu_a100_debug",
-        "slurm_time": "00:10:00",
+        "slurm_partition": "gpu_a100",
+        "slurm_time": "01:05:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": "wice",
