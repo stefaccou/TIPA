@@ -4,34 +4,36 @@ import os
 import sys
 from custom_submission_utils import find_master, update_submission_log
 
-def main(iterations=1):
 
+def main(job_input):
     from unseen_eval import get_available_adapters, merge_loaded_adapters, typological_approximation, get_glots
 
     from transformers import TrainingArguments, AutoTokenizer
-    from adapters import AdapterTrainer, init, AutoAdapterModel
+    from adapters import AdapterTrainer, AutoAdapterModel
     from adapters.composition import Stack
 
     from datasets import load_dataset, get_dataset_config_names
-    from transformers import DataCollatorForTokenClassification, AutoModelForTokenClassification
+    from transformers import DataCollatorForTokenClassification
     import os
-    import re
     import gc
     import json
-    from collections import OrderedDict
     import torch
     import numpy as np
     import evaluate
+
     metric = evaluate.load("seqeval")
     import random
 
     from huggingface_hub import HfApi
+
     api = HfApi()
 
     from qq import LanguageData, TagType
+
     ld = LanguageData.from_db()
 
     from urielplus import urielplus
+
     u = urielplus.URIELPlus()
     u.set_cache(True)
     try:
@@ -43,13 +45,10 @@ def main(iterations=1):
     except:
         print("already using Glottocodes")
 
-
     eval_languages = get_dataset_config_names("wikiann")
 
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
-
-
 
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
 
@@ -61,11 +60,16 @@ def main(iterations=1):
             print(f"Could not load {link}")
             continue
 
+    try:
+        iterations = int(job_input)
+    except:
+        print("No iterations given, using default of 1")
+        iterations = 1
     for i in range(iterations):
-
         eval_language = random.choice([lan for lan in eval_languages if len(lan) <= 3])
         print(
-            f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})")
+            f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})"
+        )
 
         dataset_eval = load_dataset("wikiann", eval_language, trust_remote_code=True)
         # If True, all tokens of a word will be labeled, otherwise only the first token
@@ -95,9 +99,7 @@ def main(iterations=1):
 
         # Batch encoding function for NER
         def tokenize_and_align_labels(examples):
-            tokenized_inputs = tokenizer(
-                examples["tokens"], truncation=True, is_split_into_words=True
-            )
+            tokenized_inputs = tokenizer(examples["tokens"], truncation=True, is_split_into_words=True)
             all_labels = examples["ner_tags"]
             new_labels = []
             for i, labels in enumerate(all_labels):
@@ -152,7 +154,10 @@ def main(iterations=1):
 
             eval_trainer = AdapterTrainer(
                 model=model,
-                args=TrainingArguments(output_dir="./eval_output", remove_unused_columns=False, ),
+                args=TrainingArguments(
+                    output_dir="./eval_output",
+                    remove_unused_columns=False,
+                ),
                 data_collator=data_collator,
                 eval_dataset=tokenized_datasets["validation"],
                 compute_metrics=compute_metrics,
@@ -170,20 +175,19 @@ def main(iterations=1):
 
             return ev
 
-
-
-
         # we check if the adapter has already been created before
         if os.path.exists(f"./trained_adapters/typological/{eval_language}"):
             print("Adapter already exists, loading instead")
-            model.load_adapter(f"./trained_adapters/typological/{eval_language}", load_as="reconstructed_" + eval_language)
+            model.load_adapter(
+                f"./trained_adapters/typological/{eval_language}", load_as="reconstructed_" + eval_language
+            )
         else:
-
             target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
             weights = typological_approximation(target_glot, get_glots(to_load))
 
-            merge_loaded_adapters(model, merge_adapter_name=f"reconstructed_{eval_language}", weights=weights,
-                                  delete_other=False)
+            merge_loaded_adapters(
+                model, merge_adapter_name=f"reconstructed_{eval_language}", weights=weights, delete_other=False
+            )
             # save this adapter
             # check if directory exists first
             if not os.path.exists(f"./trained_adapters/typological/{eval_language}"):
@@ -246,5 +250,5 @@ if __name__ == "__main__":
     job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
 
     job = executor.submit(main, job_input)
-    #job = executor.submit(main)
+    # job = executor.submit(main)
     print("job submitted")
