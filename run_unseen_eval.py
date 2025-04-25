@@ -67,6 +67,7 @@ def main(job_input):
         iterations = 1
     for i in range(iterations):
         eval_language = random.choice([lan for lan in eval_languages if len(lan) <= 3])
+        eval_languages.remove(eval_language)
         print(
             f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})"
         )
