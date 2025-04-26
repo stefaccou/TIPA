@@ -68,14 +68,14 @@ def main(job_input):
             print(f"Could not load {link}")
             continue
 
-    print("Successfully loaded adapters:")
-    print(model.roberta.encoder.layer[0].output.adapters)
+    #print("Successfully loaded adapters:")
+    #print(model.roberta.encoder.layer[0].output.adapters)
 
     try:
         iterations = int(job_input)
     except:
-        print("No iterations given, using default of 3")
-        iterations = 3
+        print("No iterations given, going for all")
+        iterations = len(eval_languages)
     for i in range(iterations):
         eval_language = random.choice([lan for lan in eval_languages if len(lan) <= 3])
         eval_languages.remove(eval_language)
