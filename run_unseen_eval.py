@@ -22,6 +22,8 @@ def main(job_input):
     import numpy as np
     import evaluate
 
+    import time
+
     metric = evaluate.load("seqeval")
     import random
 
@@ -83,7 +85,7 @@ def main(job_input):
             f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})"
         )
         try:
-
+            start = time.time()
             dataset_eval = load_dataset("wikiann", eval_language, trust_remote_code=True)
             # If True, all tokens of a word will be labeled, otherwise only the first token
             label_all_tokens = True
@@ -235,6 +237,8 @@ def main(job_input):
             # we write the language name to "done languages"
             with open("experiment_folder/done_languages.txt", "a") as f:
                 f.write(f"{eval_language}\n")
+            end = time.time()
+            print(f"Time taken: {end - start} seconds")
         except RuntimeError:
             print("RuntimeError, skipping this language")
             # we write this language to a file so we do not check it again
