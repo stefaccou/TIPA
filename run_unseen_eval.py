@@ -21,31 +21,21 @@ def main(job_input):
     import torch
     import numpy as np
     import evaluate
-
-    import time
-
-    metric = evaluate.load("seqeval")
     import random
-
-    from huggingface_hub import HfApi
-
-    api = HfApi()
-
+    from urielplus import urielplus
     from qq import LanguageData, TagType
 
+    metric = evaluate.load("seqeval")
     ld = LanguageData.from_db()
-
-    from urielplus import urielplus
-
     u = urielplus.URIELPlus()
     u.set_cache(True)
     try:
         u.integrate_grambank()
-    except:
+    except SystemExit:
         print("already using GramBank")
     try:
         u.set_glottocodes()
-    except:
+    except SystemExit:
         print("already using Glottocodes")
 
     eval_languages = get_dataset_config_names("unimelb-nlp/wikiann")
@@ -70,12 +60,12 @@ def main(job_input):
             print(f"Could not load {link}")
             continue
 
-    #print("Successfully loaded adapters:")
-    #print(model.roberta.encoder.layer[0].output.adapters)
+    # print("Successfully loaded adapters:")
+    # print(model.roberta.encoder.layer[0].output.adapters)
 
     try:
         iterations = int(job_input)
-    except:
+    except TypeError:
         iterations = len(eval_languages)
 
         print(f"No iterations given, going for all remaining ({iterations}) languages in dataset")
@@ -84,12 +74,11 @@ def main(job_input):
         eval_languages.remove(eval_language)
 
         try:
-            print("\n\n",
-                f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})"
+            print(
+                "\n\n",
+                f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
             )
             dataset_eval = load_dataset("wikiann", eval_language, trust_remote_code=True)
-            # If True, all tokens of a word will be labeled, otherwise only the first token
-            label_all_tokens = True
 
             def align_labels_with_tokens(labels, word_ids):
                 new_labels = []
@@ -138,17 +127,14 @@ def main(job_input):
             ner_feature = dataset_eval["train"].features["ner_tags"]
 
             label_names = ner_feature.feature.names
-            words = dataset_eval["train"][0]["tokens"]
-            labels = dataset_eval["train"][0]["ner_tags"]
             id2label = {i: label for i, label in enumerate(label_names)}
-            label2id = {v: k for k, v in id2label.items()}
 
             def compute_metrics(eval_preds):
                 logits, labels = eval_preds
                 predictions = np.argmax(logits, axis=-1)
 
                 # Remove ignored index (special tokens) and convert to labels
-                true_labels = [[label_names[l] for l in label if l != -100] for label in labels]
+                true_labels = [[label_names[lab] for lab in label if lab != -100] for label in labels]
                 true_predictions = [
                     [label_names[p] for (p, l) in zip(prediction, label) if l != -100]
                     for prediction, label in zip(predictions, labels)
@@ -216,15 +202,31 @@ def main(job_input):
             print(f"evaluating on reconstructed {eval_language} adapter")
             evaluations["reconstructed_" + eval_language] = eval(model, f"reconstructed_{eval_language}")
 
-            print(f"evaluating on baseline (only task adapter")
+            print("evaluating on baseline (only task adapter")
             # we calculate a baseline (just ner adapter)
             evaluations["baseline_ner"] = eval(model, "ner")
 
             # we calculate a baseline (just average over all adapter)
             # we load the mono/huge_avg_adapter for this
-            print(f"evaluating on baseline (non-weighted average)")
+            print("evaluating on baseline (non-weighted average)")
             model.load_adapter("./trained_adapters/typological/huge_avg_adapter", load_as="huge_avg_adapter")
             evaluations["baseline_avg_adapter"] = eval(model, "huge_avg_adapter")
+
+            # we calculate the baseline of using the english language model and the ner adapter
+            print("evaluating on baseline (english model + ner adapter)")
+            evaluations["baseline_en_ner"] = eval(model, "en")  # en is in the list of available adapters
+
+            # we calculate the baseline of using the typologically closest model and the ner adapter
+            print("evaluating on baseline (closest model + ner adapter)")
+            # we have the adapters, and weights
+            adapters_weights = {}
+            for adapter, weight in zip(to_load.keys(), weights):
+                adapters_weights[adapter] = weight
+            # we load the closest adapter
+            closest_adapter = max(adapters_weights, key=adapters_weights.get)
+            print(f"closest adapter is {closest_adapter}")
+            evaluations["baseline_closest_ner"] = eval(model, closest_adapter)
+
             # we delete the added adapters
             model.delete_adapter("huge_avg_adapter")
             model.delete_adapter("ner")
@@ -254,6 +256,7 @@ def main(job_input):
             with open("failed_languages.txt", "a") as f:
                 f.write(f"{eval_language}\n")
             print("KeyError, (qq unseen langugae) skipping this language")
+
 
 if __name__ == "__main__":
     job_name = "unseen_eval"
@@ -285,7 +288,7 @@ if __name__ == "__main__":
     executor = submitit.AutoExecutor(folder=str(experiments_dir))
     executor.update_parameters(**parameters)
 
-    #job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
+    # job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
     job_input = sys.argv[1] if len(sys.argv) > 1 else "default text"
     job = executor.submit(main, job_input)
     # job = executor.submit(main)
