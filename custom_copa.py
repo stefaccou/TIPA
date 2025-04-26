@@ -70,11 +70,11 @@ def main():
     training_args = TrainingArguments(
         output_dir="./trained_adapters/custom_copa_adapter",
         #eval_strategy="epoch",
-        learning_rate=1e-4,
+        learning_rate=1e-5,
         per_device_train_batch_size=32,
         #per_device_eval_batch_size=32,
         #num_train_epochs=3,
-        max_steps=1000,
+        max_steps=10000,
         weight_decay=0.01,
         logging_dir="./logs",
         logging_steps=250,
@@ -91,7 +91,7 @@ def main():
         compute_metrics=compute_accuracy,
     )
     trainer.train()
-    # we save the ner adapter as "ner_adapter"
+    # we save the copa adapter as "copa_adapter"
 
 
 if __name__ == "__main__":
