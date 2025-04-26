@@ -50,6 +50,9 @@ def main(job_input):
     # we remove the languages that are in the "failed languages" file
     with open("experiment_folder/failed_languages.txt", "r") as f:
         failed_languages = f.read().splitlines()
+    with open("experiment_folder/done_languages.txt", "r") as f:
+        done_languages = f.read().splitlines()
+    failed_languages += done_languages
     eval_languages = [lan for lan in eval_languages if lan not in failed_languages]
 
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
@@ -225,6 +228,10 @@ def main(job_input):
             with open(f"./trained_adapters/typological/{eval_language}/eval.json", "w") as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
+
+            # we write the language name to "done languages"
+            with open("experiment_folder/done_languages.txt", "a") as f:
+                f.write(f"{eval_language}\n")
         except RuntimeError:
             print("RuntimeError, skipping this language")
             # we write this language to a file so we do not check it again
