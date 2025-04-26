@@ -82,11 +82,11 @@ def main(job_input):
     for i in range(iterations):
         eval_language = random.choice([lan for lan in eval_languages if len(lan) <= 3])
         eval_languages.remove(eval_language)
-        print(
-            f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})"
-        )
-        try:
 
+        try:
+            print(
+                f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})"
+            )
             dataset_eval = load_dataset("wikiann", eval_language, trust_remote_code=True)
             # If True, all tokens of a word will be labeled, otherwise only the first token
             label_all_tokens = True
