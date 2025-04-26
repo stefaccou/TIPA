@@ -80,7 +80,7 @@ def main():
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
     )
-    train_dataset = concatenate_datasets(tokenized_datasets["train"], tokenized_datasets["validation"])
+    train_dataset = concatenate_datasets([tokenized_datasets["train"], tokenized_datasets["validation"]])
     trainer = AdapterTrainer(
         model=model,
         args=training_args,
@@ -96,7 +96,7 @@ def main():
 if __name__ == "__main__":
     # we want just the one argument as a string here
 
-    job_name = "training custom_copa_adapter"
+    job_name = "training_custom_copa_adapter"
     master_dir = find_master()
 
     # Set the experiment folder as a subdirectory of 'Master_thesis'
