@@ -224,7 +224,9 @@ def main(job_input):
                     adapters_weights[adapter] = weight
                 # we load the closest adapter
                 closest_adapter = max(adapters_weights, key=adapters_weights.get)
-                print(f"closest adapter is {closest_adapter}")
+                print(
+                    f"closest adapter is {closest_adapter} ({ld.get(closest_adapter, tag_type=TagType.BCP_47_CODE).english_name})"
+                )
                 evaluations["baseline_closest_ner"] = run_eval(model, closest_adapter)
             except Exception as e:
                 print(f"Error finding closest adapter: {e}")
