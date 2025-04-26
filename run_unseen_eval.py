@@ -47,6 +47,10 @@ def main(job_input):
         print("already using Glottocodes")
 
     eval_languages = get_dataset_config_names("unimelb-nlp/wikiann")
+    # we remove the languages that are in the "failed languages" file
+    with open("experiment_folder/failed_languages.txt", "r") as f:
+        failed_languages = f.read().splitlines()
+    eval_languages = [lan for lan in eval_languages if lan not in failed_languages]
 
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
@@ -70,12 +74,12 @@ def main(job_input):
         print("No iterations given, using default of 3")
         iterations = 3
     for i in range(iterations):
+        eval_language = random.choice([lan for lan in eval_languages if len(lan) <= 3])
+        eval_languages.remove(eval_language)
+        print(
+            f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})"
+        )
         try:
-            eval_language = random.choice([lan for lan in eval_languages if len(lan) <= 3])
-            eval_languages.remove(eval_language)
-            print(
-                f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})"
-            )
 
             dataset_eval = load_dataset("wikiann", eval_language, trust_remote_code=True)
             # If True, all tokens of a word will be labeled, otherwise only the first token
@@ -223,11 +227,18 @@ def main(job_input):
                 print("Saved evaluations to file")
         except RuntimeError:
             print("RuntimeError, skipping this language")
+            # we write this language to a file so we do not check it again
+            with open("failed_languages.txt", "a") as f:
+                f.write(f"{eval_language}\n")
             continue
         except IndexError:
             print("IndexError, skipping this language")
+            with open("failed_languages.txt", "a") as f:
+                f.write(f"{eval_language}\n")
             continue
         except KeyError:
+            with open("failed_languages.txt", "a") as f:
+                f.write(f"{eval_language}\n")
             print("KeyError, (qq unseen langugae) skipping this language")
 
 if __name__ == "__main__":
