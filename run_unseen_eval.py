@@ -62,13 +62,13 @@ def main(job_input):
             continue
 
     print("Successfully loaded adapters:")
-    print(model.roberta.encoder.layers[0].output.adapters)
+    print(model.roberta.encoder.layer[0].output.adapters)
 
     try:
         iterations = int(job_input)
     except:
-        print("No iterations given, using default of 1")
-        iterations = 1
+        print("No iterations given, using default of 3")
+        iterations = 3
     for i in range(iterations):
         try:
             eval_language = random.choice([lan for lan in eval_languages if len(lan) <= 3])
@@ -258,8 +258,8 @@ if __name__ == "__main__":
     executor = submitit.AutoExecutor(folder=str(experiments_dir))
     executor.update_parameters(**parameters)
 
-    job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
-
+    #job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
+    job_input = sys.argv[1] if len(sys.argv) > 1 else "default text"
     job = executor.submit(main, job_input)
     # job = executor.submit(main)
     print("job submitted")
