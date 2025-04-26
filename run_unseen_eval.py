@@ -76,8 +76,9 @@ def main(job_input):
     try:
         iterations = int(job_input)
     except:
-        print("No iterations given, going for all")
         iterations = len(eval_languages)
+
+        print(f"No iterations given, going for all remaining ({iterations}) languages in dataset")
     for i in range(iterations):
         eval_language = random.choice([lan for lan in eval_languages if len(lan) <= 3])
         eval_languages.remove(eval_language)
@@ -85,7 +86,7 @@ def main(job_input):
             f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})"
         )
         try:
-            start = time.time()
+
             dataset_eval = load_dataset("wikiann", eval_language, trust_remote_code=True)
             # If True, all tokens of a word will be labeled, otherwise only the first token
             label_all_tokens = True
@@ -237,8 +238,7 @@ def main(job_input):
             # we write the language name to "done languages"
             with open("experiment_folder/done_languages.txt", "a") as f:
                 f.write(f"{eval_language}\n")
-            end = time.time()
-            print(f"Time taken: {end - start} seconds")
+
         except RuntimeError:
             print("RuntimeError, skipping this language")
             # we write this language to a file so we do not check it again
@@ -256,7 +256,7 @@ def main(job_input):
             print("KeyError, (qq unseen langugae) skipping this language")
 
 if __name__ == "__main__":
-    job_name = "unseen_eval_random_debug"
+    job_name = "unseen_eval"
 
     master_dir = find_master()
 
@@ -267,8 +267,8 @@ if __name__ == "__main__":
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     parameters = {
-        "slurm_partition": "gpu_a100_debug",
-        "slurm_time": "00:05:00",
+        "slurm_partition": "gpu_a100",
+        "slurm_time": "01:00:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": "wice",

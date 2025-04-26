@@ -1,18 +1,21 @@
-
 import re
 from collections import OrderedDict
 import torch
 import evaluate
+
 metric = evaluate.load("seqeval")
 
 
 from huggingface_hub import HfApi
+
 api = HfApi()
 
 from qq import LanguageData, TagType
+
 ld = LanguageData.from_db()
 
 from urielplus import urielplus
+
 u = urielplus.URIELPlus()
 u.set_cache(True)
 try:
@@ -24,25 +27,32 @@ try:
 except:
     print("already using Glottocodes")
 
+
 def get_available_adapters():
     # get all adapters from huggingface
-    all_models = api.list_models(author="AdapterHub",
-                                 library="adapter-transformers",
-                                 search="xlm-roberta-base-"
-                                 )
+    all_models = api.list_models(author="AdapterHub", library="adapter-transformers", search="xlm-roberta-base-")
 
     to_load = {
         m.modelId: m.modelId.split("xlm-roberta-base-")[-1].rsplit("-wiki_pfeiffer", 1)[0]
         for m in all_models
-        if m.modelId.startswith("AdapterHub/xlm-roberta-base-")
-           and m.modelId.endswith("-wiki_pfeiffer")
+        if m.modelId.startswith("AdapterHub/xlm-roberta-base-") and m.modelId.endswith("-wiki_pfeiffer")
     }
     return to_load
 
+
 def get_glots(to_load):
-    manuals = {"Arabic": "arab1267", "Swahili": "swah1253", "Bengali": "beng1282", "Chinese": "mand1415",
-               "Persian": "west2369", "Yoruba": "ilaa1246", "Nepali": "nepa1254", "Quechua": "cusc1236",
-               "Estonian": "esto1258", "Guarani": "east2555"}
+    manuals = {
+        "Arabic": "arab1267",
+        "Swahili": "swah1253",
+        "Bengali": "beng1282",
+        "Chinese": "mand1415",
+        "Persian": "west2369",
+        "Yoruba": "ilaa1246",
+        "Nepali": "nepa1254",
+        "Quechua": "cusc1236",
+        "Estonian": "esto1258",
+        "Guarani": "east2555",
+    }
 
     glots = {}
     probs = []
@@ -58,16 +68,18 @@ def get_glots(to_load):
             glots[lang] = glot
         else:
             probs.append(lang)
-
-    print("no glottocodes found for these languages: ", probs)
-    print("removing them from further consideration")
+    if probs:
+        print("no glottocodes found for these languages: ", probs)
+        print("removing them from further consideration")
     for prob in probs:
         del to_load[prob]
         # happens in-place
     return glots
 
-def merge_loaded_adapters(model, merge_adapter_name="joined_adapter", weights=None, delete_other=False,
-                          patterns=False, model_type="roberta"):
+
+def merge_loaded_adapters(
+    model, merge_adapter_name="joined_adapter", weights=None, delete_other=False, patterns=False, model_type="roberta"
+):
     # to ensure we don't get problems, we check the config of all adapters
     all_adapters = list(model.adapters_config.adapters.keys())
     config_id = model.adapters_config.adapters[all_adapters[0]]
@@ -76,8 +88,9 @@ def merge_loaded_adapters(model, merge_adapter_name="joined_adapter", weights=No
     for i in range(1, len(all_adapters)):
         config_id = model.adapters_config.adapters[all_adapters[i]]
         config_i = model.adapters_config.config_map[config_id]
-        assert config == config_i, (f"Config mismatch: {config} vs {config_i}"
-                                    f"\nCurrent methodology only works for same config")
+        assert config == config_i, (
+            f"Config mismatch: {config} vs {config_i}\nCurrent methodology only works for same config"
+        )
 
     if weights == None:
         weights = [1 / len(all_adapters)] * len(all_adapters)
@@ -85,8 +98,10 @@ def merge_loaded_adapters(model, merge_adapter_name="joined_adapter", weights=No
         raise ValueError(f"Weights length {len(weights)} does not match number of adapters {len(all_adapters)}")
 
     if not patterns:
-        patterns = [f"{model_type}\.encoder\.layer\.([\d\w]+)\.output\.adapters\.(?:\w+)\.(\w+)(?:\.0)?\.(\w+)",
-                    f"{model_type}\.invertible_adapters\.(?:\w+)\.(\w+)\.(\d)\.(\w+)"]
+        patterns = [
+            f"{model_type}\.encoder\.layer\.([\d\w]+)\.output\.adapters\.(?:\w+)\.(\w+)(?:\.0)?\.(\w+)",
+            f"{model_type}\.invertible_adapters\.(?:\w+)\.(\w+)\.(\d)\.(\w+)",
+        ]
     comp_patterns = [re.compile(pattern) for pattern in patterns]
     organized_layers = {}
     for i, pattern in enumerate(patterns):
@@ -118,14 +133,17 @@ def merge_loaded_adapters(model, merge_adapter_name="joined_adapter", weights=No
                     result = sum([sd[key] * weights[j] for j, key in enumerate(keys)])
                     if two == "adapter_down":
                         new_state_dict[
-                            f"{model_type}.encoder.layer.{one}.output.adapters.{merge_adapter_name}.{two}.0.{three}"] = result
+                            f"{model_type}.encoder.layer.{one}.output.adapters.{merge_adapter_name}.{two}.0.{three}"
+                        ] = result
                     elif two == "adapter_up":
                         new_state_dict[
-                            f"{model_type}.encoder.layer.{one}.output.adapters.{merge_adapter_name}.{two}.{three}"] = result
+                            f"{model_type}.encoder.layer.{one}.output.adapters.{merge_adapter_name}.{two}.{three}"
+                        ] = result
                     else:
                         # we are in the second pattern
-                        new_state_dict[
-                            f"{model_type}.invertible_adapters.{merge_adapter_name}.{one}.{two}.{three}"] = result
+                        new_state_dict[f"{model_type}.invertible_adapters.{merge_adapter_name}.{one}.{two}.{three}"] = (
+                            result
+                        )
 
     # we now load in the new model
     if merge_adapter_name in model.adapters_config.adapters.keys():
@@ -143,6 +161,7 @@ def merge_loaded_adapters(model, merge_adapter_name="joined_adapter", weights=No
 
     # no need to return anything as the model is changed in place
 
+
 def typological_approximation(target, glots):
     """
     This function takes a target language and a list of languages.
@@ -155,16 +174,15 @@ def typological_approximation(target, glots):
         # get the distance
         try:
             dist = u.new_distance("featural", [glot, target])
-            print(f"Distance {lang} to {target}: {dist}")
+            #print(f"Distance {lang} to {target}: {dist}")
         except:
-            print(f"Error: {lang} - {glot} - {target}")
+            #print(f"Error: {lang} - {glot} - {target}")
             dist = 0
         weights.append(dist)
 
     # 1. softmax over weights
-    print(f"Weights before softmax: {weights}")
+    #print(f"Weights before softmax: {weights}")
     weights = torch.softmax(torch.tensor(weights), dim=0)
     # we need to convert to list
     weights = weights.tolist()
-    print(f"Weights after softmax: {weights}")
-
+    #print(f"Weights after softmax: {weights}")
