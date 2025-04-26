@@ -271,7 +271,7 @@ if __name__ == "__main__":
         "slurm_time": "03:00:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
-            "clusters": "wice",
+            "clusters": "genius",
             "account": os.environ["ACCOUNT_INFO"],  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
