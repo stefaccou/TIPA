@@ -61,7 +61,7 @@ def main():
     model.load_adapter("./trained_adapters/en", load_as="en")
     model.add_adapter("copa")
     model.add_multiple_choice_head(
-        "copa", num_choices=2, id2label={0: "choice1", 1: "choice2"}, label2id={"choice1": 0, "choice2": 1}
+        "copa", num_choices=2, id2label={0: "choice1", 1: "choice2"}
     )
     model.train_adapter(["copa"])
     model.active_adapters = Stack("en", "copa")
