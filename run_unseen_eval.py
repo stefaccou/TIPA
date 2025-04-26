@@ -60,8 +60,8 @@ def main(job_input):
             print(f"Could not load {link}")
             continue
 
-    # print("Successfully loaded adapters:")
-    # print(model.roberta.encoder.layer[0].output.adapters)
+    print("Successfully loaded adapters:")
+    print(model.roberta.encoder.layer[0].output.adapters)
 
     try:
         iterations = int(job_input)
@@ -216,14 +216,18 @@ def main(job_input):
 
             # we calculate the baseline of using the typologically closest model and the ner adapter
             print("evaluating on baseline (closest model + ner adapter)")
-            # we have the adapters, and weights
-            adapters_weights = {}
-            for adapter, weight in zip(to_load.keys(), weights):
-                adapters_weights[adapter] = weight
-            # we load the closest adapter
-            closest_adapter = max(adapters_weights, key=adapters_weights.get)
-            print(f"closest adapter is {closest_adapter}")
-            evaluations["baseline_closest_ner"] = run_eval(model, closest_adapter)
+
+            try:
+                # we have the adapters, and weights
+                adapters_weights = {}
+                for adapter, weight in zip(to_load.values(), weights):
+                    adapters_weights[adapter] = weight
+                # we load the closest adapter
+                closest_adapter = max(adapters_weights, key=adapters_weights.get)
+                print(f"closest adapter is {closest_adapter}")
+                evaluations["baseline_closest_ner"] = run_eval(model, closest_adapter)
+            except Exception as e:
+                print(f"Error finding closest adapter: {e}")
 
             # we delete the added adapters
             model.delete_adapter("huge_avg_adapter")
