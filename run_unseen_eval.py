@@ -6,6 +6,7 @@ from custom_submission_utils import find_master, update_submission_log
 
 
 def main(job_input):
+    print(job_input)
     from unseen_eval import get_available_adapters, merge_loaded_adapters, typological_approximation, get_glots
 
     from transformers import TrainingArguments, AutoTokenizer
@@ -59,6 +60,9 @@ def main(job_input):
         except OSError:
             print(f"Could not load {link}")
             continue
+
+    print("Successfully loaded adapters:")
+    print(model.roberta.encoder.layers[0].output.adapters)
 
     try:
         iterations = int(job_input)
