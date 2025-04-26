@@ -253,7 +253,7 @@ def main(job_input):
         except KeyError:
             with open("failed_languages.txt", "a") as f:
                 f.write(f"{eval_language}\n")
-            print("KeyError, (qq unseen langugae) skipping this language")
+            print("KeyError, (qq unseen language) skipping this language")
 
 
 if __name__ == "__main__":
