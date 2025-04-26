@@ -68,7 +68,7 @@ def main():
 
     training_args = TrainingArguments(
         output_dir="./trained_adapters/custom_copa_adapter",
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         learning_rate=1e-4,
         per_device_train_batch_size=32,
         per_device_eval_batch_size=32,
@@ -87,7 +87,6 @@ def main():
         train_dataset=train_dataset,
         eval_dataset=tokenized_datasets["test"],
         compute_metrics=compute_accuracy,
-        tokenizer=tokenizer,
     )
     trainer.train()
     # we save the ner adapter as "ner_adapter"
