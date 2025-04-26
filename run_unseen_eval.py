@@ -210,13 +210,16 @@ def main(job_input):
             model.load_adapter("./trained_adapters/ner", load_as="ner")
 
             evaluations = {}
+            print(f"evaluating on reconstructed {eval_language} adapter")
             evaluations["reconstructed_" + eval_language] = eval(model, f"reconstructed_{eval_language}")
 
+            print(f"evaluating on baseline (only task adapter")
             # we calculate a baseline (just ner adapter)
             evaluations["baseline_ner"] = eval(model, "ner")
 
             # we calculate a baseline (just average over all adapter)
             # we load the mono/huge_avg_adapter for this
+            print(f"evaluating on baseline (non-weighted average)")
             model.load_adapter("./trained_adapters/typological/huge_avg_adapter", load_as="huge_avg_adapter")
             evaluations["baseline_avg_adapter"] = eval(model, "huge_avg_adapter")
             # we delete the added adapters
