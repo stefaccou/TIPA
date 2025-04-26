@@ -6,8 +6,8 @@ from custom_submission_utils import find_master, update_submission_log
 
 def main():
     from datasets import load_dataset, concatenate_datasets
-    from transformers import TrainingArguments, AutoTokenizer, AutoConfig, EvalPrediction, AutoModelForMultipleChoice
-    from adapters import AdapterTrainer, init
+    from transformers import TrainingArguments, AutoTokenizer, AutoConfig, EvalPrediction
+    from adapters import AdapterTrainer, AutoAdapterModel, AdapterConfig
     from adapters.composition import Stack
     import numpy as np
 
@@ -52,19 +52,16 @@ def main():
     # Load the model configuration and adapter model
     config = AutoConfig.from_pretrained(
         "xlm-roberta-base",
-        num_labels=2,  # 2 choices per example
-        id2label={0: "choice1", 1: "choice2"},
-        label2id={"choice1": 0, "choice2": 1},
     )
-    model = AutoModelForMultipleChoice.from_pretrained(
+    model = AutoAdapterModel.from_pretrained(
         "xlm-roberta-base",
         config=config,
     )
     # (Optionally) load language adapters if needed
-    init(model)
-    print("initted model")
-    model.load_adapter("./trained_adapters/en", load_as="en")
+    lang_adapter_config = AdapterConfig.load("pfeiffer", reduction_factor=2)
+    model.load_adapter("./trained_adapters/en", load_as="en", config=lang_adapter_config)
     model.add_adapter("copa")
+    model.add_multiple_choice_head("copa", num_choices=2)
     model.train_adapter(["copa"])
     model.active_adapters = Stack("en", "copa")
     print(model.active_adapters)
