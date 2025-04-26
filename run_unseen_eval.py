@@ -227,6 +227,8 @@ def main(job_input):
         except IndexError:
             print("IndexError, skipping this language")
             continue
+        except KeyError:
+            print("KeyError, (qq unseen langugae) skipping this language")
 
 if __name__ == "__main__":
     job_name = "unseen_eval_random_debug"
