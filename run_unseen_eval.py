@@ -65,9 +65,8 @@ def main(job_input):
 
     try:
         iterations = int(job_input)
-    except TypeError:
+    except (ValueError, TypeError):
         iterations = len(eval_languages)
-
         print(f"No iterations given, going for all remaining ({iterations}) languages in dataset")
     for i in range(iterations):
         eval_language = random.choice([lan for lan in eval_languages if len(lan) <= 3])
@@ -127,7 +126,6 @@ def main(job_input):
             ner_feature = dataset_eval["train"].features["ner_tags"]
 
             label_names = ner_feature.feature.names
-            id2label = {i: label for i, label in enumerate(label_names)}
 
             def compute_metrics(eval_preds):
                 logits, labels = eval_preds
@@ -136,7 +134,7 @@ def main(job_input):
                 # Remove ignored index (special tokens) and convert to labels
                 true_labels = [[label_names[lab] for lab in label if lab != -100] for label in labels]
                 true_predictions = [
-                    [label_names[p] for (p, l) in zip(prediction, label) if l != -100]
+                    [label_names[pred] for (pred, lab) in zip(prediction, label) if lab != -100]
                     for prediction, label in zip(predictions, labels)
                 ]
                 all_metrics = metric.compute(predictions=true_predictions, references=true_labels)
@@ -147,7 +145,7 @@ def main(job_input):
                     "accuracy": all_metrics["overall_accuracy"],
                 }
 
-            def eval(model, name):
+            def run_eval(model, name):
                 # we load in the task adapter
                 if not name == "ner":
                     model.active_adapters = Stack(name, "ner")
@@ -200,21 +198,21 @@ def main(job_input):
 
             evaluations = {}
             print(f"evaluating on reconstructed {eval_language} adapter")
-            evaluations["reconstructed_" + eval_language] = eval(model, f"reconstructed_{eval_language}")
+            evaluations["reconstructed_" + eval_language] = run_eval(model, f"reconstructed_{eval_language}")
 
             print("evaluating on baseline (only task adapter")
             # we calculate a baseline (just ner adapter)
-            evaluations["baseline_ner"] = eval(model, "ner")
+            evaluations["baseline_ner"] = run_eval(model, "ner")
 
             # we calculate a baseline (just average over all adapter)
             # we load the mono/huge_avg_adapter for this
             print("evaluating on baseline (non-weighted average)")
             model.load_adapter("./trained_adapters/typological/huge_avg_adapter", load_as="huge_avg_adapter")
-            evaluations["baseline_avg_adapter"] = eval(model, "huge_avg_adapter")
+            evaluations["baseline_avg_adapter"] = run_eval(model, "huge_avg_adapter")
 
             # we calculate the baseline of using the english language model and the ner adapter
             print("evaluating on baseline (english model + ner adapter)")
-            evaluations["baseline_en_ner"] = eval(model, "en")  # en is in the list of available adapters
+            evaluations["baseline_en_ner"] = run_eval(model, "en")  # en is in the list of available adapters
 
             # we calculate the baseline of using the typologically closest model and the ner adapter
             print("evaluating on baseline (closest model + ner adapter)")
@@ -225,7 +223,7 @@ def main(job_input):
             # we load the closest adapter
             closest_adapter = max(adapters_weights, key=adapters_weights.get)
             print(f"closest adapter is {closest_adapter}")
-            evaluations["baseline_closest_ner"] = eval(model, closest_adapter)
+            evaluations["baseline_closest_ner"] = run_eval(model, closest_adapter)
 
             # we delete the added adapters
             model.delete_adapter("huge_avg_adapter")
