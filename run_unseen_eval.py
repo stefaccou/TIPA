@@ -84,7 +84,7 @@ def main(job_input):
         eval_languages.remove(eval_language)
 
         try:
-            print(
+            print("\n\n",
                 f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})"
             )
             dataset_eval = load_dataset("wikiann", eval_language, trust_remote_code=True)
