@@ -178,6 +178,9 @@ def typological_approximation(target, glots, distance_type):
         except SystemExit:
             # print(f"Error: {lang} - {glot} - {target}")
             dist = 0
+        except TypeError:
+            print(f"No {distance_type} data for {lang} - {glot} - {target}")
+            dist = 0
         weights.append(dist)
     # 1. softmax over weights
     # print(f"Weights before softmax: {weights}")
