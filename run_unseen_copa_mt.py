@@ -223,8 +223,6 @@ def main(submit_arguments):
             # we preprocess the dataset
             dataset_eval = preprocess_dataset(dataset_eval)
 
-            model.load_adapter("./trained_adapters/copa", load_as="copa")
-
             evaluations = {}
             weights = {}
 
@@ -250,9 +248,14 @@ def main(submit_arguments):
                     if not os.path.exists(adapter_path):
                         os.makedirs(adapter_path)
                     model.save_adapter(adapter_path, adapter_name)
+                model.load_adapter("./trained_adapters/copa", load_as="copa")
                 print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
                 evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
-
+                model.delete_adapter(adapter_name)
+                # delete the adapter for further iterations
+                model.delete_adapter("copa")
+            # load in copa adapter AFTER creation of merged adapter
+            model.load_adapter("./trained_adapters/copa", load_as="copa")
             print("evaluating on baseline (only task adapter")
             # we calculate a baseline (just copa adapter)
             evaluations["baseline_copa"] = run_eval(model, "copa")
