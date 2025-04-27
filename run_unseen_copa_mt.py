@@ -119,7 +119,7 @@ def main(submit_arguments):
             if not os.path.exists(path):
                 open(path, "w").close()
 
-    failed_file_template = os.path.join(log_dir, "copa_{distance_type}_failed_languages.txt")
+    # failed_file_template = os.path.join(log_dir, "copa_{distance_type}_failed_languages.txt")
 
     # now it’s safe to read
 
@@ -306,17 +306,17 @@ def main(submit_arguments):
         except RuntimeError:
             print("RuntimeError, skipping this language")
             # we write this language to a file so we do not check it again
-            with open(failed_file_template.format(distance_type), "a") as f:
-                f.write(f"{eval_language}\n")
+            # with open(failed_file_template.format(distance_type), "a") as f:
+            #    f.write(f"{eval_language}\n")
             continue
         except IndexError:
             print("IndexError, skipping this language")
-            with open(failed_file_template.format(distance_type), "a") as f:
-                f.write(f"{eval_language}\n")
+            # with open(failed_file_template.format(distance_type), "a") as f:
+            #    f.write(f"{eval_language}\n")
             continue
         except KeyError:
-            with open(failed_file_template.format(distance_type), "a") as f:
-                f.write(f"{eval_language}\n")
+            # with open(failed_file_template.format(distance_type), "a") as f:
+            #    f.write(f"{eval_language}\n")
             print("KeyError, (qq unseen language) skipping this language")
 
 

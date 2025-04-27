@@ -119,7 +119,7 @@ def main(submit_arguments):
             if not os.path.exists(path):
                 open(path, "w").close()
 
-    failed_file_template = os.path.join(log_dir, "copa_{distance_type}_failed_languages.txt")
+    # failed_file_template = os.path.join(log_dir, "copa_{distance_type}_failed_languages.txt")
 
     eval_languages = get_dataset_config_names("unimelb-nlp/wikiann")
     # we remove the languages that are in the "failed languages" file
@@ -330,33 +330,23 @@ def main(submit_arguments):
             with open(f"./trained_adapters/typological/{eval_language}/ner_eval.json", "w") as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
-
             # we write the language name to "done languages"
-            with open(done_file, "a") as f:
-                f.write(f"{eval_language}\n")
-
+            # with open(done_file, "a") as f:
+            #    f.write(f"{eval_language}\n")
         except RuntimeError:
             print("RuntimeError, skipping this language")
-
             # we write this language to a file so we do not check it again
-
-            with open(failed_file_template.format(distance_type), "a") as f:
-                f.write(f"{eval_language}\n")
-
+            # with open(failed_file_template.format(distance_type), "a") as f:
+            #    f.write(f"{eval_language}\n")
             continue
-
         except IndexError:
             print("IndexError, skipping this language")
-
-            with open(failed_file_template.format(distance_type), "a") as f:
-                f.write(f"{eval_language}\n")
-
+            # with open(failed_file_template.format(distance_type), "a") as f:
+            #    f.write(f"{eval_language}\n")
             continue
-
         except KeyError:
-            with open(failed_file_template.format(distance_type), "a") as f:
-                f.write(f"{eval_language}\n")
-
+            # with open(failed_file_template.format(distance_type), "a") as f:
+            #    f.write(f"{eval_language}\n")
             print("KeyError, (qq unseen language) skipping this language")
 
 
