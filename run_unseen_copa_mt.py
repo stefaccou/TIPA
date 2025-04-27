@@ -31,6 +31,7 @@ def main(submit_arguments):
         Arguments to direct the evaluation.
 
         """
+
         distance_type: Optional[str] = field(
             default=None,
             metadata={"help": ("The distance type to be used for typological approximation. ")},
@@ -39,7 +40,7 @@ def main(submit_arguments):
             default=None,
             metadata={"help": ("The number of iterations to be run. ")},
         )
-        distance_types_list : Optional[str] = field(
+        distance_types_list: Optional[str] = field(
             default=None,
             metadata={"help": ("The distance types to be used for typological approximation. ")},
         )
@@ -47,13 +48,15 @@ def main(submit_arguments):
         def __post_init__(self):
             # we check if distance is in the list of available distances
             # OR a list combination of these types
-            allowed_types = ["featural",
+            allowed_types = [
+                "featural",
                 "syntactic",
                 "phonological",
                 "geographic",
                 "genetic",
                 "morphological",
-                "inventory",]
+                "inventory",
+            ]
             if self.distance_type and self.distance_type not in allowed_types:
                 raise ValueError(
                     f"Distance type {self.distance_type} not in featural, syntactic, phonological, geographic, genetic, morphological, inventory"
@@ -114,7 +117,6 @@ def main(submit_arguments):
     failed_file_template = os.path.join(log_dir, "copa_{distance_type}_failed_languages.txt")
 
     # now it’s safe to read
-
 
     # we load in the dataset names
     eval_languages = get_dataset_config_names("xcopa")
@@ -246,9 +248,6 @@ def main(submit_arguments):
                 print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
                 evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
 
-
-
-
             print("evaluating on baseline (only task adapter")
             # we calculate a baseline (just copa adapter)
             evaluations["baseline_copa"] = run_eval(model, "copa")
@@ -300,8 +299,6 @@ def main(submit_arguments):
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
 
-
-
         except RuntimeError:
             print("RuntimeError, skipping this language")
             # we write this language to a file so we do not check it again
@@ -331,11 +328,11 @@ if __name__ == "__main__":
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     parameters = {
-        "slurm_partition": "gpu_p100",
+        "slurm_partition": "gpu_h100",
         "slurm_time": "01:00:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
-            "clusters": "genius",
+            "clusters": "wice",
             "account": os.environ["ACCOUNT_INFO"],  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
