@@ -160,7 +160,7 @@ def merge_loaded_adapters(
     # no need to return anything as the model is changed in place
 
 
-def typological_approximation(target, glots, distance_type="featural"):
+def typological_approximation(target, glots, distance_type):
     """
     This function takes a target language and a list of languages.
     It weights the other languages depending on their closeness to the target language.

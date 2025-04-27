@@ -29,6 +29,7 @@ def main(submit_arguments):
     class CustomArguments:
         """
         Arguments to direct the evaluation.
+
         """
 
         distance_type: Optional[str] = field(
@@ -39,6 +40,22 @@ def main(submit_arguments):
             default=None,
             metadata={"help": ("The number of iterations to be run. ")},
         )
+
+        def __post_init__(self):
+            # we check if distance is in the list of available distances
+            # OR a list combination of these types
+            if self.distance_type and self.distance_type not in [
+                "featural",
+                "syntactic",
+                "phonological",
+                "geographic",
+                "genetic",
+                "morphological",
+                "inventory",
+            ]:
+                raise ValueError(
+                    f"Distance type {self.distance_type} not in featural, syntactic, phonological, geographic, genetic, morphological, inventory"
+                )
 
     parser = HfArgumentParser(CustomArguments)
     # we remove sys.argv as it interferes with parsing
@@ -168,19 +185,25 @@ def main(submit_arguments):
 
                 return ev
 
+            if custom_args.distance_type:
+                distance_type = custom_args.distance_type
+            else:
+                distance_type = "featural"
             # we check if the adapter has already been created before
             if os.path.exists(
                 f"./trained_adapters/typological/{eval_language}"
-                f"{'_' + custom_args.distance_feature if custom_args.distance_feature else ''}"
+                f"{'_' + distance_type if not distance_type == 'featural' else ''}"
             ):
                 print("Adapter already exists, loading instead")
                 model.load_adapter(
-                    f"./trained_adapters/typological/{eval_language}", load_as="reconstructed_" + eval_language
+                    f"./trained_adapters/typological/{eval_language}"
+                    f"{'_' + distance_type if not distance_type == 'featural' else ''}",
+                    load_as="reconstructed_" + eval_language,
                 )
                 weights = []
             else:
                 target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
-                weights = typological_approximation(target_glot, get_glots(to_load))
+                weights = typological_approximation(target_glot, get_glots(to_load), distance_type)
 
                 merge_loaded_adapters(
                     model, merge_adapter_name=f"reconstructed_{eval_language}", weights=weights, delete_other=False
