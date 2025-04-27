@@ -5,11 +5,10 @@ import sys
 from custom_submission_utils import find_master, update_submission_log
 
 
-def main(job_input):
-    print(job_input)
+def main(submit_arguments):
     from unseen_eval import get_available_adapters, merge_loaded_adapters, typological_approximation, get_glots
 
-    from transformers import TrainingArguments, AutoTokenizer
+    from transformers import TrainingArguments, AutoTokenizer, HfArgumentParser
     from adapters import AdapterTrainer, AutoAdapterModel
     from adapters.composition import Stack
 
@@ -25,6 +24,55 @@ def main(job_input):
     from urielplus import urielplus
     from qq import LanguageData, TagType
 
+    from dataclasses import dataclass, field
+    from typing import Optional
+
+    @dataclass
+    class CustomArguments:
+        """
+        Arguments to direct the evaluation.
+
+        """
+
+        distance_type: Optional[str] = field(
+            default=None,
+            metadata={"help": ("The distance type to be used for typological approximation. ")},
+        )
+        iterations: Optional[int] = field(
+            default=None,
+            metadata={"help": ("The number of iterations to be run. ")},
+        )
+
+        def __post_init__(self):
+            # we check if distance is in the list of available distances
+            # OR a list combination of these types
+            if self.distance_type and self.distance_type not in [
+                "featural",
+                "syntactic",
+                "phonological",
+                "geographic",
+                "genetic",
+                "morphological",
+                "inventory",
+            ]:
+                raise ValueError(
+                    f"Distance type {self.distance_type} not in featural, syntactic, phonological, geographic, genetic, morphological, inventory"
+                )
+
+    parser = HfArgumentParser(CustomArguments)
+    # we remove sys.argv as it interferes with parsing
+    sys.argv = ""
+    if len(submit_arguments) == 1 and submit_arguments[0].endswith(".json"):
+        # If we pass only one argument to the script and it's the path to a json file,
+        # let's parse it to get our arguments.
+        custom_args = parser.parse_json_file(json_file=os.path.abspath(submit_arguments[0]))
+    else:
+        print("calling parser")
+        # add a comma to refer to first part of tuple output
+        (custom_args,) = parser.parse_args_into_dataclasses(submit_arguments)
+
+    print("custom args: ", custom_args)
+
     metric = evaluate.load("seqeval")
     ld = LanguageData.from_db()
     u = urielplus.URIELPlus()
@@ -38,14 +86,32 @@ def main(job_input):
     except SystemExit:
         print("already using Glottocodes")
 
+    if custom_args.distance_type:
+        distance_type = custom_args.distance_type
+    else:
+        distance_type = "featural"
+
+    log_dir = "experiment_folder/logs"
+    os.makedirs(log_dir, exist_ok=True)
+    failed_file = os.path.join(log_dir, f"copa_{distance_type}_failed_languages.txt")
+    done_file = os.path.join(log_dir, f"copa_{distance_type}_done_languages.txt")
+
+    # ensure each file exists
+    for path in (failed_file, done_file):
+        if not os.path.exists(path):
+            open(path, "w").close()
+
+    # now it’s safe to read
+    with open(failed_file, "r") as f:
+        failed_languages = f.read().splitlines()
+    with open(done_file, "r") as f:
+        done_languages = f.read().splitlines()
+
+    failed_languages += done_languages
+
     eval_languages = get_dataset_config_names("unimelb-nlp/wikiann")
     # we remove the languages that are in the "failed languages" file
-    with open("experiment_folder/failed_languages.txt", "r") as f:
-        failed_languages = f.read().splitlines()
-    with open("experiment_folder/done_languages.txt", "r") as f:
-        done_languages = f.read().splitlines()
-    failed_languages += done_languages
-    eval_languages = [lan for lan in eval_languages if lan not in failed_languages]
+    eval_languages = [lan for lan in eval_languages if lan not in failed_languages and len(lan) <= 3]
 
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
@@ -60,16 +126,17 @@ def main(job_input):
             print(f"Could not load {link}")
             continue
 
-    print("Successfully loaded adapters:")
-    print(model.roberta.encoder.layer[0].output.adapters)
-
     try:
-        iterations = int(job_input)
+        iterations = int(custom_args.iterations)
+        print(f"Number of iterations given: {iterations}")
     except (ValueError, TypeError):
         iterations = len(eval_languages)
         print(f"No iterations given, going for all remaining ({iterations}) languages in dataset")
+    if iterations == 0:
+        print("No iterations given, exiting")
+        return
     for i in range(iterations):
-        eval_language = random.choice([lan for lan in eval_languages if len(lan) <= 3])
+        eval_language = random.choice(eval_languages)
         eval_languages.remove(eval_language)
 
         try:
@@ -176,29 +243,32 @@ def main(job_input):
                 return ev
 
             # we check if the adapter has already been created before
-            if os.path.exists(f"./trained_adapters/typological/{eval_language}"):
+            # we check if the adapter has already been created before
+            adapter_name = f"reconstructed_{eval_language}_{distance_type}"
+            adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}"
+            if os.path.exists(adapter_path):
                 print("Adapter already exists, loading instead")
                 model.load_adapter(
-                    f"./trained_adapters/typological/{eval_language}", load_as="reconstructed_" + eval_language
+                    adapter_path,
+                    load_as=adapter_name,
                 )
+                weights = []
             else:
                 target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
-                weights = typological_approximation(target_glot, get_glots(to_load))
+                weights = typological_approximation(target_glot, get_glots(to_load), distance_type)
 
-                merge_loaded_adapters(
-                    model, merge_adapter_name=f"reconstructed_{eval_language}", weights=weights, delete_other=False
-                )
+                merge_loaded_adapters(model, merge_adapter_name=adapter_name, weights=weights, delete_other=False)
                 # save this adapter
                 # check if directory exists first
-                if not os.path.exists(f"./trained_adapters/typological/{eval_language}"):
-                    os.makedirs(f"./trained_adapters/typological/{eval_language}")
-                model.save_adapter(f"./trained_adapters/typological/{eval_language}", "reconstructed_" + eval_language)
+                if not os.path.exists(adapter_path):
+                    os.makedirs(adapter_path)
+                model.save_adapter(adapter_path, adapter_name)
 
             model.load_adapter("./trained_adapters/ner", load_as="ner")
 
             evaluations = {}
-            print(f"evaluating on reconstructed {eval_language} adapter")
-            evaluations["reconstructed_" + eval_language] = run_eval(model, f"reconstructed_{eval_language}")
+            print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
+            evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
 
             print("evaluating on baseline (only task adapter")
             # we calculate a baseline (just ner adapter)
@@ -220,6 +290,11 @@ def main(job_input):
             try:
                 # we have the adapters, and weights
                 adapters_weights = {}
+                # we have to calculate these if we skipped the adapter creation
+                if not weights:
+                    target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
+                    weights = typological_approximation(target_glot, get_glots(to_load))
+
                 for adapter, weight in zip(to_load.values(), weights):
                     adapters_weights[adapter] = weight
                 # we load the closest adapter
@@ -234,36 +309,36 @@ def main(job_input):
             # we delete the added adapters
             model.delete_adapter("huge_avg_adapter")
             model.delete_adapter("ner")
-            model.delete_adapter("reconstructed_" + eval_language)
+            model.delete_adapter(adapter_name)
 
             # we save this
-            with open(f"./trained_adapters/typological/{eval_language}/eval.json", "w") as f:
+            with open(f"./trained_adapters/typological/{eval_language}/ner_eval_{distance_type}.json", "w") as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
 
             # we write the language name to "done languages"
-            with open("experiment_folder/done_languages.txt", "a") as f:
+            with open(done_file, "a") as f:
                 f.write(f"{eval_language}\n")
 
         except RuntimeError:
             print("RuntimeError, skipping this language")
             # we write this language to a file so we do not check it again
-            with open("failed_languages.txt", "a") as f:
+            with open(failed_file, "a") as f:
                 f.write(f"{eval_language}\n")
             continue
         except IndexError:
             print("IndexError, skipping this language")
-            with open("failed_languages.txt", "a") as f:
+            with open(failed_file, "a") as f:
                 f.write(f"{eval_language}\n")
             continue
         except KeyError:
-            with open("failed_languages.txt", "a") as f:
+            with open(failed_file, "a") as f:
                 f.write(f"{eval_language}\n")
             print("KeyError, (qq unseen language) skipping this language")
 
 
 if __name__ == "__main__":
-    job_name = "unseen_eval"
+    job_name = "unseen_ner"
 
     master_dir = find_master()
 
@@ -292,8 +367,8 @@ if __name__ == "__main__":
     executor = submitit.AutoExecutor(folder=str(experiments_dir))
     executor.update_parameters(**parameters)
 
-    # job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
-    job_input = sys.argv[1] if len(sys.argv) > 1 else "default text"
+    job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
+
     job = executor.submit(main, job_input)
     # job = executor.submit(main)
     print("job submitted")

@@ -205,10 +205,11 @@ def main(submit_arguments):
 
             # we check if the adapter has already been created before
             adapter_name = f"reconstructed_{eval_language}_{distance_type}"
-            if os.path.exists(adapter_name):
+            adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}"
+            if os.path.exists(adapter_path):
                 print("Adapter already exists, loading instead")
                 model.load_adapter(
-                    adapter_name,
+                    adapter_path,
                     load_as=adapter_name,
                 )
                 weights = []
@@ -219,9 +220,9 @@ def main(submit_arguments):
                 merge_loaded_adapters(model, merge_adapter_name=adapter_name, weights=weights, delete_other=False)
                 # save this adapter
                 # check if directory exists first
-                if not os.path.exists(f"./trained_adapters/typological/{eval_language}"):
-                    os.makedirs(f"./trained_adapters/typological/{eval_language}")
-                model.save_adapter(f"./trained_adapters/typological/{eval_language}", adapter_name)
+                if not os.path.exists(adapter_path):
+                    os.makedirs(adapter_path)
+                model.save_adapter(adapter_path, adapter_name)
 
             # we preprocess the dataset
             dataset_eval = preprocess_dataset(dataset_eval)
