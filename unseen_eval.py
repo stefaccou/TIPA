@@ -180,11 +180,10 @@ def typological_approximation(target, glots, distance_type):
             print(e)
             dist = 0
         weights.append(dist)
-
     # 1. softmax over weights
-    # print(f"Weights before softmax: {weights}")
+    print(f"Weights before softmax: {weights}")
     weights = torch.softmax(torch.tensor(weights), dim=0)
     # we need to convert to list
     weights = weights.tolist()
-    # print(f"Weights after softmax: {weights}")
+    print(f"Weights after softmax: {weights}")
     return weights
