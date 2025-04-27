@@ -32,6 +32,22 @@ def main(submit_arguments):
 
         """
 
+        distance_types_list: Optional[List[str]] = field(
+            default=None,
+            metadata={
+                "help": ("The distance types to be used for typological approximation. "),
+                "nargs": "+",
+                "choices": [
+                    "featural",
+                    "syntactic",
+                    "phonological",
+                    "geographic",
+                    "genetic",
+                    "morphological",
+                    "inventory",
+                ],
+            },
+        )
         distance_type: Optional[str] = field(
             default=None,
             metadata={"help": ("The distance type to be used for typological approximation. ")},
@@ -39,10 +55,6 @@ def main(submit_arguments):
         iterations: Optional[int] = field(
             default=None,
             metadata={"help": ("The number of iterations to be run. ")},
-        )
-        distance_types_list: Optional[List] = field(
-            default=None,
-            metadata={"help": ("The distance types to be used for typological approximation. ")},
         )
 
         def __post_init__(self):
@@ -61,13 +73,6 @@ def main(submit_arguments):
                 raise ValueError(
                     f"Distance type {self.distance_type} not in featural, syntactic, phonological, geographic, genetic, morphological, inventory"
                 )
-            # we also check for each element in the list if it is in the allowed types
-            if self.distance_types_list:
-                for distance in self.distance_types_list.split(","):
-                    if distance not in allowed_types:
-                        raise ValueError(
-                            f"Distance type {distance} not in featural, syntactic, phonological, geographic, genetic, morphological, inventory"
-                        )
 
     parser = HfArgumentParser(CustomArguments)
     # we remove sys.argv as it interferes with parsing
