@@ -5,11 +5,10 @@ import sys
 from custom_submission_utils import find_master, update_submission_log
 
 
-def main(job_input):
-    print(job_input)
+def main(submit_arguments):
     from unseen_eval import get_available_adapters, merge_loaded_adapters, typological_approximation, get_glots
 
-    from transformers import TrainingArguments, AutoTokenizer, EvalPrediction
+    from transformers import TrainingArguments, AutoTokenizer, EvalPrediction, HfArgumentParser
     from adapters import AdapterTrainer, AutoAdapterModel
     from adapters.composition import Stack
 
@@ -22,6 +21,38 @@ def main(job_input):
     import random
     from urielplus import urielplus
     from qq import LanguageData, TagType
+
+    from dataclasses import dataclass, field
+    from typing import Optional
+
+    @dataclass
+    class CustomArguments:
+        """
+        Arguments to direct the evaluation.
+        """
+
+        distance_type: Optional[str] = field(
+            default=None,
+            metadata={"help": ("The distance type to be used for typological approximation. ")},
+        )
+        iterations: Optional[int] = field(
+            default=None,
+            metadata={"help": ("The number of iterations to be run. ")},
+        )
+
+    parser = HfArgumentParser(CustomArguments)
+    # we remove sys.argv as it interferes with parsing
+    sys.argv = ""
+    if len(submit_arguments) == 1 and submit_arguments[0].endswith(".json"):
+        # If we pass only one argument to the script and it's the path to a json file,
+        # let's parse it to get our arguments.
+        custom_args = parser.parse_json_file(json_file=os.path.abspath(submit_arguments[0]))
+    else:
+        print("calling parser")
+        # add a comma to refer to first part of tuple output
+        (custom_args,) = parser.parse_args_into_dataclasses(submit_arguments)
+
+    print("custom args: ", custom_args)
 
     ld = LanguageData.from_db()
     u = urielplus.URIELPlus()
@@ -60,7 +91,7 @@ def main(job_input):
     print(model.roberta.encoder.layer[0].output.adapters)
 
     try:
-        iterations = int(job_input)
+        iterations = int(custom_args.iterations)
     except (ValueError, TypeError):
         iterations = len(eval_languages)
         print(f"No iterations given, going for all remaining ({iterations}) languages in dataset")
@@ -138,7 +169,10 @@ def main(job_input):
                 return ev
 
             # we check if the adapter has already been created before
-            if os.path.exists(f"./trained_adapters/typological/{eval_language}"):
+            if os.path.exists(
+                f"./trained_adapters/typological/{eval_language}"
+                f"{'_' + custom_args.distance_feature if custom_args.distance_feature else ''}"
+            ):
                 print("Adapter already exists, loading instead")
                 model.load_adapter(
                     f"./trained_adapters/typological/{eval_language}", load_as="reconstructed_" + eval_language
