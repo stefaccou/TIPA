@@ -143,6 +143,7 @@ def main(job_input):
                 model.load_adapter(
                     f"./trained_adapters/typological/{eval_language}", load_as="reconstructed_" + eval_language
                 )
+                weights = []
             else:
                 target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
                 weights = typological_approximation(target_glot, get_glots(to_load))
@@ -166,7 +167,7 @@ def main(job_input):
             evaluations["reconstructed_" + eval_language] = run_eval(model, f"reconstructed_{eval_language}")
 
             print("evaluating on baseline (only task adapter")
-            # we calculate a baseline (just ner adapter)
+            # we calculate a baseline (just copa adapter)
             evaluations["baseline_copa"] = run_eval(model, "copa")
 
             # we calculate a baseline (just average over all adapter)
@@ -176,15 +177,20 @@ def main(job_input):
             evaluations["baseline_avg_adapter"] = run_eval(model, "huge_avg_adapter")
 
             # we calculate the baseline of using the english language model and the ner adapter
-            print("evaluating on baseline (english model + ner adapter)")
+            print("evaluating on baseline (english model + copa adapter)")
             evaluations["baseline_en_copa"] = run_eval(model, "en")  # en is in the list of available adapters
 
             # we calculate the baseline of using the typologically closest model and the ner adapter
-            print("evaluating on baseline (closest model + ner adapter)")
+            print("evaluating on baseline (closest model + copa adapter)")
 
             try:
                 # we have the adapters, and weights
                 adapters_weights = {}
+                # we have to calculate these if we skipped the adapter creation
+                if not weights:
+                    target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
+                    weights = typological_approximation(target_glot, get_glots(to_load))
+
                 for adapter, weight in zip(to_load.values(), weights):
                     adapters_weights[adapter] = weight
                 # we load the closest adapter
