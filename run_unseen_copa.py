@@ -83,15 +83,21 @@ def main(submit_arguments):
     except SystemExit:
         print("already using Glottocodes")
 
+    if custom_args.distance_type:
+        distance_type = custom_args.distance_type
+    else:
+        distance_type = "featural"
+
     eval_languages = get_dataset_config_names("xcopa")
     # we remove the languages that are in the "failed languages" file
-    with open("experiment_folder/logs/copa_failed_languages.txt", "r") as f:
+    with open(f"experiment_folder/logs/copa_{distance_type}_failed_languages.txt", "r") as f:
         failed_languages = f.read().splitlines()
-    with open("experiment_folder/logs/copa_done_languages.txt", "r") as f:
+    with open(f"experiment_folder/logs/copa_{distance_type}_done_languages.txt", "r") as f:
         done_languages = f.read().splitlines()
     failed_languages += done_languages
+    print("failed languages: ", failed_languages)
     eval_languages = [lan for lan in eval_languages if lan not in failed_languages and len(lan) <= 3]
-
+    print("remaining languages: ", eval_languages)
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
 
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
@@ -104,14 +110,15 @@ def main(submit_arguments):
             print(f"Could not load {link}")
             continue
 
-    print("Successfully loaded adapters:")
-    print(model.roberta.encoder.layer[0].output.adapters)
-
     try:
         iterations = int(custom_args.iterations)
+        print(f"Number of iterations given: {iterations}")
     except (ValueError, TypeError):
         iterations = len(eval_languages)
         print(f"No iterations given, going for all remaining ({iterations}) languages in dataset")
+    if iterations == 0:
+        print("No iterations given, exiting")
+        return
     for i in range(iterations):
         eval_language = random.choice(eval_languages)
         eval_languages.remove(eval_language)
@@ -185,10 +192,6 @@ def main(submit_arguments):
 
                 return ev
 
-            if custom_args.distance_type:
-                distance_type = custom_args.distance_type
-            else:
-                distance_type = "featural"
             # we check if the adapter has already been created before
             if os.path.exists(
                 f"./trained_adapters/typological/{eval_language}"
@@ -276,16 +279,16 @@ def main(submit_arguments):
         except RuntimeError:
             print("RuntimeError, skipping this language")
             # we write this language to a file so we do not check it again
-            with open("experiment_folder/logs/copa_failed_languages.txt", "a") as f:
+            with open(f"experiment_folder/logs/copa_{distance_type}_failed_languages.txt", "a") as f:
                 f.write(f"{eval_language}\n")
             continue
         except IndexError:
             print("IndexError, skipping this language")
-            with open("experiment_folder/logs/copa_failed_languages.txt", "a") as f:
+            with open(f"experiment_folder/logs/copa_{distance_type}_failed_languages.txt", "a") as f:
                 f.write(f"{eval_language}\n")
             continue
         except KeyError:
-            with open("experiment_folder/logs/copa_failed_languages.txt", "a") as f:
+            with open(f"experiment_folder/logs/copa_{distance_type}_failed_languages.txt", "a") as f:
                 f.write(f"{eval_language}\n")
             print("KeyError, (qq unseen language) skipping this language")
 
