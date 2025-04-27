@@ -23,7 +23,7 @@ def main(submit_arguments):
     from qq import LanguageData, TagType
 
     from dataclasses import dataclass, field
-    from typing import Optional
+    from typing import Optional, List
 
     @dataclass
     class CustomArguments:
@@ -40,7 +40,7 @@ def main(submit_arguments):
             default=None,
             metadata={"help": ("The number of iterations to be run. ")},
         )
-        distance_types_list: Optional[str] = field(
+        distance_types_list: Optional[List] = field(
             default=None,
             metadata={"help": ("The distance types to be used for typological approximation. ")},
         )
