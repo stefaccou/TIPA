@@ -320,8 +320,8 @@ if __name__ == "__main__":
     executor = submitit.AutoExecutor(folder=str(experiments_dir))
     executor.update_parameters(**parameters)
 
-    # job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
-    job_input = sys.argv[1] if len(sys.argv) > 1 else "default text"
+    job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
+    # job_input = sys.argv[1] if len(sys.argv) > 1 else "default text"
     job = executor.submit(main, job_input)
     # job = executor.submit(main)
     print("job submitted")
