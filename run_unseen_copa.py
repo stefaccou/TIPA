@@ -279,7 +279,7 @@ def main(submit_arguments):
                 print("Saved evaluations to file")
 
             # we write the language name to "done languages"
-            with open("experiment_folder/logs/copa_done_languages.txt", "a") as f:
+            with open(done_file, "a") as f:
                 f.write(f"{eval_language}\n")
 
         except RuntimeError:
