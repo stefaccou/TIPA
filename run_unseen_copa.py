@@ -88,16 +88,27 @@ def main(submit_arguments):
     else:
         distance_type = "featural"
 
-    eval_languages = get_dataset_config_names("xcopa")
-    # we remove the languages that are in the "failed languages" file
-    with open(f"experiment_folder/logs/copa_{distance_type}_failed_languages.txt", "r") as f:
+    log_dir = "experiment_folder/logs"
+    os.makedirs(log_dir, exist_ok=True)
+    failed_file = os.path.join(log_dir, f"copa_{distance_type}_failed_languages.txt")
+    done_file = os.path.join(log_dir, f"copa_{distance_type}_done_languages.txt")
+
+    # ensure each file exists
+    for path in (failed_file, done_file):
+        if not os.path.exists(path):
+            open(path, "w").close()
+
+    # now it’s safe to read
+    with open(failed_file, "r") as f:
         failed_languages = f.read().splitlines()
-    with open(f"experiment_folder/logs/copa_{distance_type}_done_languages.txt", "r") as f:
+    with open(done_file, "r") as f:
         done_languages = f.read().splitlines()
+
     failed_languages += done_languages
-    print("failed languages: ", failed_languages)
+
+    # we load in the dataset names
+    eval_languages = get_dataset_config_names("xcopa")
     eval_languages = [lan for lan in eval_languages if lan not in failed_languages and len(lan) <= 3]
-    print("remaining languages: ", eval_languages)
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
 
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
@@ -279,16 +290,16 @@ def main(submit_arguments):
         except RuntimeError:
             print("RuntimeError, skipping this language")
             # we write this language to a file so we do not check it again
-            with open(f"experiment_folder/logs/copa_{distance_type}_failed_languages.txt", "a") as f:
+            with open(failed_file, "a") as f:
                 f.write(f"{eval_language}\n")
             continue
         except IndexError:
             print("IndexError, skipping this language")
-            with open(f"experiment_folder/logs/copa_{distance_type}_failed_languages.txt", "a") as f:
+            with open(failed_file, "a") as f:
                 f.write(f"{eval_language}\n")
             continue
         except KeyError:
-            with open(f"experiment_folder/logs/copa_{distance_type}_failed_languages.txt", "a") as f:
+            with open(failed_file, "a") as f:
                 f.write(f"{eval_language}\n")
             print("KeyError, (qq unseen language) skipping this language")
 
