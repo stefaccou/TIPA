@@ -25,7 +25,7 @@ def main(submit_arguments):
     from qq import LanguageData, TagType
 
     from dataclasses import dataclass, field
-    from typing import Optional
+    from typing import Optional, List
 
     @dataclass
     class CustomArguments:
@@ -34,6 +34,22 @@ def main(submit_arguments):
 
         """
 
+        distance_types_list: Optional[List[str]] = field(
+            default=None,
+            metadata={
+                "help": ("The distance types to be used for typological approximation. "),
+                "nargs": "+",
+                "choices": [
+                    "featural",
+                    "syntactic",
+                    "phonological",
+                    "geographic",
+                    "genetic",
+                    "morphological",
+                    "inventory",
+                ],
+            },
+        )
         distance_type: Optional[str] = field(
             default=None,
             metadata={"help": ("The distance type to be used for typological approximation. ")},
@@ -86,32 +102,28 @@ def main(submit_arguments):
     except SystemExit:
         print("already using Glottocodes")
 
-    if custom_args.distance_type:
-        distance_type = custom_args.distance_type
+    if custom_args.distance_types_list:
+        distance_types = custom_args.distance_types_list
+    elif custom_args.distance_type:
+        distance_types = [custom_args.distance_type]
     else:
-        distance_type = "featural"
+        distance_types = ["featural"]
 
     log_dir = "experiment_folder/logs"
     os.makedirs(log_dir, exist_ok=True)
-    failed_file = os.path.join(log_dir, f"ner_{distance_type}_failed_languages.txt")
-    done_file = os.path.join(log_dir, f"ner_{distance_type}_done_languages.txt")
+    for distance_type in distance_types:
+        failed_file = os.path.join(log_dir, f"ner_{distance_type}_failed_languages.txt")
+        done_file = os.path.join(log_dir, f"ner_{distance_type}_done_languages.txt")
+        # ensure each file exists
+        for path in (failed_file, done_file):
+            if not os.path.exists(path):
+                open(path, "w").close()
 
-    # ensure each file exists
-    for path in (failed_file, done_file):
-        if not os.path.exists(path):
-            open(path, "w").close()
-
-    # now it’s safe to read
-    with open(failed_file, "r") as f:
-        failed_languages = f.read().splitlines()
-    with open(done_file, "r") as f:
-        done_languages = f.read().splitlines()
-
-    failed_languages += done_languages
+    failed_file_template = os.path.join(log_dir, "copa_{distance_type}_failed_languages.txt")
 
     eval_languages = get_dataset_config_names("unimelb-nlp/wikiann")
     # we remove the languages that are in the "failed languages" file
-    eval_languages = [lan for lan in eval_languages if lan not in failed_languages and len(lan) <= 3]
+    eval_languages = [lan for lan in eval_languages if len(lan) <= 3]
 
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
@@ -242,34 +254,38 @@ def main(submit_arguments):
 
                 return ev
 
+            evaluations = {}
+            weights = {}
             # we check if the adapter has already been created before
-            # we check if the adapter has already been created before
-            adapter_name = f"reconstructed_{eval_language}_{distance_type}"
-            adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}"
-            if os.path.exists(adapter_path):
-                print("Adapter already exists, loading instead")
-                model.load_adapter(
-                    adapter_path,
-                    load_as=adapter_name,
-                )
-                weights = []
-            else:
-                target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
-                weights = typological_approximation(target_glot, get_glots(to_load), distance_type)
+            for distance_type in distance_types:
+                adapter_name = f"reconstructed_{eval_language}_{distance_type}"
+                adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}"
+                weights[distance_type] = {}
+                if os.path.exists(adapter_path):
+                    print("Adapter already exists, loading instead")
+                    model.load_adapter(
+                        adapter_path,
+                        load_as=adapter_name,
+                    )
 
-                merge_loaded_adapters(model, merge_adapter_name=adapter_name, weights=weights, delete_other=False)
-                # save this adapter
-                # check if directory exists first
-                if not os.path.exists(adapter_path):
-                    os.makedirs(adapter_path)
-                model.save_adapter(adapter_path, adapter_name)
+                else:
+                    target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
+                    weights[distance_type] = typological_approximation(target_glot, get_glots(to_load), distance_type)
+
+                    merge_loaded_adapters(model, merge_adapter_name=adapter_name, weights=weights, delete_other=False)
+                    # save this adapter
+                    # check if directory exists first
+                    if not os.path.exists(adapter_path):
+                        os.makedirs(adapter_path)
+                    model.save_adapter(adapter_path, adapter_name)
+                model.load_adapter("./trained_adapters/ner", load_as="ner")
+                print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
+                evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
+                model.delete_adapter(adapter_name)
+                # delete the adapter for further iterations
+                model.delete_adapter("ner")
 
             model.load_adapter("./trained_adapters/ner", load_as="ner")
-
-            evaluations = {}
-            print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
-            evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
-
             print("evaluating on baseline (only task adapter")
             # we calculate a baseline (just ner adapter)
             evaluations["baseline_ner"] = run_eval(model, "ner")
@@ -286,33 +302,32 @@ def main(submit_arguments):
 
             # we calculate the baseline of using the typologically closest model and the ner adapter
             print("evaluating on baseline (closest model + ner adapter)")
+            for distance_type in distance_types:
+                try:
+                    # we have the adapters, and weights
+                    adapters_weights = {}
+                    # we have to calculate these if we skipped the adapter creation
+                    if not weights:
+                        target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
+                        weights = typological_approximation(target_glot, get_glots(to_load))
 
-            try:
-                # we have the adapters, and weights
-                adapters_weights = {}
-                # we have to calculate these if we skipped the adapter creation
-                if not weights:
-                    target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
-                    weights = typological_approximation(target_glot, get_glots(to_load))
-
-                for adapter, weight in zip(to_load.values(), weights):
-                    adapters_weights[adapter] = weight
-                # we load the closest adapter
-                closest_adapter = max(adapters_weights, key=adapters_weights.get)
-                print(
-                    f"closest adapter is {closest_adapter} ({ld.get(closest_adapter, tag_type=TagType.BCP_47_CODE).english_name})"
-                )
-                evaluations["baseline_closest_ner"] = run_eval(model, closest_adapter)
-            except Exception as e:
-                print(f"Error finding closest adapter: {e}")
+                    for adapter, weight in zip(to_load.values(), weights[distance_type]):
+                        adapters_weights[adapter] = weight
+                    # we load the closest adapter
+                    closest_adapter = max(adapters_weights, key=adapters_weights.get)
+                    print(
+                        f"closest adapter is {closest_adapter} ({ld.get(closest_adapter, tag_type=TagType.BCP_47_CODE).english_name})"
+                    )
+                    evaluations["baseline_closest_ner"] = run_eval(model, closest_adapter)
+                except Exception as e:
+                    print(f"Error finding closest adapter: {e}")
 
             # we delete the added adapters
             model.delete_adapter("huge_avg_adapter")
             model.delete_adapter("ner")
-            model.delete_adapter(adapter_name)
 
             # we save this
-            with open(f"./trained_adapters/typological/{eval_language}/ner_eval_{distance_type}.json", "w") as f:
+            with open(f"./trained_adapters/typological/{eval_language}/ner_eval.json", "w") as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
 
@@ -322,18 +337,26 @@ def main(submit_arguments):
 
         except RuntimeError:
             print("RuntimeError, skipping this language")
+
             # we write this language to a file so we do not check it again
-            with open(failed_file, "a") as f:
+
+            with open(failed_file_template.format(distance_type), "a") as f:
                 f.write(f"{eval_language}\n")
+
             continue
+
         except IndexError:
             print("IndexError, skipping this language")
-            with open(failed_file, "a") as f:
+
+            with open(failed_file_template.format(distance_type), "a") as f:
                 f.write(f"{eval_language}\n")
+
             continue
+
         except KeyError:
-            with open(failed_file, "a") as f:
+            with open(failed_file_template.format(distance_type), "a") as f:
                 f.write(f"{eval_language}\n")
+
             print("KeyError, (qq unseen language) skipping this language")
 
 

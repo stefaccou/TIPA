@@ -297,10 +297,6 @@ def main(submit_arguments):
             # we delete the added adapters
             model.delete_adapter("huge_avg_adapter")
             model.delete_adapter("copa")
-            for distance_type in distance_types:
-                adapter_name = f"reconstructed_{eval_language}_{distance_type}"
-                # we delete the adapter
-                model.delete_adapter(adapter_name)
 
             # we save this
             with open(f"./trained_adapters/typological/{eval_language}/copa_eval.json", "w") as f:
