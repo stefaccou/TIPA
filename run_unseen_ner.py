@@ -272,7 +272,9 @@ def main(submit_arguments):
                     target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
                     weights[distance_type] = typological_approximation(target_glot, get_glots(to_load), distance_type)
 
-                    merge_loaded_adapters(model, merge_adapter_name=adapter_name, weights=weights, delete_other=False)
+                    merge_loaded_adapters(
+                        model, merge_adapter_name=adapter_name, weights=weights[distance_type], delete_other=False
+                    )
                     # save this adapter
                     # check if directory exists first
                     if not os.path.exists(adapter_path):
@@ -307,9 +309,9 @@ def main(submit_arguments):
                     # we have the adapters, and weights
                     adapters_weights = {}
                     # we have to calculate these if we skipped the adapter creation
-                    if not weights:
+                    if not weights[distance_type]:
                         target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
-                        weights = typological_approximation(target_glot, get_glots(to_load))
+                        weights[distance_type] = typological_approximation(target_glot, get_glots(to_load))
 
                     for adapter, weight in zip(to_load.values(), weights[distance_type]):
                         adapters_weights[adapter] = weight
