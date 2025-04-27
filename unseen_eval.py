@@ -176,17 +176,13 @@ def typological_approximation(target, glots, distance_type):
             dist = u.new_distance(distance_type, [glot, target])
             # print(f"Distance {lang} to {target}: {dist}")
         except SystemExit:
-            print("sysex")
-            dist = 0
-        except Exception as e:
             # print(f"Error: {lang} - {glot} - {target}")
-            print(e)
             dist = 0
         weights.append(dist)
     # 1. softmax over weights
-    print(f"Weights before softmax: {weights}")
+    # print(f"Weights before softmax: {weights}")
     weights = torch.softmax(torch.tensor(weights), dim=0)
     # we need to convert to list
     weights = weights.tolist()
-    print(f"Weights after softmax: {weights}")
+    # print(f"Weights after softmax: {weights}")
     return weights
