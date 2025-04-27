@@ -175,6 +175,9 @@ def typological_approximation(target, glots, distance_type):
         try:
             dist = u.new_distance(distance_type, [glot, target])
             # print(f"Distance {lang} to {target}: {dist}")
+        except SystemExit:
+            print("sysex")
+            dist = 0
         except Exception as e:
             # print(f"Error: {lang} - {glot} - {target}")
             print(e)
