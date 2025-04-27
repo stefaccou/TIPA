@@ -90,7 +90,7 @@ def main(submit_arguments):
     with open("experiment_folder/logs/copa_done_languages.txt", "r") as f:
         done_languages = f.read().splitlines()
     failed_languages += done_languages
-    eval_languages = [lan for lan in eval_languages if lan not in failed_languages]
+    eval_languages = [lan for lan in eval_languages if lan not in failed_languages and len(lan) <= 3]
 
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
 
@@ -113,7 +113,7 @@ def main(submit_arguments):
         iterations = len(eval_languages)
         print(f"No iterations given, going for all remaining ({iterations}) languages in dataset")
     for i in range(iterations):
-        eval_language = random.choice([lan for lan in eval_languages if len(lan) <= 3])
+        eval_language = random.choice(eval_languages)
         eval_languages.remove(eval_language)
 
         try:
