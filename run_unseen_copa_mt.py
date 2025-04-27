@@ -101,7 +101,7 @@ def main(submit_arguments):
         print("already using Glottocodes")
 
     if custom_args.distance_types_list:
-        distance_types = custom_args.distance_types_list.split(",")
+        distance_types = custom_args.distance_types_list
     elif custom_args.distance_type:
         distance_types = [custom_args.distance_type]
     else:
