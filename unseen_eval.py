@@ -2,29 +2,27 @@ import re
 from collections import OrderedDict
 import torch
 import evaluate
+from huggingface_hub import HfApi
+from qq import LanguageData, TagType
+from urielplus import urielplus
+
 
 metric = evaluate.load("seqeval")
 
-
-from huggingface_hub import HfApi
-
 api = HfApi()
-
-from qq import LanguageData, TagType
 
 ld = LanguageData.from_db()
 
-from urielplus import urielplus
 
 u = urielplus.URIELPlus()
 u.set_cache(True)
 try:
     u.integrate_grambank()
-except:
+except SystemExit:
     print("already using GramBank")
 try:
     u.set_glottocodes()
-except:
+except SystemExit:
     print("already using Glottocodes")
 
 
@@ -92,7 +90,7 @@ def merge_loaded_adapters(
             f"Config mismatch: {config} vs {config_i}\nCurrent methodology only works for same config"
         )
 
-    if weights == None:
+    if not weights:
         weights = [1 / len(all_adapters)] * len(all_adapters)
     if len(weights) != len(all_adapters):
         raise ValueError(f"Weights length {len(weights)} does not match number of adapters {len(all_adapters)}")
@@ -162,10 +160,12 @@ def merge_loaded_adapters(
     # no need to return anything as the model is changed in place
 
 
-def typological_approximation(target, glots):
+def typological_approximation(target, glots, distance_type="featural"):
     """
     This function takes a target language and a list of languages.
     It weights the other languages depending on their closeness to the target language.
+    "distance_type" can be of following:
+    "featural", "syntactic", "phonological", "geographic", "genetic", "morphological", "inventory"
     """
 
     # 1. retrieve closeness score of all languages to target language
@@ -173,10 +173,11 @@ def typological_approximation(target, glots):
     for lang, glot in glots.items():
         # get the distance
         try:
-            dist = u.new_distance("featural", [glot, target])
+            dist = u.new_distance(distance_type, [glot, target])
             # print(f"Distance {lang} to {target}: {dist}")
-        except:
+        except Exception as e:
             # print(f"Error: {lang} - {glot} - {target}")
+            print(e)
             dist = 0
         weights.append(dist)
 
