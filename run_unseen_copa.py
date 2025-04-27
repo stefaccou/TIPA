@@ -204,29 +204,24 @@ def main(submit_arguments):
                 return ev
 
             # we check if the adapter has already been created before
-            if os.path.exists(
-                f"./trained_adapters/typological/{eval_language}"
-                f"{'_' + distance_type if not distance_type == 'featural' else ''}"
-            ):
+            adapter_name = f"reconstructed_{eval_language}_{distance_type}"
+            if os.path.exists(adapter_name):
                 print("Adapter already exists, loading instead")
                 model.load_adapter(
-                    f"./trained_adapters/typological/{eval_language}"
-                    f"{'_' + distance_type if not distance_type == 'featural' else ''}",
-                    load_as="reconstructed_" + eval_language,
+                    adapter_name,
+                    load_as=adapter_name,
                 )
                 weights = []
             else:
                 target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
                 weights = typological_approximation(target_glot, get_glots(to_load), distance_type)
 
-                merge_loaded_adapters(
-                    model, merge_adapter_name=f"reconstructed_{eval_language}", weights=weights, delete_other=False
-                )
+                merge_loaded_adapters(model, merge_adapter_name=adapter_name, weights=weights, delete_other=False)
                 # save this adapter
                 # check if directory exists first
                 if not os.path.exists(f"./trained_adapters/typological/{eval_language}"):
                     os.makedirs(f"./trained_adapters/typological/{eval_language}")
-                model.save_adapter(f"./trained_adapters/typological/{eval_language}", "reconstructed_" + eval_language)
+                model.save_adapter(f"./trained_adapters/typological/{eval_language}", adapter_name)
 
             # we preprocess the dataset
             dataset_eval = preprocess_dataset(dataset_eval)
@@ -234,8 +229,8 @@ def main(submit_arguments):
             model.load_adapter("./trained_adapters/copa", load_as="copa")
 
             evaluations = {}
-            print(f"evaluating on reconstructed {eval_language} adapter")
-            evaluations["reconstructed_" + eval_language] = run_eval(model, f"reconstructed_{eval_language}")
+            print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
+            evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
 
             print("evaluating on baseline (only task adapter")
             # we calculate a baseline (just copa adapter)
@@ -276,10 +271,10 @@ def main(submit_arguments):
             # we delete the added adapters
             model.delete_adapter("huge_avg_adapter")
             model.delete_adapter("copa")
-            model.delete_adapter("reconstructed_" + eval_language)
+            model.delete_adapter(adapter_name)
 
             # we save this
-            with open(f"./trained_adapters/typological/{eval_language}/copa_eval.json", "w") as f:
+            with open(f"./trained_adapters/typological/{eval_language}/copa_eval_{distance_type}.json", "w") as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
 
