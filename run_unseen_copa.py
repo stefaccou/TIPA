@@ -219,7 +219,7 @@ def main(job_input):
         except RuntimeError:
             print("RuntimeError, skipping this language")
             # we write this language to a file so we do not check it again
-            with open("failed_languages.txt", "a") as f:
+            with open("experiment_folder/logs/copa_failed_languages.txt", "a") as f:
                 f.write(f"{eval_language}\n")
             continue
         except IndexError:
