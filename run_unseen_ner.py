@@ -93,8 +93,8 @@ def main(submit_arguments):
 
     log_dir = "experiment_folder/logs"
     os.makedirs(log_dir, exist_ok=True)
-    failed_file = os.path.join(log_dir, f"copa_{distance_type}_failed_languages.txt")
-    done_file = os.path.join(log_dir, f"copa_{distance_type}_done_languages.txt")
+    failed_file = os.path.join(log_dir, f"ner_{distance_type}_failed_languages.txt")
+    done_file = os.path.join(log_dir, f"ner_{distance_type}_done_languages.txt")
 
     # ensure each file exists
     for path in (failed_file, done_file):
