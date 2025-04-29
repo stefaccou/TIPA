@@ -310,6 +310,7 @@ def main(submit_arguments):
     last_checkpoint = None
     if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
+        print("LAST CHECKPOINT", last_checkpoint)
         if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
             raise ValueError(
                 f"Output directory ({training_args.output_dir}) already exists and is not empty. "
@@ -735,7 +736,7 @@ if __name__ == "__main__":
             "nodes": 1,
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,
-            "mail_type": "BEGIN,END,FAIL",
+            "mail_type": "END,FAIL",
             "mail_user": "stef.accou@student.kuleuven.be",
         },
     }
