@@ -714,7 +714,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "debug_fineweb2_basque"
+    job_name = "fineweb2_basque_mlm"
 
     master_dir = find_master()
 
@@ -725,8 +725,8 @@ if __name__ == "__main__":
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     parameters = {
-        "slurm_partition": "gpu_a100_debug",
-        "slurm_time": "01:00:00",
+        "slurm_partition": "gpu_a100",
+        "slurm_time": "08:00:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": "wice",
@@ -734,7 +734,7 @@ if __name__ == "__main__":
             "nodes": 1,
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,
-            "mail_type": "END,FAIL",
+            "mail_type": "BEGIN, END,FAIL",
             "mail_user": "stef.accou@student.kuleuven.be",
         },
     }
