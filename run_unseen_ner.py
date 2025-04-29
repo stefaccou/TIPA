@@ -109,20 +109,7 @@ def main(submit_arguments):
     else:
         distance_types = ["featural"]
 
-    log_dir = "experiment_folder/logs"
-    os.makedirs(log_dir, exist_ok=True)
-    for distance_type in distance_types:
-        failed_file = os.path.join(log_dir, f"ner_{distance_type}_failed_languages.txt")
-        done_file = os.path.join(log_dir, f"ner_{distance_type}_done_languages.txt")
-        # ensure each file exists
-        for path in (failed_file, done_file):
-            if not os.path.exists(path):
-                open(path, "w").close()
-
-    # failed_file_template = os.path.join(log_dir, "copa_{distance_type}_failed_languages.txt")
-
     eval_languages = get_dataset_config_names("unimelb-nlp/wikiann")
-    # we remove the languages that are in the "failed languages" file
     eval_languages = [lan for lan in eval_languages if len(lan) <= 3]
 
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
@@ -364,8 +351,8 @@ if __name__ == "__main__":
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     parameters = {
-        "slurm_partition": "gpu_p100_debug",
-        "slurm_time": "00:20:00",
+        "slurm_partition": "gpu_p100",
+        "slurm_time": "02:30:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": "genius",

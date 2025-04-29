@@ -23,7 +23,7 @@ def main(submit_arguments):
     from qq import LanguageData, TagType
 
     from dataclasses import dataclass, field
-    from typing import Optional
+    from typing import Optional, List
 
     @dataclass
     class CustomArguments:
@@ -32,6 +32,22 @@ def main(submit_arguments):
 
         """
 
+        distance_types_list: Optional[List[str]] = field(
+            default=None,
+            metadata={
+                "help": ("The distance types to be used for typological approximation. "),
+                "nargs": "+",
+                "choices": [
+                    "featural",
+                    "syntactic",
+                    "phonological",
+                    "geographic",
+                    "genetic",
+                    "morphological",
+                    "inventory",
+                ],
+            },
+        )
         distance_type: Optional[str] = field(
             default=None,
             metadata={"help": ("The distance type to be used for typological approximation. ")},
@@ -83,32 +99,16 @@ def main(submit_arguments):
     except SystemExit:
         print("already using Glottocodes")
 
-    if custom_args.distance_type:
-        distance_type = custom_args.distance_type
+    if custom_args.distance_types_list:
+        distance_types = custom_args.distance_types_list
+    elif custom_args.distance_type:
+        distance_types = [custom_args.distance_type]
     else:
-        distance_type = "featural"
-
-    log_dir = "experiment_folder/logs"
-    os.makedirs(log_dir, exist_ok=True)
-    failed_file = os.path.join(log_dir, f"copa_{distance_type}_failed_languages.txt")
-    done_file = os.path.join(log_dir, f"copa_{distance_type}_done_languages.txt")
-
-    # ensure each file exists
-    for path in (failed_file, done_file):
-        if not os.path.exists(path):
-            open(path, "w").close()
-
-    # now it’s safe to read
-    with open(failed_file, "r") as f:
-        failed_languages = f.read().splitlines()
-    with open(done_file, "r") as f:
-        done_languages = f.read().splitlines()
-
-    failed_languages += done_languages
+        distance_types = ["featural"]
 
     # we load in the dataset names
     eval_languages = get_dataset_config_names("xcopa")
-    eval_languages = [lan for lan in eval_languages if lan not in failed_languages and len(lan) <= 3]
+    eval_languages = [lan for lan in eval_languages if len(lan) <= 3]
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
 
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
@@ -203,36 +203,45 @@ def main(submit_arguments):
 
                 return ev
 
-            # we check if the adapter has already been created before
-            adapter_name = f"reconstructed_{eval_language}_{distance_type}"
-            adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}"
-            if os.path.exists(adapter_path):
-                print("Adapter already exists, loading instead")
-                model.load_adapter(
-                    adapter_path,
-                    load_as=adapter_name,
-                )
-                weights = []
-            else:
-                target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
-                weights = typological_approximation(target_glot, get_glots(to_load), distance_type)
-
-                merge_loaded_adapters(model, merge_adapter_name=adapter_name, weights=weights, delete_other=False)
-                # save this adapter
-                # check if directory exists first
-                if not os.path.exists(adapter_path):
-                    os.makedirs(adapter_path)
-                model.save_adapter(adapter_path, adapter_name)
-
             # we preprocess the dataset
             dataset_eval = preprocess_dataset(dataset_eval)
 
-            model.load_adapter("./trained_adapters/copa", load_as="copa")
-
             evaluations = {}
-            print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
-            evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
+            weights = {}
 
+            # we check if the adapter has already been created before
+            for distance_type in distance_types:
+                adapter_name = f"reconstructed_{eval_language}_{distance_type}"
+                adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}"
+                weights[distance_type] = {}
+                if os.path.exists(adapter_path):
+                    print("Adapter already exists, loading instead")
+                    model.load_adapter(
+                        adapter_path,
+                        load_as=adapter_name,
+                    )
+
+                else:
+                    target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
+                    weights[distance_type] = typological_approximation(target_glot, get_glots(to_load), distance_type)
+
+                    merge_loaded_adapters(
+                        model, merge_adapter_name=adapter_name, weights=weights[distance_type], delete_other=False
+                    )
+                    # save this adapter
+                    # check if directory exists first
+                    if not os.path.exists(adapter_path):
+                        os.makedirs(adapter_path)
+                    model.save_adapter(adapter_path, adapter_name)
+                model.load_adapter("./trained_adapters/copa", load_as="copa")
+                print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
+                evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
+                model.delete_adapter(adapter_name)
+                # delete the adapter for further iterations
+                model.delete_adapter("copa")
+
+            # load in copa adapter AFTER creation of merged adapter
+            model.load_adapter("./trained_adapters/copa", load_as="copa")
             print("evaluating on baseline (only task adapter")
             # we calculate a baseline (just copa adapter)
             evaluations["baseline_copa"] = run_eval(model, "copa")
@@ -250,53 +259,51 @@ def main(submit_arguments):
             # we calculate the baseline of using the typologically closest model and the ner adapter
             print("evaluating on baseline (closest model + copa adapter)")
 
-            try:
-                # we have the adapters, and weights
-                adapters_weights = {}
-                # we have to calculate these if we skipped the adapter creation
-                if not weights:
-                    target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
-                    weights = typological_approximation(target_glot, get_glots(to_load))
+            # we calculate the baseline of using the typologically closest model and the ner adapter
+            print("evaluating on baseline (closest model + ner adapter)")
+            for distance_type in distance_types:
+                try:
+                    # we have the adapters, and weights
+                    adapters_weights = {}
+                    # we have to calculate these if we skipped the adapter creation
+                    if not weights[distance_type]:
+                        target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
+                        weights[distance_type] = typological_approximation(target_glot, get_glots(to_load))
 
-                for adapter, weight in zip(to_load.values(), weights):
-                    adapters_weights[adapter] = weight
-                # we load the closest adapter
-                closest_adapter = max(adapters_weights, key=adapters_weights.get)
-                print(
-                    f"closest adapter is {closest_adapter} ({ld.get(closest_adapter, tag_type=TagType.BCP_47_CODE).english_name})"
-                )
-                evaluations["baseline_closest_ner"] = run_eval(model, closest_adapter)
-            except Exception as e:
-                print(f"Error finding closest adapter: {e}")
+                    for adapter, weight in zip(to_load.values(), weights[distance_type]):
+                        adapters_weights[adapter] = weight
+                    # we load the closest adapter
+                    closest_adapter = max(adapters_weights, key=adapters_weights.get)
+                    print(
+                        f"closest {distance_type} adapter is {closest_adapter} ({ld.get(closest_adapter, tag_type=TagType.BCP_47_CODE).english_name})"
+                    )
+                    evaluations["baseline_closest_ner"] = run_eval(model, closest_adapter)
+                except Exception as e:
+                    print(f"Error finding closest adapter: {e}")
 
             # we delete the added adapters
             model.delete_adapter("huge_avg_adapter")
             model.delete_adapter("copa")
-            model.delete_adapter(adapter_name)
 
             # we save this
-            with open(f"./trained_adapters/typological/{eval_language}/copa_eval_{distance_type}.json", "w") as f:
+            with open(f"./trained_adapters/typological/{eval_language}/copa_eval.json", "w") as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
-
-            # we write the language name to "done languages"
-            with open(done_file, "a") as f:
-                f.write(f"{eval_language}\n")
 
         except RuntimeError:
             print("RuntimeError, skipping this language")
             # we write this language to a file so we do not check it again
-            with open(failed_file, "a") as f:
-                f.write(f"{eval_language}\n")
+            # with open(failed_file_template.format(distance_type), "a") as f:
+            #    f.write(f"{eval_language}\n")
             continue
         except IndexError:
             print("IndexError, skipping this language")
-            with open(failed_file, "a") as f:
-                f.write(f"{eval_language}\n")
+            # with open(failed_file_template.format(distance_type), "a") as f:
+            #    f.write(f"{eval_language}\n")
             continue
         except KeyError:
-            with open(failed_file, "a") as f:
-                f.write(f"{eval_language}\n")
+            # with open(failed_file_template.format(distance_type), "a") as f:
+            #    f.write(f"{eval_language}\n")
             print("KeyError, (qq unseen language) skipping this language")
 
 
@@ -312,11 +319,11 @@ if __name__ == "__main__":
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     parameters = {
-        "slurm_partition": "gpu_p100",
+        "slurm_partition": "gpu_h100",
         "slurm_time": "01:00:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
-            "clusters": "genius",
+            "clusters": "wice",
             "account": os.environ["ACCOUNT_INFO"],  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
