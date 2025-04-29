@@ -173,7 +173,8 @@ def typological_approximation(target, glots, distance_type):
     for lang, glot in glots.items():
         # get the distance
         try:
-            dist = u.new_distance(distance_type, [glot, target])
+            # distances range from 0 to 1
+            dist = 1 - u.new_distance(distance_type, [glot, target])
             # print(f"Distance {lang} to {target}: {dist}")
         except SystemExit:
             # print(f"Error: {lang} - {glot} - {target}")
