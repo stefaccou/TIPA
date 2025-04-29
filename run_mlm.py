@@ -637,10 +637,11 @@ def main(submit_arguments):
     )
 
     # Setup adapters
-    setup_adapter_training(model, adapter_args, data_args.dataset_name or "mlm")
-
+    # setup_adapter_training(model, adapter_args, data_args.dataset_name or "mlm")
+    setup_adapter_training(model, adapter_args, "mlm")
     # Initialize our Trainer
     trainer_class = AdapterTrainer if adapter_args.train_adapter else Trainer
+
     trainer = trainer_class(
         model=model,
         args=training_args,
@@ -662,7 +663,8 @@ def main(submit_arguments):
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
-        trainer.save_model()  # Saves the tokenizer too for easy upload
+        # WE IMPLEMENT CUSTOM SAVING NAME
+        trainer.save_model(training_args.output_dir)  # Saves the tokenizer too for easy upload
         metrics = train_result.metrics
 
         max_train_samples = (
