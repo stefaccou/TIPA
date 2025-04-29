@@ -24,6 +24,8 @@ https://huggingface.co/models?filter=fill-mask
 import submitit
 import sys
 import os
+from custom_submission_utils import find_master, update_submission_log
+
 
 def main(submit_arguments):
     print("starting main")
@@ -710,10 +712,20 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
+    job_name = "debug_fineweb2_basque"
+
+    master_dir = find_master()
+
+    # Set the experiment folder as a subdirectory of 'Master_thesis'
+    experiments_dir = master_dir / "experiment_folder"
+
+    run_count = update_submission_log(experiments_dir, job_name)
+    experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
+    experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     parameters = {
-        "slurm_partition": "gpu_h100",
-        "slurm_time": "00:20:00",
-        "slurm_job_name": "eval dutch mlm adapter",
+        "slurm_partition": "gpu_h100_debug",
+        "slurm_time": "00:30:00",
+        "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": "wice",
             "account": os.environ["ACCOUNT_INFO"],  # replace with your account
@@ -725,8 +737,12 @@ if __name__ == "__main__":
         },
     }
 
-    executor = submitit.AutoExecutor(folder="experiment_folder")
+    # Initialize the Submitit executor with the new experiments_dir
+    executor = submitit.AutoExecutor(folder=str(experiments_dir))
     executor.update_parameters(**parameters)
 
-    text = sys.argv[1:] if len(sys.argv) > 1 else "default text"
-    job = executor.submit(main, text)
+    job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
+
+    job = executor.submit(main, job_input)
+    # job = executor.submit(main)
+    print("job submitted")
