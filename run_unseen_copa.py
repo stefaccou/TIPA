@@ -268,7 +268,9 @@ def main(submit_arguments):
                     # we have to calculate these if we skipped the adapter creation
                     if not weights[distance_type]:
                         target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
-                        weights[distance_type] = typological_approximation(target_glot, get_glots(to_load))
+                        weights[distance_type] = typological_approximation(
+                            target_glot, get_glots(to_load), distance_type
+                        )
 
                     for adapter, weight in zip(to_load.values(), weights[distance_type]):
                         adapters_weights[adapter] = weight
