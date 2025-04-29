@@ -310,7 +310,6 @@ def main(submit_arguments):
     last_checkpoint = None
     if os.path.isdir(training_args.output_dir) and training_args.do_train and not training_args.overwrite_output_dir:
         last_checkpoint = get_last_checkpoint(training_args.output_dir)
-        print("LAST CHECKPOINT", last_checkpoint)
         if last_checkpoint is None and len(os.listdir(training_args.output_dir)) > 0:
             raise ValueError(
                 f"Output directory ({training_args.output_dir}) already exists and is not empty. "
@@ -664,7 +663,6 @@ def main(submit_arguments):
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
-        print("we get here once", training_args.output_dir, "\n" * 100)
         # WE IMPLEMENT CUSTOM SAVING NAME
         trainer.save_model(training_args.output_dir)  # Saves the tokenizer too for easy upload
         metrics = train_result.metrics
