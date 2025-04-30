@@ -727,7 +727,7 @@ if __name__ == "__main__":
     partition = "gpu_a100"  # Change this to your desired partition
     parameters = {
         "slurm_partition": partition,
-        "slurm_time": "02:00:00",
+        "slurm_time": "08:00:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",
