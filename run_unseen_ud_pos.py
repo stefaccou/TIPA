@@ -108,7 +108,7 @@ def main(submit_arguments):
     else:
         distance_types = ["featural"]
 
-    ud_datasets = get_dataset_config_names("unversal-dependencies")
+    ud_datasets = get_dataset_config_names("universal-dependencies")
     eval_languages_dict = {}
     for ds in ud_datasets:
         lang = ds.split("_")[0]
