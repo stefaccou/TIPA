@@ -101,7 +101,7 @@ def main():
     )
     init(model)
     print("initted model")
-    model.load_adapter("./trained_adapters/mono/en", load_as="en")
+    model.load_adapter("./trained_adapters/en", load_as="en")
     model.add_adapter("ud_pos")
     model.train_adapter(["ud_pos"])
     model.active_adapters = Stack("en", "ud_pos")
