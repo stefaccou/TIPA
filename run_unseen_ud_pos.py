@@ -108,7 +108,7 @@ def main(submit_arguments):
     else:
         distance_types = ["featural"]
 
-    ud_datasets = get_dataset_config_names("universal-dependencies")
+    ud_datasets = get_dataset_config_names("universal_dependencies")
     eval_languages_dict = {}
     for ds in ud_datasets:
         lang = ds.split("_")[0]
@@ -152,7 +152,7 @@ def main(submit_arguments):
                 f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
             )
             dataset_eval = load_dataset(
-                "universal-dependencies", eval_languages_dict[eval_language], trust_remote_code=True
+                "universal_dependencies", eval_languages_dict[eval_language], trust_remote_code=True
             )
 
             def tokenize_and_align_labels(examples):
