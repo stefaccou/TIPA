@@ -252,6 +252,8 @@ def main(submit_arguments):
                 print(f"Evaluation results for {name}:")
                 print(ev)
                 # we empty the cache
+                model.cpu()
+                del model
                 del eval_trainer
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
