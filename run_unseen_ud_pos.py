@@ -58,12 +58,12 @@ def main(submit_arguments):
             default=None,
             metadata={"help": ("The number of iterations to be run. ")},
         )
-        limit: Optional[float | int] = field(
+        limit: Optional[float] = field(
             default=None,
             metadata={
                 "help": (
-                    "The limit for the distance types. If a float, it will remove all languages with a distance score lower than limit. "
-                    "If an int, it works as a top-k languages filter with the highest similarity."
+                    "The limit for the distance types. If <1, it will remove all languages with a distance score lower than limit. "
+                    "If >=1, it works as a top-k languages filter with the highest similarity."
                 )
             },
         )
