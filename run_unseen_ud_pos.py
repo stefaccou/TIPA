@@ -366,7 +366,7 @@ def main(submit_arguments):
 
             # we save this
             with open(
-                f"./trained_adapters/typological/{eval_language}/pos_eval{'_' + str(custom_args.limit) if custom_args.limit else ''}.json",
+                f"./trained_adapters/typological/{eval_language}/pos_eval{limit_str}.json",
                 "w",
             ) as f:
                 json.dump(evaluations, f, indent=4)
