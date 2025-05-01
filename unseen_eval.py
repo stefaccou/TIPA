@@ -90,15 +90,13 @@ def merge_loaded_adapters(
             f"Config mismatch: {config} vs {config_i}\nCurrent methodology only works for same config"
         )
 
-    if not weights:
-        weights = [1 / len(all_adapters)] * len(all_adapters)
-    if len(weights) != len(all_adapters):
-        raise ValueError(f"Weights length {len(weights)} does not match number of adapters {len(all_adapters)}")
-
+    if weights is None or weights == {}:
+        weights = {adapter: 1 / len(all_adapters) for adapter in all_adapters}
+    print("weights:", weights)
     if not patterns:
         patterns = [
-            f"{model_type}\.encoder\.layer\.([\d\w]+)\.output\.adapters\.(?:\w+)\.(\w+)(?:\.0)?\.(\w+)",
-            f"{model_type}\.invertible_adapters\.(?:\w+)\.(\w+)\.(\d)\.(\w+)",
+            f"{model_type}\.encoder\.layer\.(?P<one>[\d\w]+)\.output\.adapters\.(?P<adapter>\w+)\.(?P<two>\w+)(?:\.0)?\.(?P<three>\w+)",
+            f"{model_type}\.invertible_adapters\.(?P<adapter>\w+)\.(?P<one>\w+)\.(?P<two>\d)\.(?P<three>\w+)",
         ]
     comp_patterns = [re.compile(pattern) for pattern in patterns]
     organized_layers = {}
@@ -110,17 +108,20 @@ def merge_loaded_adapters(
         for i, pattern in enumerate(comp_patterns):
             match = re.search(pattern, key)
             if match:
-                one = match.group(1)
-                two = match.group(2)
-                three = match.group(3)
+                one = match.group("one")
+                two = match.group("two")
+                three = match.group("three")
+                adapter_name = match.group("adapter")
+                if adapter_name not in weights.keys():
+                    # print(f"Adapter {adapter_name} not in weights")
+                    continue
                 if one not in organized_layers[i]:
                     organized_layers[i][one] = {}
                 if two not in organized_layers[i][one]:
                     organized_layers[i][one][two] = {}
                 if three not in organized_layers[i][one][two]:
                     organized_layers[i][one][two][three] = []
-                organized_layers[i][one][two][three].append(key)
-
+                organized_layers[i][one][two][three].append((key, adapter_name))
     new_state_dict = OrderedDict()
     sd = model.state_dict()
 
@@ -128,7 +129,7 @@ def merge_loaded_adapters(
         for one, two in one.items():
             for two, three in two.items():
                 for three, keys in three.items():
-                    result = sum([sd[key] * weights[j] for j, key in enumerate(keys)])
+                    result = sum([sd[layer] * weights[adapter_name] for layer, adapter_name in keys])
                     if two == "adapter_down":
                         new_state_dict[
                             f"{model_type}.encoder.layer.{one}.output.adapters.{merge_adapter_name}.{two}.0.{three}"
@@ -160,12 +161,14 @@ def merge_loaded_adapters(
     # no need to return anything as the model is changed in place
 
 
-def typological_approximation(target, glots, distance_type):
+def typological_approximation(target, glots, distance_type, limit=None):
     """
     This function takes a target language and a list of languages.
     It weights the other languages depending on their closeness to the target language.
     "distance_type" can be of following:
     "featural", "syntactic", "phonological", "geographic", "genetic", "morphological", "inventory"
+    If limit is specified and is <1, it will remove all languages with a distance lower than limit.
+    If limit is specified and is >=1, it works as a top-k languages filter with the highest similarity.
     """
 
     # 1. retrieve closeness score of all languages to target language
@@ -182,11 +185,27 @@ def typological_approximation(target, glots, distance_type):
         except TypeError:
             print(f"No {distance_type} data for {lang} - {glot} - {target}")
             dist = 0
-        weights.append(dist)
-    # 1. softmax over weights
-    # print(f"Weights before softmax: {weights}")
-    weights = torch.softmax(torch.tensor(weights), dim=0)
+        weights[lang] = dist
+
+    # Check for limit:
+    if limit:
+        if limit < 1:
+            for lang, dist in list(weights.items()):
+                if dist < limit:
+                    print(f"Removing {lang} with distance {dist}")
+                    del weights[lang]
+        else:  # we take the best n (limit) languages
+            n = min(limit, len(weights))
+            # we sort the weights
+            sorted_weights = sorted(weights.items(), key=lambda x: x[1], reverse=True)
+            # we take the first n
+            weights = dict(sorted_weights[:n])
+
+    print(f"Weights before softmax: {weights}")
+    soft_weights = torch.softmax(torch.tensor(list(weights.values())), dim=0)
     # we need to convert to list
-    weights = weights.tolist()
-    # print(f"Weights after softmax: {weights}")
+    soft_weights = soft_weights.tolist()
+    # we zippedly return the keys and normalized values
+    weights = {k: v for k, v in zip(weights.keys(), soft_weights)}
+    print(f"Weights after softmax: {weights}")
     return weights
