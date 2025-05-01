@@ -714,7 +714,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "fineweb2_basque_mlm"
+    job_name = "debug_fineweb2_basque_mlm"
 
     master_dir = find_master()
 
