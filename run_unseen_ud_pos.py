@@ -156,7 +156,7 @@ def main(submit_arguments):
             dataset_eval = load_dataset(
                 "universal_dependencies", eval_languages_dict[eval_language], trust_remote_code=True
             )
-            print(dataset_eval["train"][0])
+            print(dataset_eval.keys())
 
             def tokenize_and_align_labels(examples):
                 tokenized = tokenizer(
@@ -280,7 +280,7 @@ def main(submit_arguments):
                     print(f"target glot found: {target_glot}")
                     weights[distance_type] = typological_approximation(target_glot, get_glots(to_load), distance_type)
                     print("active adapters to be merged:")
-                    print(model.roberta.encoder.layers["0"].output.adapters)
+                    print(model.roberta.encoder.layer["0"].output.adapters)
                     merge_loaded_adapters(
                         model, merge_adapter_name=adapter_name, weights=weights[distance_type], delete_other=False
                     )
