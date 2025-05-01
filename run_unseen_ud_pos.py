@@ -395,8 +395,8 @@ if __name__ == "__main__":
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     parameters = {
-        "slurm_partition": "gpu_p100",
-        "slurm_time": "02:00:00",
+        "slurm_partition": "gpu_p100_debug",
+        "slurm_time": "01:00:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": "genius",
