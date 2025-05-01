@@ -58,6 +58,15 @@ def main(submit_arguments):
             default=None,
             metadata={"help": ("The number of iterations to be run. ")},
         )
+        limit: Optional[float | int] = field(
+            default=None,
+            metadata={
+                "help": (
+                    "The limit for the distance types. If a float, it will remove all languages with a distance score lower than limit. "
+                    "If an int, it works as a top-k languages filter with the highest similarity."
+                )
+            },
+        )
 
         def __post_init__(self):
             # we check if distance is in the list of available distances
@@ -284,7 +293,9 @@ def main(submit_arguments):
                 else:
                     target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
                     print(f"target glot found: {target_glot}")
-                    weights[distance_type] = typological_approximation(target_glot, get_glots(to_load), distance_type)
+                    weights[distance_type] = typological_approximation(
+                        target_glot, get_glots(to_load), distance_type, custom_args.limit
+                    )
                     # print("active adapters to be merged:")
                     # print(model.roberta.encoder.layer[0].output.adapters)
                     merge_loaded_adapters(
@@ -346,7 +357,10 @@ def main(submit_arguments):
             model.delete_adapter("ud_pos")
 
             # we save this
-            with open(f"./trained_adapters/typological/{eval_language}/pos_eval.json", "w") as f:
+            with open(
+                f"./trained_adapters/typological/{eval_language}/pos_eval{'_' + custom_args.limit if custom_args.limit else ''}",
+                "w",
+            ) as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
             # we write the language name to "done languages"
