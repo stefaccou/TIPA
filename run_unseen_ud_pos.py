@@ -355,7 +355,7 @@ def main(submit_arguments):
 
             # we save this
             with open(
-                f"./trained_adapters/typological/{eval_language}/pos_eval{'_' + custom_args.limit if custom_args.limit else ''}",
+                f"./trained_adapters/typological/{eval_language}/pos_eval{'_' + str(custom_args.limit) if custom_args.limit else ''}",
                 "w",
             ) as f:
                 json.dump(evaluations, f, indent=4)
@@ -381,7 +381,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "unseen_ud_pos"
+    job_name = "debug_unseen_ud_pos"
 
     master_dir = find_master()
 
