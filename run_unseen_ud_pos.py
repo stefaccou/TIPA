@@ -118,7 +118,9 @@ def main(submit_arguments):
         except KeyError:
             # print(f"Language {lang} not in database, skipping")
             continue
-    eval_languages = list(eval_languages_dict.keys())
+    # eval_languages = list(eval_languages_dict.keys())
+    eval_languages = ["yo", "kk", "cop"]
+    print(eval_languages)
 
     tokenizer = XLMRobertaTokenizerFast.from_pretrained("xlm-roberta-base")
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
@@ -154,6 +156,7 @@ def main(submit_arguments):
             dataset_eval = load_dataset(
                 "universal_dependencies", eval_languages_dict[eval_language], trust_remote_code=True
             )
+            print(dataset_eval["train"][0])
 
             def tokenize_and_align_labels(examples):
                 tokenized = tokenizer(
@@ -248,9 +251,7 @@ def main(submit_arguments):
                 ev = eval_trainer.evaluate()
                 print(f"Evaluation results for {name}:")
                 print(ev)
-                # we empty the cache and model
-                model.cpu()
-                del model
+                # we empty the cache
                 del eval_trainer
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
@@ -274,6 +275,7 @@ def main(submit_arguments):
 
                 else:
                     target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
+                    print(f"target glot found: {target_glot}")
                     weights[distance_type] = typological_approximation(target_glot, get_glots(to_load), distance_type)
 
                     merge_loaded_adapters(
@@ -341,21 +343,21 @@ def main(submit_arguments):
             # we write the language name to "done languages"
             # with open(done_file, "a") as f:
             #    f.write(f"{eval_language}\n")
-        except RuntimeError:
-            print("RuntimeError, skipping this language")
+        except RuntimeError as e:
+            print(f"RuntimeError {e}, skipping this language")
             # we write this language to a file so we do not check it again
             # with open(failed_file_template.format(distance_type), "a") as f:
             #    f.write(f"{eval_language}\n")
             continue
-        except IndexError:
-            print("IndexError, skipping this language")
+        except IndexError as e:
+            print(f"IndexError {e}, skipping this language")
             # with open(failed_file_template.format(distance_type), "a") as f:
             #    f.write(f"{eval_language}\n")
             continue
-        except KeyError:
+        except KeyError as e:
             # with open(failed_file_template.format(distance_type), "a") as f:
             #    f.write(f"{eval_language}\n")
-            print("KeyError, (qq unseen language) skipping this language")
+            print(f"KeyError {e}, (qq unseen language) skipping this language")
 
 
 if __name__ == "__main__":
