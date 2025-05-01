@@ -172,7 +172,7 @@ def typological_approximation(target, glots, distance_type, limit=None):
     """
 
     # 1. retrieve closeness score of all languages to target language
-    weights = []
+    weights = {}
     for lang, glot in glots.items():
         # get the distance
         try:
