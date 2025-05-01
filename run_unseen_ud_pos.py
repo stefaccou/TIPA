@@ -183,11 +183,18 @@ def main(submit_arguments):
                 tokenized["labels"] = all_labels
                 return tokenized
 
+            if "test" in dataset_eval.keys():
+                dataset_eval = dataset_eval["test"]
+            elif "validation" in dataset_eval.keys():
+                dataset_eval = dataset_eval["validation"]
+            else:
+                dataset_eval = dataset_eval["train"]
+
             # apply to train/validation
             tokenized_datasets = dataset_eval.map(
                 tokenize_and_align_labels,
                 batched=True,
-                remove_columns=dataset_eval["train"].column_names,
+                remove_columns=dataset_eval.column_names,
             )
 
             def compute_metrics(eval_preds):
@@ -238,12 +245,7 @@ def main(submit_arguments):
                 else:
                     model.active_adapters = name
                 # we check if the dataset has a test set or a validation set
-                if "test" in tokenized_datasets.keys():
-                    eval_dataset = tokenized_datasets["test"]
-                elif "validation" in tokenized_datasets.keys():
-                    eval_dataset = tokenized_datasets["validation"]
-                else:
-                    eval_dataset = tokenized_datasets["train"]
+
                 eval_trainer = AdapterTrainer(
                     model=model,
                     args=TrainingArguments(
@@ -251,7 +253,7 @@ def main(submit_arguments):
                         remove_unused_columns=False,
                     ),
                     data_collator=data_collator,
-                    eval_dataset=eval_dataset,
+                    eval_dataset=tokenized_datasets,
                     compute_metrics=compute_metrics,
                 )
                 ev = eval_trainer.evaluate()
