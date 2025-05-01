@@ -151,6 +151,15 @@ def main(submit_arguments):
     if iterations == 0:
         print("No iterations given, exiting")
         return
+    if not custom_args.limit:
+        limit_str = ""
+    else:
+        if custom_args.limit < 1:
+            decimal = str(custom_args.limit).split(".")[1]
+            limit_str = f"_0{decimal}"
+        else:
+            limit_str = f"_{str(custom_args.limit)}"
+
     for i in range(iterations):
         eval_language = random.choice(eval_languages)
         eval_languages.remove(eval_language)
@@ -280,9 +289,8 @@ def main(submit_arguments):
             weights_dist = {}
             # we check if the adapter has already been created before
             for distance_type in distance_types:
-                adapter_name = f"reconstructed_{eval_language}_{distance_type}{'_' + str(custom_args.limit) if custom_args.limit else ''}"
-                adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}{'/' + str(custom_args.limit) if custom_args.limit else ''}"
-                weights_dist[distance_type] = {}
+                adapter_name = f"reconstructed_{eval_language}_{distance_type}{limit_str}"
+                adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}{limit_str}"
                 if os.path.exists(adapter_path):
                     print("Adapter already exists, loading instead")
                     model.load_adapter(
