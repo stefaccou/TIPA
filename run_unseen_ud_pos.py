@@ -332,19 +332,16 @@ def main(submit_arguments):
             print("evaluating on baseline (closest model + ud_pos adapter)")
             for distance_type in distance_types:
                 try:
-                    # we have the adapters, and weights
-                    adapters_weights = {}
                     # we have to calculate these if we skipped the adapter creation
+                    # we set limit to one so we only get the best adapter
                     if not weights[distance_type]:
                         target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
                         weights[distance_type] = typological_approximation(
-                            target_glot, get_glots(to_load), distance_type
+                            target_glot, get_glots(to_load), distance_type, 1
                         )
 
-                    for adapter, weight in zip(to_load.values(), weights[distance_type]):
-                        adapters_weights[adapter] = weight
                     # we load the closest adapter
-                    closest_adapter = max(adapters_weights, key=adapters_weights.get)
+                    closest_adapter = max(weights[distance_type], key=weights[distance_type].get)
                     print(
                         f"closest {distance_type} adapter is {closest_adapter} ({ld.get(closest_adapter, tag_type=TagType.BCP_47_CODE).english_name})"
                     )
