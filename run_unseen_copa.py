@@ -56,6 +56,15 @@ def main(submit_arguments):
             default=None,
             metadata={"help": ("The number of iterations to be run. ")},
         )
+        limit: Optional[float] = field(
+            default=None,
+            metadata={
+                "help": (
+                    "The limit for the distance types. If <1, it will remove all languages with a distance score lower than limit. "
+                    "If >=1, it works as a top-k languages filter with the highest similarity."
+                )
+            },
+        )
 
         def __post_init__(self):
             # we check if distance is in the list of available distances
@@ -130,6 +139,17 @@ def main(submit_arguments):
     if iterations == 0:
         print("No iterations given, exiting")
         return
+    if not custom_args.limit:
+        limit_str = ""
+        limit_p = ""
+    else:
+        if custom_args.limit < 1:
+            decimal = str(custom_args.limit).split(".")[1]
+            limit_str = f"_0{decimal}"
+            limit_p = f"/0{decimal}"
+        else:
+            limit_str = f"_{str(custom_args.limit)}"
+            limit_p = f"/{str(custom_args.limit)}"
     for i in range(iterations):
         eval_language = random.choice(eval_languages)
         eval_languages.remove(eval_language)
@@ -217,9 +237,8 @@ def main(submit_arguments):
 
             # we check if the adapter has already been created before
             for distance_type in distance_types:
-                adapter_name = f"reconstructed_{eval_language}_{distance_type}"
-                adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}"
-                weights[distance_type] = {}
+                adapter_name = f"reconstructed_{eval_language}_{distance_type}{limit_str}"
+                adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}{limit_p}"
                 if os.path.exists(adapter_path):
                     print("Adapter already exists, loading instead")
                     model.load_adapter(
@@ -229,8 +248,9 @@ def main(submit_arguments):
 
                 else:
                     target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
-                    weights[distance_type] = typological_approximation(target_glot, get_glots(to_load), distance_type)
-
+                    weights[distance_type] = typological_approximation(
+                        target_glot, get_glots(to_load), distance_type, custom_args.limit
+                    )
                     merge_loaded_adapters(
                         model, merge_adapter_name=adapter_name, weights=weights[distance_type], delete_other=False
                     )
@@ -269,19 +289,16 @@ def main(submit_arguments):
             print("evaluating on baseline (closest model + ner adapter)")
             for distance_type in distance_types:
                 try:
-                    # we have the adapters, and weights
-                    adapters_weights = {}
                     # we have to calculate these if we skipped the adapter creation
-                    if not weights[distance_type]:
+                    # we set limit to one so we only get the best adapter
+                    if distance_type not in weights.keys():
                         target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
                         weights[distance_type] = typological_approximation(
-                            target_glot, get_glots(to_load), distance_type
+                            target_glot, get_glots(to_load), distance_type, 1
                         )
 
-                    for adapter, weight in zip(to_load.values(), weights[distance_type]):
-                        adapters_weights[adapter] = weight
                     # we load the closest adapter
-                    closest_adapter = max(adapters_weights, key=adapters_weights.get)
+                    closest_adapter = max(weights[distance_type], key=weights[distance_type].get)
                     print(
                         f"closest {distance_type} adapter is {closest_adapter} ({ld.get(closest_adapter, tag_type=TagType.BCP_47_CODE).english_name})"
                     )
@@ -294,7 +311,10 @@ def main(submit_arguments):
             model.delete_adapter("copa")
 
             # we save this
-            with open(f"./trained_adapters/typological/{eval_language}/copa_eval.json", "w") as f:
+            with open(
+                f"./trained_adapters/typological/{eval_language}/pos_eval{limit_str}.json",
+                "w",
+            ) as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
 
@@ -326,12 +346,13 @@ if __name__ == "__main__":
     run_count = update_submission_log(experiments_dir, job_name)
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
+    partition = "gpu_h100"
     parameters = {
-        "slurm_partition": "gpu_h100",
+        "slurm_partition": partition,
         "slurm_time": "01:00:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
-            "clusters": "wice",
+            "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",
             "account": os.environ["ACCOUNT_INFO"],  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
