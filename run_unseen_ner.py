@@ -144,6 +144,12 @@ def main(submit_arguments):
                 f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
             )
             dataset_eval = load_dataset("wikiann", eval_language, trust_remote_code=True)
+            if "test" in dataset_eval.keys():
+                dataset_eval = dataset_eval["test"]
+            elif "validation" in dataset_eval.keys():
+                dataset_eval = dataset_eval["validation"]
+            else:
+                dataset_eval = dataset_eval["train"]
 
             def align_labels_with_tokens(labels, word_ids):
                 new_labels = []
@@ -184,12 +190,12 @@ def main(submit_arguments):
             tokenized_datasets = dataset_eval.map(
                 tokenize_and_align_labels,
                 batched=True,
-                remove_columns=dataset_eval["train"].column_names,
+                remove_columns=dataset_eval.column_names,
             )
 
             # dataset_en is now ready to be used with adapters for cross-lingual transfer
 
-            ner_feature = dataset_eval["train"].features["ner_tags"]
+            ner_feature = dataset_eval.features["ner_tags"]
 
             label_names = ner_feature.feature.names
 
@@ -225,7 +231,7 @@ def main(submit_arguments):
                         remove_unused_columns=False,
                     ),
                     data_collator=data_collator,
-                    eval_dataset=tokenized_datasets["validation"],
+                    eval_dataset=tokenized_datasets,
                     compute_metrics=compute_metrics,
                 )
                 ev = eval_trainer.evaluate()

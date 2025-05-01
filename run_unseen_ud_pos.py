@@ -118,9 +118,7 @@ def main(submit_arguments):
         except KeyError:
             # print(f"Language {lang} not in database, skipping")
             continue
-    # eval_languages = list(eval_languages_dict.keys())
-    eval_languages = ["yo", "kk", "cop"]
-    print(eval_languages)
+    eval_languages = list(eval_languages_dict.keys())
 
     tokenizer = XLMRobertaTokenizerFast.from_pretrained("xlm-roberta-base")
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
@@ -287,8 +285,8 @@ def main(submit_arguments):
                     target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
                     print(f"target glot found: {target_glot}")
                     weights[distance_type] = typological_approximation(target_glot, get_glots(to_load), distance_type)
-                    print("active adapters to be merged:")
-                    print(model.roberta.encoder.layer[0].output.adapters)
+                    # print("active adapters to be merged:")
+                    # print(model.roberta.encoder.layer[0].output.adapters)
                     merge_loaded_adapters(
                         model, merge_adapter_name=adapter_name, weights=weights[distance_type], delete_other=False
                     )
@@ -384,7 +382,7 @@ if __name__ == "__main__":
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     parameters = {
         "slurm_partition": "gpu_p100",
-        "slurm_time": "02:00:00",
+        "slurm_time": "04:00:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": "genius",

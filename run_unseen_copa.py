@@ -187,7 +187,7 @@ def main(submit_arguments):
                         output_dir="./eval_output",
                         remove_unused_columns=False,
                     ),
-                    eval_dataset=dataset_eval["test"],
+                    eval_dataset=dataset_eval,
                     compute_metrics=compute_accuracy,
                 )
                 ev = eval_trainer.evaluate()
@@ -204,6 +204,12 @@ def main(submit_arguments):
                 return ev
 
             # we preprocess the dataset
+            if "test" in dataset_eval:
+                dataset_eval = dataset_eval["test"]
+            elif "validation" in dataset_eval:
+                dataset_eval = dataset_eval["validation"]
+            else:
+                dataset_eval = dataset_eval["train"]
             dataset_eval = preprocess_dataset(dataset_eval)
 
             evaluations = {}
