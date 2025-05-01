@@ -237,7 +237,13 @@ def main(submit_arguments):
                     model.active_adapters = Stack(name, "ud_pos")
                 else:
                     model.active_adapters = name
-
+                # we check if the dataset has a test set or a validation set
+                if "test" in tokenized_datasets.keys():
+                    eval_dataset = tokenized_datasets["test"]
+                elif "validation" in tokenized_datasets.keys():
+                    eval_dataset = tokenized_datasets["validation"]
+                else:
+                    eval_dataset = tokenized_datasets["train"]
                 eval_trainer = AdapterTrainer(
                     model=model,
                     args=TrainingArguments(
@@ -245,7 +251,7 @@ def main(submit_arguments):
                         remove_unused_columns=False,
                     ),
                     data_collator=data_collator,
-                    eval_dataset=tokenized_datasets["validation"],
+                    eval_dataset=eval_dataset,
                     compute_metrics=compute_metrics,
                 )
                 ev = eval_trainer.evaluate()
@@ -280,7 +286,7 @@ def main(submit_arguments):
                     print(f"target glot found: {target_glot}")
                     weights[distance_type] = typological_approximation(target_glot, get_glots(to_load), distance_type)
                     print("active adapters to be merged:")
-                    print(model.roberta.encoder.layer["0"].output.adapters)
+                    print(model.roberta.encoder.layer[0].output.adapters)
                     merge_loaded_adapters(
                         model, merge_adapter_name=adapter_name, weights=weights[distance_type], delete_other=False
                     )
