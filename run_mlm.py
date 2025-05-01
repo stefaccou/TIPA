@@ -714,7 +714,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "debug_fineweb2_basque_mlm"
+    job_name = "fineweb2_basque_mlm"
 
     master_dir = find_master()
 
@@ -724,10 +724,10 @@ if __name__ == "__main__":
     run_count = update_submission_log(experiments_dir, job_name)
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
-    partition = "gpu_a100_debug"  # Change this to your desired partition
+    partition = "gpu_a100"  # Change this to your desired partition
     parameters = {
         "slurm_partition": partition,
-        "slurm_time": "01:00:00",
+        "slurm_time": "10:00:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",
