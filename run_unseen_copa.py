@@ -65,6 +65,15 @@ def main(submit_arguments):
                 )
             },
         )
+        save_adapter: Optional[bool] = field(
+            default=False,
+            metadata={
+                "help": (
+                    "Whether to save the adapter after training. "
+                    "If True, it will save the adapter to the trained_adapters folder."
+                )
+            },
+        )
 
         def __post_init__(self):
             # we check if distance is in the list of available distances
@@ -256,9 +265,10 @@ def main(submit_arguments):
                     )
                     # save this adapter
                     # check if directory exists first
-                    if not os.path.exists(adapter_path):
-                        os.makedirs(adapter_path)
-                    model.save_adapter(adapter_path, adapter_name)
+                    if custom_args.save_adapter:
+                        if not os.path.exists(adapter_path):
+                            os.makedirs(adapter_path)
+                        model.save_adapter(adapter_path, adapter_name)
                 model.load_adapter("./trained_adapters/copa", load_as="copa")
                 print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
                 evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
