@@ -278,12 +278,12 @@ def main(submit_arguments):
                 return ev
 
             evaluations = {}
-            weights = {}
+            weights_dist = {}
             # we check if the adapter has already been created before
             for distance_type in distance_types:
                 adapter_name = f"reconstructed_{eval_language}_{distance_type}{limit_str}"
                 adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}{limit_p}"
-                weights[distance_type] = {}
+                weights_dist[distance_type] = {}
                 if os.path.exists(adapter_path):
                     print("Adapter already exists, loading instead")
                     model.load_adapter(
@@ -293,12 +293,12 @@ def main(submit_arguments):
 
                 else:
                     target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
-                    weights[distance_type] = typological_approximation(
+                    weights_dist[distance_type] = typological_approximation(
                         target_glot, get_glots(to_load), distance_type, custom_args.limit
                     )
 
                     merge_loaded_adapters(
-                        model, merge_adapter_name=adapter_name, weights=weights[distance_type], delete_other=False
+                        model, merge_adapter_name=adapter_name, weights=weights_dist[distance_type], delete_other=False
                     )
                     # save this adapter
                     # check if directory exists first
@@ -334,14 +334,14 @@ def main(submit_arguments):
                 try:
                     # we have to calculate these if we skipped the adapter creation
                     # we set limit to one so we only get the best adapter
-                    if distance_type not in weights.keys():
+                    if distance_type not in weights_dist.keys():
                         target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
-                        weights[distance_type] = typological_approximation(
+                        weights_dist[distance_type] = typological_approximation(
                             target_glot, get_glots(to_load), distance_type, 1
                         )
 
                     # we load the closest adapter
-                    closest_adapter = max(weights[distance_type], key=weights[distance_type].get)
+                    closest_adapter = max(weights_dist[distance_type], key=weights_dist[distance_type].get)
                     print(
                         f"closest {distance_type} adapter is {closest_adapter} ({ld.get(closest_adapter, tag_type=TagType.BCP_47_CODE).english_name})"
                     )
