@@ -92,7 +92,7 @@ def merge_loaded_adapters(
 
     if weights is None or weights == {}:
         weights = {adapter: 1 / len(all_adapters) for adapter in all_adapters}
-    print("weights:", weights)
+
     if not patterns:
         patterns = [
             f"{model_type}\.encoder\.layer\.(?P<one>[\d\w]+)\.output\.adapters\.(?P<adapter>\w+)\.(?P<two>\w+)(?:\.0)?\.(?P<three>\w+)",
@@ -192,10 +192,10 @@ def typological_approximation(target, glots, distance_type, limit=None):
         if limit < 1:
             for lang, dist in list(weights.items()):
                 if dist < limit:
-                    print(f"Removing {lang} with distance {dist}")
+                    # print(f"Removing {lang} with distance {dist}")
                     del weights[lang]
         else:  # we take the best n (limit) languages
-            n = int(min(limit, len(weights)))
+            n = min(limit, len(weights))
             # we sort the weights
             sorted_weights = sorted(weights.items(), key=lambda x: x[1], reverse=True)
             # we take the first n
@@ -203,11 +203,11 @@ def typological_approximation(target, glots, distance_type, limit=None):
             # we convert back to dict
             weights = {k: v for k, v in sorted_weights}
 
-    print(f"Weights before softmax: {weights}")
+    # print(f"Weights before softmax: {weights}")
     soft_weights = torch.softmax(torch.tensor(list(weights.values())), dim=0)
     # we need to convert to list
     soft_weights = soft_weights.tolist()
     # we zippedly return the keys and normalized values
     weights = {k: v for k, v in zip(weights.keys(), soft_weights)}
-    print(f"Weights after softmax: {weights}")
+    # print(f"Weights after softmax: {weights}")
     return weights
