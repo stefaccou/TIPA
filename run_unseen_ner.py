@@ -161,6 +161,7 @@ def main(submit_arguments):
             limit_str = f"_0{decimal}"
             limit_p = f"/0{decimal}"
         else:
+            custom_args.limit = int(custom_args.limit)
             limit_str = f"_{str(custom_args.limit)}"
             limit_p = f"/{str(custom_args.limit)}"
 

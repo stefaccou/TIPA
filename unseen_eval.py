@@ -113,7 +113,7 @@ def merge_loaded_adapters(
                 three = match.group("three")
                 adapter_name = match.group("adapter")
                 if adapter_name not in weights.keys():
-                    print(f"Adapter {adapter_name} not in weights")
+                    # print(f"Adapter {adapter_name} not in weights")
                     continue
                 if one not in organized_layers[i]:
                     organized_layers[i][one] = {}
