@@ -424,7 +424,7 @@ if __name__ == "__main__":
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,
             "mail_type": "BEGIN,END,FAIL",
-            "mail_user": "stef.accou@student.kuleuven.be",
+            "mail_user": f"{'' if partition.endswith('debug') else 'stef.accou@student.kuleuven.be'}",
         },
     }
 
