@@ -199,7 +199,9 @@ def typological_approximation(target, glots, distance_type, limit=None):
             # we sort the weights
             sorted_weights = sorted(weights.items(), key=lambda x: x[1], reverse=True)
             # we take the first n
-            print(n, sorted_weights, len(sorted_weights))
+            print("before filtering", weights)
+            print("after filtering", sorted_weights)
+            print(n, "chosen:", len(sorted_weights))
             sorted_weights = sorted_weights[:n]
             # we convert back to dict
             weights = {k: v for k, v in sorted_weights}
