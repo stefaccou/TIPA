@@ -379,7 +379,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "debug_unseen_ner"
+    job_name = "unseen_ner"
 
     master_dir = find_master()
 
