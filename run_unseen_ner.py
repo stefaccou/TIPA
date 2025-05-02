@@ -332,6 +332,11 @@ def main(submit_arguments):
                 # delete the adapter for further iterations
                 model.delete_adapter("ner")
 
+            model.load_adapter("./trained_adapters/ner", load_as="ner")
+            # we calculate the baseline of using the english language model and the ner adapter
+            print("evaluating on baseline (english model + ner adapter)")
+            evaluations["baseline_en_ner"] = run_eval(model, "en")
+            model.delete_adapter("ner")
             if not custom_args.disable_baselines:
                 model.load_adapter("./trained_adapters/ner", load_as="ner")
                 print("evaluating on baseline (only task adapter")
