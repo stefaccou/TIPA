@@ -354,7 +354,7 @@ if __name__ == "__main__":
     run_count = update_submission_log(experiments_dir, job_name)
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
-    partition = "gpu_h100"
+    partition = "gpu_p100"
     parameters = {
         "slurm_partition": partition,
         "slurm_time": f"{'00:10:00' if partition.endswith('debug') else '01:00:00'}",
@@ -366,7 +366,7 @@ if __name__ == "__main__":
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,
             "mail_type": "BEGIN,END,FAIL",
-            "mail_user": "stef.accou@student.kuleuven.be",
+            "mail_user": f"{'' if partition.endswith('debug') else 'stef.accou@student.kuleuven.be'}",
         },
     }
 
