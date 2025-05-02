@@ -34,6 +34,15 @@ def main(submit_arguments):
 
         """
 
+        baselines: Optional[bool] = field(
+            default=True,
+            metadata={
+                "help": (
+                    "Whether to calculate the baselines. "
+                    "Default True, it will calculate the baselines for the adapter combinations."
+                )
+            },
+        )
         distance_types_list: Optional[List[str]] = field(
             default=None,
             metadata={
@@ -73,6 +82,15 @@ def main(submit_arguments):
                 "help": (
                     "Whether to save the adapter after training. "
                     "If True, it will save the adapter to the trained_adapters folder."
+                )
+            },
+        )
+        output_name: Optional[str] = field(
+            default=None,
+            metadata={
+                "help": (
+                    "The name of the output file. "
+                    "If not specified, it will be saved as ner_eval.json in the trained_adapters folder."
                 )
             },
         )
@@ -314,48 +332,55 @@ def main(submit_arguments):
                 # delete the adapter for further iterations
                 model.delete_adapter("ner")
 
-            model.load_adapter("./trained_adapters/ner", load_as="ner")
-            print("evaluating on baseline (only task adapter")
-            # we calculate a baseline (just ner adapter)
-            evaluations["baseline_ner"] = run_eval(model, "ner")
+            if custom_args.baselines:
+                model.load_adapter("./trained_adapters/ner", load_as="ner")
+                print("evaluating on baseline (only task adapter")
+                # we calculate a baseline (just ner adapter)
+                evaluations["baseline_ner"] = run_eval(model, "ner")
 
-            # we calculate a baseline (just average over all adapter)
-            # we load the mono/huge_avg_adapter for this
-            print("evaluating on baseline (non-weighted average)")
-            model.load_adapter("./trained_adapters/typological/huge_avg_adapter", load_as="huge_avg_adapter")
-            evaluations["baseline_avg_adapter"] = run_eval(model, "huge_avg_adapter")
+                # we calculate a baseline (just average over all adapter)
+                # we load the mono/huge_avg_adapter for this
+                print("evaluating on baseline (non-weighted average)")
+                model.load_adapter("./trained_adapters/typological/huge_avg_adapter", load_as="huge_avg_adapter")
+                evaluations["baseline_avg_adapter"] = run_eval(model, "huge_avg_adapter")
 
-            # we calculate the baseline of using the english language model and the ner adapter
-            print("evaluating on baseline (english model + ner adapter)")
-            evaluations["baseline_en_ner"] = run_eval(model, "en")  # en is in the list of available adapters
+                # we calculate the baseline of using the english language model and the ner adapter
+                print("evaluating on baseline (english model + ner adapter)")
+                evaluations["baseline_en_ner"] = run_eval(model, "en")  # en is in the list of available adapters
 
-            # we calculate the baseline of using the typologically closest model and the ner adapter
-            print("evaluating on baseline (closest model + ner adapter)")
-            for distance_type in distance_types:
-                try:
-                    # we have to calculate these if we skipped the adapter creation
-                    # we set limit to one so we only get the best adapter
-                    if distance_type not in weights.keys():
-                        target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
-                        weights[distance_type] = typological_approximation(
-                            target_glot, get_glots(to_load), distance_type, 1
+                # we calculate the baseline of using the typologically closest model and the ner adapter
+                print("evaluating on baseline (closest model + ner adapter)")
+                for distance_type in distance_types:
+                    try:
+                        # we have to calculate these if we skipped the adapter creation
+                        # we set limit to one so we only get the best adapter
+                        if distance_type not in weights.keys():
+                            target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
+                            weights[distance_type] = typological_approximation(
+                                target_glot, get_glots(to_load), distance_type, 1
+                            )
+
+                        # we load the closest adapter
+                        closest_adapter = max(weights[distance_type], key=weights[distance_type].get)
+                        print(
+                            f"closest {distance_type} adapter is {closest_adapter} ({ld.get(closest_adapter, tag_type=TagType.BCP_47_CODE).english_name})"
                         )
+                        evaluations["baseline_closest_ner"] = run_eval(model, closest_adapter)
+                    except Exception as e:
+                        print(f"Error finding closest adapter: {e}")
 
-                    # we load the closest adapter
-                    closest_adapter = max(weights[distance_type], key=weights[distance_type].get)
-                    print(
-                        f"closest {distance_type} adapter is {closest_adapter} ({ld.get(closest_adapter, tag_type=TagType.BCP_47_CODE).english_name})"
-                    )
-                    evaluations["baseline_closest_ner"] = run_eval(model, closest_adapter)
-                except Exception as e:
-                    print(f"Error finding closest adapter: {e}")
-
-            # we delete the added adapters
-            model.delete_adapter("huge_avg_adapter")
-            model.delete_adapter("ner")
+                # we delete the added adapters
+                model.delete_adapter("huge_avg_adapter")
+                model.delete_adapter("ner")
 
             # we save this
-            with open(f"./trained_adapters/typological/{eval_language}/ner_eval{limit_str}.json", "w") as f:
+            if custom_args.output_name:
+                output_file = (
+                    f"./trained_adapters/typological/{eval_language}/{custom_args.output_name}{limit_str}.json"
+                )
+            else:
+                output_file = f"./trained_adapters/typological/{eval_language}/ner_eval{limit_str}.json"
+            with open(output_file, "w") as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
             # we write the language name to "done languages"
