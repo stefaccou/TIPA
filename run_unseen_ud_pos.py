@@ -169,6 +169,7 @@ def main(submit_arguments):
             limit_str = f"_0{decimal}"
             limit_p = f"/0{decimal}"
         else:
+            custom_args.limit = int(custom_args.limit)
             limit_str = f"_{str(custom_args.limit)}"
             limit_p = f"/{str(custom_args.limit)}"
 
@@ -397,7 +398,7 @@ def main(submit_arguments):
         except KeyError as e:
             # with open(failed_file_template.format(distance_type), "a") as f:
             #    f.write(f"{eval_language}\n")
-            print(f"KeyError {e}, (qq unseen language) skipping this language")
+            print(f"KeyError {e}, skipping this language")
 
 
 if __name__ == "__main__":
@@ -413,8 +414,8 @@ if __name__ == "__main__":
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     partition = "gpu_p100"
     parameters = {
-        "slurm_partition": "gpu_p100",
-        "slurm_time": "02:00:00",
+        "slurm_partition": partition,
+        "slurm_time": f"{'00:10:00' if partition.endswith('debug') else '02:00:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",

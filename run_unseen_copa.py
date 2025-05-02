@@ -157,6 +157,7 @@ def main(submit_arguments):
             limit_str = f"_0{decimal}"
             limit_p = f"/0{decimal}"
         else:
+            custom_args.limit = int(custom_args.limit)
             limit_str = f"_{str(custom_args.limit)}"
             limit_p = f"/{str(custom_args.limit)}"
     for i in range(iterations):
@@ -294,9 +295,6 @@ def main(submit_arguments):
 
             # we calculate the baseline of using the typologically closest model and the ner adapter
             print("evaluating on baseline (closest model + copa adapter)")
-
-            # we calculate the baseline of using the typologically closest model and the ner adapter
-            print("evaluating on baseline (closest model + ner adapter)")
             for distance_type in distance_types:
                 try:
                     # we have to calculate these if we skipped the adapter creation
@@ -328,21 +326,21 @@ def main(submit_arguments):
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
 
-        except RuntimeError:
-            print("RuntimeError, skipping this language")
+        except RuntimeError as e:
+            print(f"RuntimeError {e}, skipping this language")
             # we write this language to a file so we do not check it again
             # with open(failed_file_template.format(distance_type), "a") as f:
             #    f.write(f"{eval_language}\n")
             continue
-        except IndexError:
-            print("IndexError, skipping this language")
+        except IndexError as e:
+            print(f"IndexError {e}, skipping this language")
             # with open(failed_file_template.format(distance_type), "a") as f:
             #    f.write(f"{eval_language}\n")
             continue
-        except KeyError:
+        except KeyError as e:
             # with open(failed_file_template.format(distance_type), "a") as f:
             #    f.write(f"{eval_language}\n")
-            print("KeyError, (qq unseen language) skipping this language")
+            print(f"KeyError {e}, skipping this language")
 
 
 if __name__ == "__main__":
@@ -359,7 +357,7 @@ if __name__ == "__main__":
     partition = "gpu_h100"
     parameters = {
         "slurm_partition": partition,
-        "slurm_time": "01:00:00",
+        "slurm_time": f"{'00:10:00' if partition.endswith('debug') else '01:00:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",
