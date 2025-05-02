@@ -199,13 +199,9 @@ def typological_approximation(target, glots, distance_type, limit=None):
             # we sort the weights
             sorted_weights = sorted(weights.items(), key=lambda x: x[1], reverse=True)
             # we take the first n
-            print("before filtering", weights)
-            print("after filtering", sorted_weights)
-            print(n, "chosen:", len(sorted_weights))
             sorted_weights = sorted_weights[:n]
             # we convert back to dict
             weights = {k: v for k, v in sorted_weights}
-            print(f"Keeping top {n} languages: {weights}")
 
     print(f"Weights before softmax: {weights}")
     soft_weights = torch.softmax(torch.tensor(list(weights.values())), dim=0)
