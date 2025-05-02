@@ -34,7 +34,7 @@ def main(submit_arguments):
 
         """
 
-        baselines: Optional[bool] = field(
+        disable_baselines: Optional[bool] = field(
             default=True,
             metadata={
                 "help": (
@@ -332,7 +332,7 @@ def main(submit_arguments):
                 # delete the adapter for further iterations
                 model.delete_adapter("ner")
 
-            if custom_args.baselines:
+            if not custom_args.disable_baselines:
                 model.load_adapter("./trained_adapters/ner", load_as="ner")
                 print("evaluating on baseline (only task adapter")
                 # we calculate a baseline (just ner adapter)
