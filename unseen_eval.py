@@ -195,12 +195,11 @@ def typological_approximation(target, glots, distance_type, limit=None):
                     print(f"Removing {lang} with distance {dist}")
                     del weights[lang]
         else:  # we take the best n (limit) languages
-            n = min(limit, len(weights))
-            print(n)
+            n = int(min(limit, len(weights)))
             # we sort the weights
             sorted_weights = sorted(weights.items(), key=lambda x: x[1], reverse=True)
-            print(type(sorted_weights), sorted_weights)
             # we take the first n
+            print(n, sorted_weights, len(sorted_weights))
             sorted_weights = sorted_weights[:n]
             # we convert back to dict
             weights = {k: v for k, v in sorted_weights}
