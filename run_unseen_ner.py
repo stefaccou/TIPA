@@ -360,21 +360,21 @@ def main(submit_arguments):
             # we write the language name to "done languages"
             # with open(done_file, "a") as f:
             #    f.write(f"{eval_language}\n")
-        except RuntimeError:
-            print("RuntimeError, skipping this language")
+        except RuntimeError as e:
+            print(f"RuntimeError {e}, skipping this language")
             # we write this language to a file so we do not check it again
             # with open(failed_file_template.format(distance_type), "a") as f:
             #    f.write(f"{eval_language}\n")
             continue
-        except IndexError:
-            print("IndexError, skipping this language")
+        except IndexError as e:
+            print(f"IndexError {e}, skipping this language")
             # with open(failed_file_template.format(distance_type), "a") as f:
             #    f.write(f"{eval_language}\n")
             continue
-        except KeyError:
+        except KeyError as e:
             # with open(failed_file_template.format(distance_type), "a") as f:
             #    f.write(f"{eval_language}\n")
-            print("KeyError, (qq unseen language) skipping this language")
+            print(f"KeyError {e}, skipping this language")
 
 
 if __name__ == "__main__":
