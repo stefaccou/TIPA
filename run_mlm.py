@@ -714,7 +714,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "fineweb2_basque_mlm"
+    job_name = "fineweb2_serbian_mlm"
 
     master_dir = find_master()
 
@@ -727,7 +727,7 @@ if __name__ == "__main__":
     partition = "gpu_a100"  # Change this to your desired partition
     parameters = {
         "slurm_partition": partition,
-        "slurm_time": "04:00:00",
+        "slurm_time": "14:00:00",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",
