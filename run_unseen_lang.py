@@ -173,7 +173,7 @@ def main(submit_arguments):
         try:
             print(
                 "\n\n",
-                f"Evaluating {task}on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
+                f"Evaluating {task} on {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
             )
 
             # Load and preprocess the dataset
@@ -226,7 +226,7 @@ def main(submit_arguments):
             # we check if the adapter has already been created before
             for distance_type in distance_types:
                 adapter_name = f"reconstructed_{eval_language}_{distance_type}{limit_str}"
-                adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}{limit_p}"
+                adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}_extended_{limit_p}"
                 weights[distance_type] = {}
                 if os.path.exists(adapter_path):
                     print("Adapter already exists, loading instead")
@@ -283,7 +283,7 @@ def main(submit_arguments):
                     try:
                         # we have to calculate these if we skipped the adapter creation
                         # we set limit to one so we only get the best adapter
-                        if distance_type not in weights.keys():
+                        if weights[distance_type] == {}:
                             target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
                             weights[distance_type] = typological_approximation(
                                 target_glot, get_glots(to_load), distance_type, 1
