@@ -36,7 +36,7 @@ def get_eval_languages(task):
         eval_languages = get_dataset_config_names(task2ds[task])
         return {lan: lan for lan in eval_languages if len(lan) <= 3}
     elif task == "pos":
-        ud_datasets = get_dataset_config_names(task2ds)
+        ud_datasets = get_dataset_config_names(task2ds[task])
         eval_languages = {}
         for ds in ud_datasets:
             lang = ds.split("_")[0]
