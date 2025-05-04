@@ -268,7 +268,7 @@ def main(submit_arguments):
             print("evaluating on baseline (english model + task adapter)")
             evaluations["baseline_en"] = run_eval(model, "en")
             model.delete_adapter(task)
-            if custom_args.disable_baselines:
+            if not custom_args.disable_baselines:
                 model.load_adapter(f"./trained_adapters/{task}", load_as=task)
                 print("evaluating on baseline (only task adapter")
                 # we calculate a baseline (just task adapter)
@@ -278,11 +278,6 @@ def main(submit_arguments):
                 print("evaluating on baseline (non-weighted average)")
                 model.load_adapter("./trained_adapters/typological/huge_avg_adapter", load_as="huge_avg_adapter")
                 evaluations["baseline_avg_adapter"] = run_eval(model, "huge_avg_adapter")
-
-                # we calculate the baseline of using the english language model and the task adapter
-                print("evaluating on baseline (english model + task adapter)")
-                evaluations["baseline_en_task"] = run_eval(model, "en")  # en is in the list of available adapters
-
                 # we calculate the baseline of using the typologically closest model and the task adapter
                 print("evaluating on baseline (closest model + task adapter)")
                 for distance_type in distance_types:
