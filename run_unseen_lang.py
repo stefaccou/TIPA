@@ -259,13 +259,13 @@ def main(submit_arguments):
                 evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
                 model.delete_adapter(adapter_name)
                 # delete the adapter for further iterations
-                model.delete_adapter("ner")
+                model.delete_adapter(task)
 
             model.load_adapter(f"./trained_adapters/{task}", load_as=task)
             # we calculate the baseline of using the english language model and the ner adapter
-            print("evaluating on baseline (english model + ner adapter)")
+            print("evaluating on baseline (english model + task adapter)")
             evaluations["baseline_en_ner"] = run_eval(model, "en")
-            model.delete_adapter("ner")
+            model.delete_adapter(task)
             if custom_args.disable_baselines:
                 model.load_adapter(f"./trained_adapters/{task}", load_as=task)
                 print("evaluating on baseline (only task adapter")
