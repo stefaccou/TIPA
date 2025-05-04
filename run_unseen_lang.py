@@ -138,9 +138,11 @@ def main(submit_arguments):
     else:
         distance_types = ["featural"]
 
-    eval_languages = get_eval_languages(custom_args.task)
+    task = custom_args.task
 
-    Tokenizer = XLMRobertaTokenizerFast if custom_args.task == "pos" else AutoTokenizer
+    eval_languages = get_eval_languages(task)
+
+    Tokenizer = XLMRobertaTokenizerFast if task == "pos" else AutoTokenizer
     tokenizer = Tokenizer.from_pretrained("xlm-roberta-base")
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 
@@ -171,14 +173,14 @@ def main(submit_arguments):
         try:
             print(
                 "\n\n",
-                f"Evaluating {custom_args.task}on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
+                f"Evaluating {task}on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
             )
 
             # Load and preprocess the dataset
-            dataset_eval = load_eval(custom_args.task, eval_language, eval_languages)
-            tokenized_datasets = preprocess(dataset_eval, custom_args.task, tokenizer)
+            dataset_eval = load_eval(task, eval_language, eval_languages)
+            tokenized_datasets = preprocess(dataset_eval, task, tokenizer)
 
-            if custom_args.task == "ner":
+            if task == "ner":
                 ner_feature = dataset_eval.features["ner_tags"]
                 label_names = ner_feature.feature.names
             else:
@@ -188,8 +190,8 @@ def main(submit_arguments):
 
             def run_eval(model, name):
                 # we load in the task adapter
-                if not name == custom_args.task:
-                    model.active_adapters = Stack(name, custom_args.task)
+                if not name == task:
+                    model.active_adapters = Stack(name, task)
                 else:
                     model.active_adapters = name
                 # prepare the common arguments
@@ -200,10 +202,10 @@ def main(submit_arguments):
                         remove_unused_columns=False,
                     ),
                     "eval_dataset": tokenized_datasets,
-                    "compute_metrics": get_compute_metrics(custom_args.task, label_names),
+                    "compute_metrics": get_compute_metrics(task, label_names),
                 }
                 # only include data_collator if task isn’t “copa”
-                if custom_args.task != "copa":
+                if task != "copa":
                     trainer_kwargs["data_collator"] = data_collator
                 # instantiate
                 eval_trainer = AdapterTrainer(**trainer_kwargs)
@@ -248,24 +250,23 @@ def main(submit_arguments):
                         if not os.path.exists(adapter_path):
                             os.makedirs(adapter_path)
                         model.save_adapter(adapter_path, adapter_name)
-                model.load_adapter("./trained_adapters/ner", load_as="ner")
+                model.load_adapter(f"./trained_adapters/{task}", load_as=task)
                 print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
                 evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
                 model.delete_adapter(adapter_name)
                 # delete the adapter for further iterations
                 model.delete_adapter("ner")
 
-            model.load_adapter("./trained_adapters/ner", load_as="ner")
+            model.load_adapter(f"./trained_adapters/{task}", load_as=task)
             # we calculate the baseline of using the english language model and the ner adapter
             print("evaluating on baseline (english model + ner adapter)")
             evaluations["baseline_en_ner"] = run_eval(model, "en")
             model.delete_adapter("ner")
-            if not custom_args.disable_baselines:
-                model.load_adapter("./trained_adapters/ner", load_as="ner")
+            if custom_args.disable_baselines:
+                model.load_adapter(f"./trained_adapters/{task}", load_as=task)
                 print("evaluating on baseline (only task adapter")
                 # we calculate a baseline (just ner adapter)
-                evaluations["baseline_ner"] = run_eval(model, "ner")
-
+                evaluations["baseline_task_adapter"] = run_eval(model, task)
                 # we calculate a baseline (just average over all adapter)
                 # we load the mono/huge_avg_adapter for this
                 print("evaluating on baseline (non-weighted average)")
@@ -273,11 +274,11 @@ def main(submit_arguments):
                 evaluations["baseline_avg_adapter"] = run_eval(model, "huge_avg_adapter")
 
                 # we calculate the baseline of using the english language model and the ner adapter
-                print("evaluating on baseline (english model + ner adapter)")
-                evaluations["baseline_en_ner"] = run_eval(model, "en")  # en is in the list of available adapters
+                print("evaluating on baseline (english model + task adapter)")
+                evaluations["baseline_en_task"] = run_eval(model, "en")  # en is in the list of available adapters
 
                 # we calculate the baseline of using the typologically closest model and the ner adapter
-                print("evaluating on baseline (closest model + ner adapter)")
+                print("evaluating on baseline (closest model + task adapter)")
                 for distance_type in distance_types:
                     try:
                         # we have to calculate these if we skipped the adapter creation
@@ -293,13 +294,13 @@ def main(submit_arguments):
                         print(
                             f"closest {distance_type} adapter is {closest_adapter} ({ld.get(closest_adapter, tag_type=TagType.BCP_47_CODE).english_name})"
                         )
-                        evaluations["baseline_closest_ner"] = run_eval(model, closest_adapter)
+                        evaluations[f"baseline_closest_{distance_type}"] = run_eval(model, closest_adapter)
                     except Exception as e:
                         print(f"Error finding closest adapter: {e}")
 
                 # we delete the added adapters
                 model.delete_adapter("huge_avg_adapter")
-                model.delete_adapter("ner")
+                model.delete_adapter(task)
 
             # we save this
             if custom_args.output_name:
@@ -307,7 +308,7 @@ def main(submit_arguments):
                     f"./trained_adapters/typological/{eval_language}/{custom_args.output_name}{limit_str}.json"
                 )
             else:
-                output_file = f"./trained_adapters/typological/{eval_language}/ner_eval{limit_str}.json"
+                output_file = f"./trained_adapters/typological/{eval_language}/{task}_eval{limit_str}.json"
             with open(output_file, "w") as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
