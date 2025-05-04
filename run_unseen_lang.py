@@ -94,7 +94,7 @@ def main(submit_arguments):
             metadata={
                 "help": (
                     "The name of the output file. "
-                    "If not specified, it will be saved as ner_eval.json in the trained_adapters folder."
+                    "If not specified, it will be saved as task_eval.json in the trained_adapters folder."
                 )
             },
         )
@@ -262,14 +262,14 @@ def main(submit_arguments):
                 model.delete_adapter(task)
 
             model.load_adapter(f"./trained_adapters/{task}", load_as=task)
-            # we calculate the baseline of using the english language model and the ner adapter
+            # we calculate the baseline of using the english language model and the task adapter
             print("evaluating on baseline (english model + task adapter)")
-            evaluations["baseline_en_ner"] = run_eval(model, "en")
+            evaluations["baseline_en"] = run_eval(model, "en")
             model.delete_adapter(task)
             if custom_args.disable_baselines:
                 model.load_adapter(f"./trained_adapters/{task}", load_as=task)
                 print("evaluating on baseline (only task adapter")
-                # we calculate a baseline (just ner adapter)
+                # we calculate a baseline (just task adapter)
                 evaluations["baseline_task_adapter"] = run_eval(model, task)
                 # we calculate a baseline (just average over all adapter)
                 # we load the mono/huge_avg_adapter for this
@@ -277,11 +277,11 @@ def main(submit_arguments):
                 model.load_adapter("./trained_adapters/typological/huge_avg_adapter", load_as="huge_avg_adapter")
                 evaluations["baseline_avg_adapter"] = run_eval(model, "huge_avg_adapter")
 
-                # we calculate the baseline of using the english language model and the ner adapter
+                # we calculate the baseline of using the english language model and the task adapter
                 print("evaluating on baseline (english model + task adapter)")
                 evaluations["baseline_en_task"] = run_eval(model, "en")  # en is in the list of available adapters
 
-                # we calculate the baseline of using the typologically closest model and the ner adapter
+                # we calculate the baseline of using the typologically closest model and the task adapter
                 print("evaluating on baseline (closest model + task adapter)")
                 for distance_type in distance_types:
                     try:
