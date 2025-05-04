@@ -38,6 +38,9 @@ def main(submit_arguments):
 
         """
 
+        task: str = field(
+            metadata={"help": ("The task to perform (ner, copa or pos)")},
+        )
         disable_baselines: Optional[bool] = field(
             default=True,
             metadata={
@@ -94,10 +97,6 @@ def main(submit_arguments):
                     "If not specified, it will be saved as ner_eval.json in the trained_adapters folder."
                 )
             },
-        )
-        task: Optional[str] = field(
-            default="ner",
-            metadata={"help": ("The task to perform (ner, copa or pos)")},
         )
 
         def __post_init__(self):
@@ -333,7 +332,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "unseen_ner"
+    job_name = "unseen_task"
 
     master_dir = find_master()
 
