@@ -309,7 +309,7 @@ def main(submit_arguments):
             # we save this
             if custom_args.output_name:
                 output_file = (
-                    f"./trained_adapters/typological/{eval_language}/{custom_args.output_name}{limit_str}.json"
+                    f"./trained_adapters/typological/{eval_language}/{task}_{custom_args.output_name}{limit_str}.json"
                 )
             else:
                 output_file = f"./trained_adapters/typological/{eval_language}/{task}_eval{limit_str}.json"
