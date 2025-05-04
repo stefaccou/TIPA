@@ -20,7 +20,6 @@ def main(submit_arguments):
     import torch
     import numpy as np
     import evaluate
-    import random
     from urielplus import urielplus
     from qq import LanguageData, TagType
 
@@ -182,10 +181,7 @@ def main(submit_arguments):
             limit_str = f"_{str(custom_args.limit)}"
             limit_p = f"/{str(custom_args.limit)}"
 
-    for i in range(iterations):
-        eval_language = random.choice(eval_languages)
-        eval_languages.remove(eval_language)
-
+    for eval_language in eval_languages:
         try:
             print(
                 "\n\n",
@@ -330,6 +326,7 @@ def main(submit_arguments):
                 model.delete_adapter(adapter_name)
                 # delete the adapter for further iterations
                 model.delete_adapter("ner")
+
             for distance_type in distance_types:
                 for lang in eval_languages:
                     adapter_name = f"reconstructed_{eval_language}_{distance_type}{limit_str}_extended_{lang}"
@@ -371,6 +368,7 @@ def main(submit_arguments):
                     model.delete_adapter("ner")
                     model.delete_adapter(lang)
                     del to_load["Added_adapter"]
+
                 target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
                 # we do the same for both
                 model.load_adapter("./trained_adapters/eu", load_as="eu")
@@ -486,7 +484,6 @@ if __name__ == "__main__":
     partition = "gpu_p100"
     parameters = {
         "slurm_partition": partition,
-        # "slurm_time": "03:00:00",
         "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '03:30:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
@@ -495,7 +492,7 @@ if __name__ == "__main__":
             "nodes": 1,
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,
-            "mail_type": "BEGIN,END,FAIL",
+            "mail_type": "",  # "BEGIN,END,FAIL",
             "mail_user": f"{'' if partition.endswith('debug') else 'stef.accou@student.kuleuven.be'}",
         },
     }
