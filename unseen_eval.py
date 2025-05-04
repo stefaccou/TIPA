@@ -5,7 +5,10 @@ import evaluate
 from huggingface_hub import HfApi
 from qq import LanguageData, TagType
 from urielplus import urielplus
-
+from datasets import load_dataset, get_dataset_config_names
+import numpy as np
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+from transformers import EvalPrediction
 
 metric = evaluate.load("seqeval")
 
@@ -25,8 +28,217 @@ try:
 except SystemExit:
     print("already using Glottocodes")
 
+task2ds = {"ner": "unimelb-nlp/wikiann", "pos": "universal_dependencies", "copa": "xcopa"}
 
-def get_available_adapters():
+
+def get_eval_languages(task):
+    if task in ["ner", "copa"]:
+        eval_languages = get_dataset_config_names(task2ds[task])
+        return {lan: lan for lan in eval_languages if len(lan) <= 3}
+    elif task == "pos":
+        ud_datasets = get_dataset_config_names(task2ds)
+        eval_languages = {}
+        for ds in ud_datasets:
+            lang = ds.split("_")[0]
+            try:
+                ld.get(lang, tag_type=TagType.BCP_47_CODE)
+                eval_languages[lang] = ds
+            except KeyError:
+                # print(f"Language {lang} not in database, skipping")
+                continue
+        return eval_languages
+
+
+def load_eval(task, eval_language, eval_languages):
+    dataset = load_dataset(task2ds[task], eval_languages[eval_language], trust_remote_code="True")
+    if "test" in dataset.keys():
+        dataset_eval = dataset["test"]
+    elif "validation" in dataset.keys():
+        dataset_eval = dataset["validation"]
+    else:
+        dataset_eval = dataset["train"]
+    return dataset_eval
+
+
+def preprocess(dataset, task, tokenizer):
+    if task == "ner":
+
+        def align_labels_with_tokens(labels, word_ids):
+            new_labels = []
+            current_word = None
+            for word_id in word_ids:
+                if word_id != current_word:
+                    # Start of a new word!
+                    current_word = word_id
+                    label = -100 if word_id is None else labels[word_id]
+                    new_labels.append(label)
+                elif word_id is None:
+                    # Special token
+                    new_labels.append(-100)
+                else:
+                    # Same word as previous token
+                    label = labels[word_id]
+                    # If the label is B-XXX we change it to I-XXX
+                    if label % 2 == 1:
+                        label += 1
+                    new_labels.append(label)
+
+            return new_labels
+
+        # Batch encoding function for NER
+        def tokenize_and_align_labels(examples):
+            tokenized_inputs = tokenizer(examples["tokens"], truncation=True, is_split_into_words=True)
+            all_labels = examples["ner_tags"]
+            new_labels = []
+            for i, labels in enumerate(all_labels):
+                word_ids = tokenized_inputs.word_ids(i)
+                new_labels.append(align_labels_with_tokens(labels, word_ids))
+
+            tokenized_inputs["labels"] = new_labels
+            return tokenized_inputs
+
+        tokenized_datasets = dataset.map(
+            tokenize_and_align_labels,
+            batched=True,
+            remove_columns=dataset.column_names,
+        )
+        return tokenized_datasets
+    elif task == "pos":
+
+        def tokenize_and_align_labels(examples):
+            tokenized = tokenizer(
+                examples["tokens"],
+                is_split_into_words=True,
+                truncation=True,
+                padding="max_length",
+                max_length=128,
+            )
+            all_labels = []
+            for i, labels in enumerate(examples["upos"]):
+                word_ids = tokenized.word_ids(batch_index=i)
+                previous_word_idx = None
+                label_ids = []
+                for word_idx in word_ids:
+                    if word_idx is None:
+                        label_ids.append(-100)
+                    elif word_idx != previous_word_idx:
+                        label_ids.append(labels[word_idx])
+                    else:
+                        label_ids.append(-100)
+                    previous_word_idx = word_idx
+                all_labels.append(label_ids)
+            tokenized["labels"] = all_labels
+            return tokenized
+
+        tokenized_datasets = dataset.map(
+            tokenize_and_align_labels,
+            batched=True,
+            remove_columns=dataset.column_names,
+        )
+        return tokenized_datasets
+    elif task == "copa":
+
+        def encode_batch(examples):
+            all_encoded = {"input_ids": [], "attention_mask": []}
+            # Iterate through all examples in this batch
+            for premise, question, choice1, choice2 in zip(
+                examples["premise"], examples["question"], examples["choice1"], examples["choice2"]
+            ):
+                sentences_a = [premise + " " + question for _ in range(2)]
+                # Both answer choices are passed in an array according to the format needed for the multiple-choice prediction head
+                sentences_b = [choice1, choice2]
+                encoded = tokenizer(
+                    sentences_a,
+                    sentences_b,
+                    max_length=60,
+                    truncation=True,
+                    padding="max_length",
+                )
+                all_encoded["input_ids"].append(encoded["input_ids"])
+                all_encoded["attention_mask"].append(encoded["attention_mask"])
+            return all_encoded
+
+        def preprocess_dataset(dataset):
+            # Encode the input data
+            dataset = dataset.map(encode_batch, batched=True)
+            # The transformers model expects the target class column to be named "labels"
+            dataset = dataset.rename_column("label", "labels")
+            # Transform to pytorch tensors and only output the required columns
+            dataset.set_format(columns=["input_ids", "attention_mask", "labels"])
+            return dataset
+
+        dataset_eval = preprocess_dataset(dataset)
+        return dataset_eval
+
+
+def get_compute_metrics(task, label_names=None):
+    if task == "ner":
+        assert label_names, "NER eval needs labels"
+
+        def compute_metrics(eval_preds):
+            logits, labels = eval_preds
+            predictions = np.argmax(logits, axis=-1)
+            # Remove ignored index (special tokens) and convert to labels
+            true_labels = [[label_names[lab] for lab in label if lab != -100] for label in labels]
+            true_predictions = [
+                [label_names[pred] for (pred, lab) in zip(prediction, label) if lab != -100]
+                for prediction, label in zip(predictions, labels)
+            ]
+            all_metrics = metric.compute(predictions=true_predictions, references=true_labels)
+            return {
+                "precision": all_metrics["overall_precision"],
+                "recall": all_metrics["overall_recall"],
+                "f1": all_metrics["overall_f1"],
+                "accuracy": all_metrics["overall_accuracy"],
+            }
+
+    elif task == "pos":
+
+        def compute_metrics(eval_preds):
+            logits, label_ids = eval_preds
+            # 1) take argmax over labels
+            pred_ids = np.argmax(logits, axis=-1)
+
+            # 2) flatten, filtering out the -100 padding label
+            true_labels = []
+            true_preds = []
+            for pred_seq, label_seq in zip(pred_ids, label_ids):
+                for pred, lab in zip(pred_seq, label_seq):
+                    if lab == -100:
+                        continue
+                    true_labels.append(lab)
+                    true_preds.append(pred)
+
+            # 3) compute metrics
+            acc = accuracy_score(true_labels, true_preds)
+            # you can choose 'macro' or 'micro' or 'weighted' averages
+            prec_macro = precision_score(true_labels, true_preds, average="macro", zero_division=0)
+            rec_macro = recall_score(true_labels, true_preds, average="macro", zero_division=0)
+            f1_macro = f1_score(true_labels, true_preds, average="macro", zero_division=0)
+
+            prec_micro = precision_score(true_labels, true_preds, average="micro", zero_division=0)
+            rec_micro = recall_score(true_labels, true_preds, average="micro", zero_division=0)
+            f1_micro = f1_score(true_labels, true_preds, average="micro", zero_division=0)
+
+            return {
+                "accuracy": acc,
+                "precision_macro": prec_macro,
+                "recall_macro": rec_macro,
+                "f1_macro": f1_macro,
+                "precision_micro": prec_micro,
+                "recall_micro": rec_micro,
+                "f1_micro": f1_micro,
+            }
+    elif task == "copa":
+
+        def compute_metrics(p: EvalPrediction):
+            preds = np.argmax(p.predictions, axis=1)
+            return {"acc": (preds == p.label_ids).mean()}
+
+    return compute_metrics
+
+
+def get_available_adapters(local=False):
     # get all adapters from huggingface
     all_models = api.list_models(author="AdapterHub", library="adapter-transformers", search="xlm-roberta-base-")
 
@@ -35,6 +247,12 @@ def get_available_adapters():
         for m in all_models
         if m.modelId.startswith("AdapterHub/xlm-roberta-base-") and m.modelId.endswith("-wiki_pfeiffer")
     }
+    if local:
+        trained_adapter_path = "./trained_adapters/"
+        for iso in local:
+            to_load[trained_adapter_path + iso] = iso
+        print("extended to load with locals")
+        print(to_load)
     return to_load
 
 
