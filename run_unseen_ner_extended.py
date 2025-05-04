@@ -362,7 +362,7 @@ def main(submit_arguments):
                     print(
                         f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}, added {lang}"
                     )
-                    evaluations[f"reconstructed_{distance_type}_{lang}"] = run_eval(model, adapter_name)
+                    evaluations[f"reconstructed_{distance_type}_extended_{lang}"] = run_eval(model, adapter_name)
                     model.delete_adapter(adapter_name)
                     # delete the adapter for further iterations
                     model.delete_adapter("ner")
@@ -385,7 +385,7 @@ def main(submit_arguments):
                 print(
                     f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}, added both eu and sr"
                 )
-                evaluations[f"reconstructed_{distance_type}_extended"] = run_eval(model, "extended_both")
+                evaluations[f"reconstructed_{distance_type}_extended_both"] = run_eval(model, "extended_both")
                 model.delete_adapter("extended_both")
                 # delete the adapter for further iterations
                 model.delete_adapter("ner")
