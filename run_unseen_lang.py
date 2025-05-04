@@ -227,6 +227,10 @@ def main(submit_arguments):
             for distance_type in distance_types:
                 adapter_name = f"reconstructed_{eval_language}_{distance_type}{limit_str}"
                 adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}_extended_{limit_p}"
+                if custom_args.output_name:
+                    adapter_path = (
+                        f"./trained_adapters/typological/{eval_language}/{distance_type}_{custom_args.output_name}"
+                    )
                 weights[distance_type] = {}
                 if os.path.exists(adapter_path):
                     print("Adapter already exists, loading instead")
