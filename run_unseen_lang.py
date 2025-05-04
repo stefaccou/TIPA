@@ -169,7 +169,7 @@ def main(submit_arguments):
             limit_str = f"_{str(custom_args.limit)}"
             limit_p = f"/{str(custom_args.limit)}"
 
-    print(f"\n{'~' * 30}{task.upper()}\n{'~' * 30}")
+    print(f"\n{'~' * 30}\n{task.upper()}\n{'~' * 30}")
 
     for eval_language in eval_languages.keys():
         try:
