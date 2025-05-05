@@ -5,7 +5,7 @@ from custom_submission_utils import find_master, update_submission_log
 
 
 def main(submit_arguments):
-    from datasets import load_dataset
+    from datasets import load_dataset, concatenate_datasets
     from dataclasses import dataclass, field
     from transformers import TrainingArguments, AutoTokenizer, AutoConfig, EvalPrediction, HfArgumentParser
     from adapters import AdapterTrainer, AutoAdapterModel
@@ -92,10 +92,10 @@ def main(submit_arguments):
 
     training_args = TrainingArguments(
         output_dir=data_args.output_dir,
-        eval_strategy="epoch",
+        # eval_strategy="epoch",
         learning_rate=1e-4,
         per_device_train_batch_size=16,
-        per_device_eval_batch_size=16,
+        # per_device_eval_batch_size=16,
         num_train_epochs=100,
         weight_decay=0.01,
         save_steps=25000,
@@ -103,12 +103,13 @@ def main(submit_arguments):
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
     )
-
+    train_dataset = concatenate_datasets([tokenized_datasets["train"], tokenized_datasets["validation"]])
     trainer = AdapterTrainer(
         model=model,
         args=training_args,
-        train_dataset=tokenized_datasets["train"],
-        eval_dataset=tokenized_datasets["validation"],
+        train_dataset=train_dataset,
+        # train_dataset=tokenized_datasets["train"],
+        # eval_dataset=tokenized_datasets["validation"],
         compute_metrics=compute_accuracy,
     )
     trainer.train()
