@@ -8,7 +8,7 @@ from custom_submission_utils import find_master, update_submission_log
 def main(submit_arguments):
     from unseen_eval import (
         get_eval_languages,
-        load_adapter_model,
+        # load_adapter_model,
         load_eval,
         preprocess,
         get_compute_metrics,
@@ -19,7 +19,7 @@ def main(submit_arguments):
     )
 
     from transformers import TrainingArguments, AutoTokenizer, HfArgumentParser, XLMRobertaTokenizerFast
-    from adapters import AdapterTrainer
+    from adapters import AdapterTrainer, AutoAdapterModel
     from adapters.composition import Stack
 
     from transformers import DataCollatorForTokenClassification
@@ -147,7 +147,8 @@ def main(submit_arguments):
     tokenizer = Tokenizer.from_pretrained("xlm-roberta-base")
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 
-    model = load_adapter_model(task)
+    # model = load_adapter_model(task)
+    model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
 
     to_load = get_available_adapters(local=["eu", "sr"])
     for link, id in to_load.items():
