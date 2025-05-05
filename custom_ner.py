@@ -140,7 +140,7 @@ def main(submit_arguments):
         save_steps=25000,
         num_train_epochs=100,
         weight_decay=0.01,
-        overwrite_output_dir=True,
+        overwrite_output_dir=False,
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
     )
