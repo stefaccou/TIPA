@@ -4,10 +4,11 @@ import os
 from custom_submission_utils import find_master, update_submission_log
 
 
-def main():
+def main(submit_arguments):
     from datasets import load_dataset
-    from transformers import TrainingArguments, AutoTokenizer, AutoConfig
-    from adapters import AdapterTrainer, AutoAdapterModel
+    from dataclasses import dataclass, field
+    from transformers import TrainingArguments, AutoTokenizer, AutoModelForTokenClassification, HfArgumentParser
+    from adapters import AdapterTrainer, init
     from adapters.composition import Stack
     from transformers import DataCollatorForTokenClassification
     import evaluate
@@ -19,6 +20,30 @@ def main():
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
     ner_feature = raw_datasets["train"].features["ner_tags"]
     label_names = ner_feature.feature.names
+
+    @dataclass
+    class DataTrainingArguments:
+        """
+        Arguments pertaining to what data we are going to input our model for training and eval.
+        """
+
+        output_dir: str = field(
+            default=None,
+            metadata={"help": ("Directory for model checkpoints and saving")},
+        )
+
+    parser = HfArgumentParser(DataTrainingArguments)
+    sys.argv = ""
+    if len(submit_arguments) == 1 and submit_arguments[0].endswith(".json"):
+        # If we pass only one argument to the script and it's the path to a json file,
+        # let's parse it to get our arguments.
+        data_args = parser.parse_json_file(json_file=os.path.abspath(submit_arguments[0]))
+    else:
+        print("calling parser")
+        # add a comma to refer to first part of tuple output
+        (data_args,) = parser.parse_args_into_dataclasses(submit_arguments)
+
+    print("custom args: ", data_args)
 
     def align_labels_with_tokens(labels, word_ids):
         new_labels = []
@@ -78,9 +103,9 @@ def main():
         }
 
     id2label = {i: label for i, label in enumerate(label_names)}
-    # label2id = {v: k for k, v in id2label.items()}
+    label2id = {v: k for k, v in id2label.items()}
 
-    """model = AutoModelForTokenClassification.from_pretrained(
+    model = AutoModelForTokenClassification.from_pretrained(
         "xlm-roberta-base",
         id2label=id2label,
         label2id=label2id,
@@ -90,8 +115,8 @@ def main():
     model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", load_as="en")
     model.add_adapter("ner")
     model.train_adapter(["ner"])
-    model.active_adapters = Stack("en", "ner")"""
-    config = AutoConfig.from_pretrained(
+    model.active_adapters = Stack("en", "ner")
+    """config = AutoConfig.from_pretrained(
         "xlm-roberta-base",
     )
     model = AutoAdapterModel.from_pretrained(
@@ -101,21 +126,19 @@ def main():
     # (Optionally) load language adapters if needed
     model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", load_as="en")
     model.add_adapter("ner")
-    model.add_multiple_choice_head("ner", num_choices=len(id2label), id2label=id2label)
+    model.add_multiple_choice_head("ner", num_choices=len(label_names), id2label=id2label)
     model.train_adapter(["ner"])
-    model.active_adapters = Stack("en", "ner")
+    model.active_adapters = Stack("en", "ner")"""
     # print(model.active_adapters)
 
     training_args = TrainingArguments(
-        output_dir="./trained_adapters/custom_ner_adapter",
+        output_dir=data_args.output_dir,
         evaluation_strategy="epoch",
         learning_rate=1e-4,
-        per_device_train_batch_size=32,
-        per_device_eval_batch_size=32,
-        num_train_epochs=3,
+        per_device_train_batch_size=16,
+        per_device_eval_batch_size=16,
+        num_train_epochs=100,
         weight_decay=0.01,
-        logging_dir="./logs",
-        logging_steps=250,
         overwrite_output_dir=True,
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
@@ -167,6 +190,6 @@ if __name__ == "__main__":
 
     job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
 
-    # job = executor.submit(main, job_input)
-    job = executor.submit(main)
+    job = executor.submit(main, job_input)
+    # job = executor.submit(main)
     print("job submitted")
