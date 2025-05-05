@@ -6,8 +6,8 @@ from custom_submission_utils import find_master, update_submission_log
 
 def main():
     from datasets import load_dataset
-    from transformers import AutoModelForTokenClassification, TrainingArguments, AutoTokenizer
-    from adapters import AdapterTrainer, init
+    from transformers import TrainingArguments, AutoTokenizer, AutoConfig
+    from adapters import AdapterTrainer, AutoAdapterModel
     from adapters.composition import Stack
     from transformers import DataCollatorForTokenClassification
     import evaluate
@@ -17,9 +17,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
     raw_datasets = load_dataset("wikiann", "en")
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
-
     ner_feature = raw_datasets["train"].features["ner_tags"]
-
     label_names = ner_feature.feature.names
 
     def align_labels_with_tokens(labels, word_ids):
@@ -80,20 +78,33 @@ def main():
         }
 
     id2label = {i: label for i, label in enumerate(label_names)}
-    label2id = {v: k for k, v in id2label.items()}
+    # label2id = {v: k for k, v in id2label.items()}
 
-    model = AutoModelForTokenClassification.from_pretrained(
+    """model = AutoModelForTokenClassification.from_pretrained(
         "xlm-roberta-base",
         id2label=id2label,
         label2id=label2id,
     )
+
     init(model)
-    print("initted model")
-    model.load_adapter("./trained_adapters/en", load_as="en")
+    model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", load_as="en")
     model.add_adapter("ner")
     model.train_adapter(["ner"])
+    model.active_adapters = Stack("en", "ner")"""
+    config = AutoConfig.from_pretrained(
+        "xlm-roberta-base",
+    )
+    model = AutoAdapterModel.from_pretrained(
+        "xlm-roberta-base",
+        config=config,
+    )
+    # (Optionally) load language adapters if needed
+    model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", load_as="en")
+    model.add_adapter("ner")
+    model.add_multiple_choice_head("ner", num_choices=len(id2label), id2label=id2label)
+    model.train_adapter(["ner"])
     model.active_adapters = Stack("en", "ner")
-    print(model.active_adapters)
+    # print(model.active_adapters)
 
     training_args = TrainingArguments(
         output_dir="./trained_adapters/custom_ner_adapter",
@@ -123,9 +134,8 @@ def main():
 
 
 if __name__ == "__main__":
-    # we want just the one argument as a string here
+    job_name = "better_ner_adapter_debug"
 
-    job_name = "training custom_ner_adapter"
     master_dir = find_master()
 
     # Set the experiment folder as a subdirectory of 'Master_thesis'
@@ -134,24 +144,29 @@ if __name__ == "__main__":
     run_count = update_submission_log(experiments_dir, job_name)
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
+    partition = "gpu_a100_debug"
     parameters = {
-        "slurm_partition": "gpu_p100",
-        "slurm_time": "02:00:00",
+        "slurm_partition": partition,
+        # "slurm_time": "03:00:00",
+        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '10:30:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
-            "clusters": "genius",
+            "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",
             "account": os.environ["ACCOUNT_INFO"],  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,
-            "mail_type": "END",
-            "mail_user": "",
+            "mail_type": "BEGIN,END,FAIL",
+            "mail_user": f"{'' if partition.endswith('debug') else 'stef.accou@student.kuleuven.be'}",
         },
     }
 
     # Initialize the Submitit executor with the new experiments_dir
     executor = submitit.AutoExecutor(folder=str(experiments_dir))
     executor.update_parameters(**parameters)
-    submitit_input = sys.argv[1:] if len(sys.argv) > 1 else "No input passed"
-    job = executor.submit(main)
-    print("eval submitted")
+
+    job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
+
+    job = executor.submit(main, job_input)
+    # job = executor.submit(main)
+    print("job submitted")
