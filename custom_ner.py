@@ -43,7 +43,7 @@ def main(submit_arguments):
         # add a comma to refer to first part of tuple output
         (data_args,) = parser.parse_args_into_dataclasses(submit_arguments)
 
-    print("custom args: ", data_args)
+    print("passed args: ", data_args)
 
     def align_labels_with_tokens(labels, word_ids):
         new_labels = []
@@ -140,7 +140,7 @@ def main(submit_arguments):
         save_steps=25000,
         num_train_epochs=100,
         weight_decay=0.01,
-        overwrite_output_dir=False,
+        overwrite_output_dir=True,
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
     )
