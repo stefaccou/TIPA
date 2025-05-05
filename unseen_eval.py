@@ -6,6 +6,8 @@ from huggingface_hub import HfApi
 from qq import LanguageData, TagType
 from urielplus import urielplus
 from datasets import load_dataset, get_dataset_config_names
+from adapters import AutoAdapterModel, init
+from transformers import AutoModelForTokenClassification
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from transformers import EvalPrediction
@@ -236,6 +238,21 @@ def get_compute_metrics(task, label_names=None):
             return {"acc": (preds == p.label_ids).mean()}
 
     return compute_metrics
+
+
+def load_adapter_model(task):
+    if not task == "ner":
+        return AutoAdapterModel.from_pretrained("xlm-roberta-base")
+    label_names = ["O", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "B-DATE", "I-DATE"]
+    id2label = {i: label for i, label in enumerate(label_names)}
+    label2id = {v: k for k, v in id2label.items()}
+    model = AutoModelForTokenClassification.from_pretrained(
+        "xlm-roberta-base",
+        id2label=id2label,
+        label2id=label2id,
+    )
+    init(model)
+    return model
 
 
 def get_available_adapters(local=False):
