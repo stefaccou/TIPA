@@ -258,20 +258,20 @@ def main(submit_arguments):
                         if not os.path.exists(adapter_path):
                             os.makedirs(adapter_path)
                         model.save_adapter(adapter_path, adapter_name)
-                model.load_adapter(f"./trained_adapters/{task}", load_as=task)
+                model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
                 print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
                 evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
                 model.delete_adapter(adapter_name)
                 # delete the adapter for further iterations
                 model.delete_adapter(task)
 
-            model.load_adapter(f"./trained_adapters/{task}", load_as=task)
+            model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
             # we calculate the baseline of using the english language model and the task adapter
             print("evaluating on baseline (english model + task adapter)")
             evaluations["baseline_en"] = run_eval(model, "en")
             model.delete_adapter(task)
             if not custom_args.disable_baselines:
-                model.load_adapter(f"./trained_adapters/{task}", load_as=task)
+                model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
                 print("evaluating on baseline (only task adapter")
                 # we calculate a baseline (just task adapter)
                 evaluations["baseline_task_adapter"] = run_eval(model, task)
