@@ -43,7 +43,7 @@ def main(submit_arguments):
             metadata={"help": ("The task to perform (ner, copa or pos)")},
         )
         disable_baselines: Optional[bool] = field(
-            default=True,
+            default=False,
             metadata={
                 "help": (
                     "Whether to calculate the baselines. "
