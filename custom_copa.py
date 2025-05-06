@@ -93,12 +93,12 @@ def main(submit_arguments):
     training_args = TrainingArguments(
         output_dir=data_args.output_dir,
         # eval_strategy="epoch",
-        learning_rate=1e-4,
-        per_device_train_batch_size=16,
+        learning_rate=1e-5,
+        per_device_train_batch_size=32,
         # per_device_eval_batch_size=16,
-        num_train_epochs=100,
+        # num_train_epochs=100,
         weight_decay=0.01,
-        save_steps=25000,
+        max_steps=10000,
         overwrite_output_dir=True,
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
