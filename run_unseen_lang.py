@@ -345,7 +345,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "debug_unseen_task"
+    job_name = "unseen_task"
 
     master_dir = find_master()
 
