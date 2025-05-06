@@ -322,7 +322,7 @@ def main(submit_arguments):
             print(f"RuntimeError {e}, skipping this language")
             # we write this language to a file so we do not check it again
             with open(
-                f"./experiment_folder/logs/failed_languages{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
+                f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
                 "a",
             ) as f:
                 f.write(f"{eval_language}\n")
@@ -330,14 +330,14 @@ def main(submit_arguments):
         except IndexError as e:
             print(f"IndexError {e}, skipping this language")
             with open(
-                f"./experiment_folder/logs/failed_languages{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
+                f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
                 "a",
             ) as f:
                 f.write(f"{eval_language}\n")
             continue
         except KeyError as e:
             with open(
-                f"./experiment_folder/logs/failed_languages{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
+                f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
                 "a",
             ) as f:
                 f.write(f"{eval_language}\n")
