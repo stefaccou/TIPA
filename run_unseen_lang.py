@@ -363,7 +363,7 @@ if __name__ == "__main__":
         "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '03:30:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
-            "clusters": f"{'genius' if partition.startswith(('gpu_p100', 'v100')) else 'wice'}",
+            "clusters": f"{'genius' if partition.startswith(('gpu_p100', 'gpu_v100')) else 'wice'}",
             "account": os.environ["ACCOUNT_INFO"],  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
