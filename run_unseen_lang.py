@@ -369,7 +369,7 @@ if __name__ == "__main__":
     run_count = update_submission_log(experiments_dir, job_name)
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
-    partition = "gpu_v100"
+    partition = "gpu_p100"
     parameters = {
         "slurm_partition": partition,
         # "slurm_time": "03:00:00",
