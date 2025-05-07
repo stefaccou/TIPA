@@ -42,15 +42,7 @@ def main(submit_arguments):
         task: str = field(
             metadata={"help": ("The task to perform (ner, copa or pos)")},
         )
-        disable_baselines: Optional[bool] = field(
-            default=False,
-            metadata={
-                "help": (
-                    "Whether to calculate the baselines. "
-                    "Default True, it will calculate the baselines for the adapter combinations."
-                )
-            },
-        )
+
         distance_types_list: Optional[List[str]] = field(
             default=None,
             metadata={
@@ -72,6 +64,15 @@ def main(submit_arguments):
             metadata={"help": ("The distance type to be used for typological approximation. ")},
         )
 
+        disable_baselines: Optional[bool] = field(
+            default=False,
+            metadata={
+                "help": (
+                    "Whether to calculate the baselines. "
+                    "Default True, it will calculate the baselines for the adapter combinations."
+                )
+            },
+        )
         limit: Optional[float] = field(
             default=None,
             metadata={
@@ -355,14 +356,14 @@ if __name__ == "__main__":
     run_count = update_submission_log(experiments_dir, job_name)
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
-    partition = "gpu_p100"
+    partition = "gpu_v100"
     parameters = {
         "slurm_partition": partition,
         # "slurm_time": "03:00:00",
         "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '03:30:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
-            "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",
+            "clusters": f"{'genius' if partition.startswith(('gpu_p100', 'v100')) else 'wice'}",
             "account": os.environ["ACCOUNT_INFO"],  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
