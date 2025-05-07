@@ -31,6 +31,10 @@ def main(submit_arguments):
 
     from dataclasses import dataclass, field
     from typing import Optional, List
+    import logging
+
+    # silence urielplus INFO logs
+    logging.getLogger("urielplus").setLevel(logging.ERROR)
 
     @dataclass
     class CustomArguments:
