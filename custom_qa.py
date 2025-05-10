@@ -106,36 +106,8 @@ def main(submit_arguments):
     model.add_adapter("qa")
     model.train_adapter(["qa"])
     model.active_adapters = Stack("en", "qa")
-    model.to("cuda")
-    """config = AutoConfig.from_pretrained(
-        "xlm-roberta-base",
-    )
-    model = AutoAdapterModel.from_pretrained(
-        "xlm-roberta-base",
-        config=config,
-    )
-    # (Optionally) load language adapters if needed
-    model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", load_as="en")
-    model.add_adapter("ner")
-    model.add_multiple_choice_head("ner", num_choices=len(label_names), id2label=id2label)
-    model.train_adapter(["ner"])
-    model.active_adapters = Stack("en", "ner")"""
-    # print(model.active_adapters)
 
-    debug_args = TrainingArguments(
-        output_dir=data_args.output_dir,
-        eval_strategy="epoch",
-        learning_rate=1e-4,
-        per_device_train_batch_size=16,
-        per_device_eval_batch_size=16,
-        max_steps=300,
-        # num_train_epochs=2,
-        weight_decay=0.01,
-        overwrite_output_dir=True,
-        # The next line is important to ensure the dataset labels are properly passed to the model
-        remove_unused_columns=False,
-    )
-    """training_args = TrainingArguments(
+    training_args = TrainingArguments(
         output_dir=data_args.output_dir,
         eval_strategy="epoch",
         learning_rate=1e-4,
@@ -147,11 +119,10 @@ def main(submit_arguments):
         overwrite_output_dir=True,
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
-    )"""
+    )
     trainer = AdapterTrainer(
         model=model,
-        # args=training_args,
-        args=debug_args,
+        args=training_args,
         train_dataset=tokenized_datasets["train"],
         eval_dataset=tokenized_datasets["validation"],
         data_collator=data_collator,
