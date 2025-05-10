@@ -237,6 +237,8 @@ def main(submit_arguments):
                     trainer_kwargs["data_collator"] = data_collator
                 if task != "qa":
                     trainer_kwargs["compute_metrics"] = compute_metrics
+                else:
+                    trainer_kwargs["processing_class"] = tokenizer
                 # instantiate
                 eval_trainer = AdapterTrainer(**trainer_kwargs)
                 if not task == "qa":
