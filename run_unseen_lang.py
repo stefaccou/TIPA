@@ -243,7 +243,9 @@ def main(submit_arguments):
                     ev = eval_trainer.evaluate()
                 else:
                     predictions, _, _ = eval_trainer.predict(tokenized_datasets)
+                    print("predictions:", predictions)
                     start_logits, end_logits = predictions
+                    print(f"start_logits: {start_logits.shape}, end_logits: {end_logits.shape}")
                     ev = compute_metrics(start_logits, end_logits, tokenized_datasets, dataset_eval)
 
                 print(f"Evaluation results for {name}:")
@@ -352,15 +354,15 @@ def main(submit_arguments):
             # we write the language name to "done languages"
             # with open(done_file, "a") as f:
             #    f.write(f"{eval_language}\n")
-        except RuntimeError as e:
-            print(f"RuntimeError {e}, skipping this language")
-            # we write this language to a file so we do not check it again
-            with open(
-                f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
-                "a",
-            ) as f:
-                f.write(f"{eval_language}\n")
-            continue
+        # except RuntimeError as e:
+        #     print(f"RuntimeError {e}, skipping this language")
+        #     # we write this language to a file so we do not check it again
+        #     with open(
+        #         f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
+        #         "a",
+        #     ) as f:
+        #         f.write(f"{eval_language}\n")
+        #     continue
         except IndexError as e:
             print(f"IndexError {e}, skipping this language")
             with open(
