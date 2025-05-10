@@ -235,7 +235,6 @@ def main(submit_arguments):
                     ev = eval_trainer.evaluate()
                 else:
                     predictions, _, _ = eval_trainer.predict(tokenized_datasets)
-                    # 2) compute EM/F1 with your compute_metrics()
                     start_logits, end_logits = predictions
                     ev = compute_metrics(start_logits, end_logits, tokenized_datasets, dataset_eval)
 

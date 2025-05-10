@@ -12,6 +12,7 @@ from transformers import AutoModelForTokenClassification
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from transformers import EvalPrediction
+from tqdm import tqdm
 
 metrics = {"ner": evaluate.load("seqeval"), "qa": evaluate.load("squad")}
 
@@ -284,7 +285,7 @@ def get_compute_metrics(task, label_names=None):
                 example_to_features[feature["example_id"]].append(idx)
 
             predicted_answers = []
-            for example in examples:
+            for example in tqdm(examples):
                 example_id = example["id"]
                 context = example["context"]
                 answers = []
