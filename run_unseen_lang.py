@@ -225,11 +225,12 @@ def main(submit_arguments):
                     model.active_adapters = name
                 # prepare the common arguments
                 compute_metrics = get_compute_metrics(task, label_names)
+
                 trainer_kwargs = {
                     "model": model,
                     "args": TrainingArguments(
                         output_dir="./eval_output",
-                        remove_unused_columns=False,
+                        # remove_unused_columns=False,
                         fp16=True,
                     ),
                     "eval_dataset": tokenized_datasets,
@@ -246,6 +247,7 @@ def main(submit_arguments):
                 if not task == "qa":
                     ev = eval_trainer.evaluate()
                 else:
+                    print(eval_trainer)
                     predictions, _, _ = eval_trainer.predict(tokenized_datasets)
                     print("predictions:", predictions)
                     start_logits, end_logits = predictions
