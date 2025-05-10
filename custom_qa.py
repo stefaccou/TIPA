@@ -14,7 +14,7 @@ def main(submit_arguments):
 
     # metric = evaluate.load("squad")
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-    raw_datasets = load_dataset("squad", split="train[:5000]")
+    raw_datasets = load_dataset("squad")
     data_collator = DefaultDataCollator()
 
     @dataclass
