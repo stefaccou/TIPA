@@ -18,11 +18,17 @@ def main(submit_arguments):
         get_glots,
     )
 
-    from transformers import TrainingArguments, AutoTokenizer, HfArgumentParser, XLMRobertaTokenizerFast
+    from transformers import (
+        TrainingArguments,
+        AutoTokenizer,
+        HfArgumentParser,
+        XLMRobertaTokenizerFast,
+        DataCollatorForTokenClassification,
+        DefaultDataCollator,
+    )
     from adapters import AdapterTrainer, AutoAdapterModel
     from adapters.composition import Stack
 
-    from transformers import DataCollatorForTokenClassification
     import os
     import gc
     import json
@@ -161,7 +167,9 @@ def main(submit_arguments):
 
     Tokenizer = XLMRobertaTokenizerFast if task == "pos" else AutoTokenizer
     tokenizer = Tokenizer.from_pretrained("xlm-roberta-base")
-    data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
+    data_collator = (
+        DataCollatorForTokenClassification(tokenizer=tokenizer) if not task == "qa" else DefaultDataCollator()
+    )
 
     # model = load_adapter_model(task)
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
