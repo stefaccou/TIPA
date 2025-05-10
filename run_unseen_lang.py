@@ -148,12 +148,16 @@ def main(submit_arguments):
 
     eval_languages = get_eval_languages(task)
     # we filter out the languages that have failed before
-    with open(
-        f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
-        "r",
-    ) as f:
-        failed_languages = f.read().splitlines()
-    eval_languages = {k: v for k, v in eval_languages.items() if k not in failed_languages}
+    # we first check if the file exists:
+    if os.path.exists(
+        f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt"
+    ):
+        with open(
+            f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
+            "r",
+        ) as f:
+            failed_languages = f.read().splitlines()
+        eval_languages = {k: v for k, v in eval_languages.items() if k not in failed_languages}
 
     Tokenizer = XLMRobertaTokenizerFast if task == "pos" else AutoTokenizer
     tokenizer = Tokenizer.from_pretrained("xlm-roberta-base")
