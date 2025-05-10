@@ -113,8 +113,8 @@ def main(submit_arguments):
         learning_rate=1e-4,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
-        save_steps=25000,
-        num_train_epochs=100,
+        save_steps=1000,
+        num_train_epochs=3,
         weight_decay=0.01,
         overwrite_output_dir=True,
         # The next line is important to ensure the dataset labels are properly passed to the model
@@ -134,7 +134,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    debug = True
+    debug = False
     job_name = f"{'debug_' * debug}qa_adapter"
 
     master_dir = find_master()
