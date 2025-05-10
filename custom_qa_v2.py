@@ -9,6 +9,7 @@ def main(submit_arguments):
     from dataclasses import dataclass, field
     from transformers import TrainingArguments, AutoTokenizer, HfArgumentParser
     from adapters import AdapterTrainer, AutoAdapterModel
+    from adapters.composition import Stack
     from transformers import DefaultDataCollator
 
     # metric = evaluate.load("squad")
@@ -103,6 +104,8 @@ def main(submit_arguments):
     model.load_adapter("./trained_adapters/mono/en", load_as="en")
     model.add_adapter("qa")
     model.add_qa_head("qa")
+    model.train_adapter(["qa"])
+    model.active_adapters = Stack("en", "qa")
 
     training_args = TrainingArguments(
         output_dir=data_args.output_dir,
