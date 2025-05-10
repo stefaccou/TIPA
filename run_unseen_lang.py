@@ -359,7 +359,8 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "unseen_task"
+    debug = True
+    job_name = debug * "debug_" + "unseen_task"
 
     master_dir = find_master()
 
@@ -369,7 +370,7 @@ if __name__ == "__main__":
     run_count = update_submission_log(experiments_dir, job_name)
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
-    partition = "gpu_p100"
+    partition = f"gpu_p100{debug * '_debug'}"
     parameters = {
         "slurm_partition": partition,
         # "slurm_time": "03:00:00",
