@@ -106,6 +106,7 @@ def main(submit_arguments):
     model.add_adapter("qa")
     model.train_adapter(["qa"])
     model.active_adapters = Stack("en", "qa")
+    model.to("cuda")
     """config = AutoConfig.from_pretrained(
         "xlm-roberta-base",
     )
