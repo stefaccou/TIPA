@@ -227,10 +227,11 @@ def main(submit_arguments):
                 # only include data_collator if task isn’t “copa”
                 if task != "copa":
                     trainer_kwargs["data_collator"] = data_collator
+                if task != "qa":
+                    trainer_kwargs["compute_metrics"] = compute_metrics
                 # instantiate
                 eval_trainer = AdapterTrainer(**trainer_kwargs)
                 if not task == "qa":
-                    trainer_kwargs["compute_metrics"] = compute_metrics
                     ev = eval_trainer.evaluate()
                 else:
                     predictions, _, _ = eval_trainer.predict(tokenized_datasets)
