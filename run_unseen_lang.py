@@ -196,7 +196,8 @@ def main(submit_arguments):
             limit_p = f"/{str(custom_args.limit)}"
 
     print(f"\n{'~' * 30}\n{task.upper()}\n{'~' * 30}")
-
+    # Brute: we only consider english for now
+    eval_languages = {k: v for k, v in eval_languages.items() if k == "en"}
     for eval_language in eval_languages.keys():
         try:
             print(
