@@ -7,9 +7,8 @@ from custom_submission_utils import find_master, update_submission_log
 def main(submit_arguments):
     from datasets import load_dataset
     from dataclasses import dataclass, field
-    from transformers import TrainingArguments, AutoTokenizer, AutoModelForQuestionAnswering, HfArgumentParser
-    from adapters import AdapterTrainer, init
-    from adapters.composition import Stack
+    from transformers import TrainingArguments, AutoTokenizer, HfArgumentParser
+    from adapters import AdapterTrainer, AutoAdapterModel
     from transformers import DefaultDataCollator
 
     # metric = evaluate.load("squad")
@@ -99,13 +98,11 @@ def main(submit_arguments):
         remove_columns=raw_datasets["train"].column_names,
     )
 
-    model = AutoModelForQuestionAnswering.from_pretrained("xlm-roberta-base")
-
-    init(model)
-    model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", load_as="en")
+    model_name = "xlm-roberta-base"
+    model = AutoAdapterModel.from_pretrained(model_name)
+    model.load_adapter("./trained_adapters/mono/en", load_as="en")
     model.add_adapter("qa")
-    model.train_adapter(["qa"])
-    model.active_adapters = Stack("en", "qa")
+    model.add_qa_head("qa")
 
     training_args = TrainingArguments(
         output_dir=data_args.output_dir,
