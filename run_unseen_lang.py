@@ -229,6 +229,7 @@ def main(submit_arguments):
                     "args": TrainingArguments(
                         output_dir="./eval_output",
                         remove_unused_columns=False,
+                        fp16=True,
                     ),
                     "eval_dataset": tokenized_datasets,
                 }
