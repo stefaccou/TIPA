@@ -123,11 +123,12 @@ def main(submit_arguments):
 
     debug_args = TrainingArguments(
         output_dir=data_args.output_dir,
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         learning_rate=1e-4,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
-        save_steps=200,
+        log_steps=100,
+        max_steps=200,
         num_train_epochs=2,
         weight_decay=0.01,
         overwrite_output_dir=True,
@@ -136,7 +137,7 @@ def main(submit_arguments):
     )
     """training_args = TrainingArguments(
         output_dir=data_args.output_dir,
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         learning_rate=1e-4,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
