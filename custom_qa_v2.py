@@ -101,7 +101,7 @@ def main(submit_arguments):
 
     model_name = "xlm-roberta-base"
     model = AutoAdapterModel.from_pretrained(model_name)
-    model.load_adapter("./trained_adapters/mono/en", load_as="en")
+    model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", load_as="en")
     model.add_adapter("qa")
     model.add_qa_head("qa")
     model.train_adapter(["qa"])
