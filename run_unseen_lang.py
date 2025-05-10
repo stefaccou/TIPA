@@ -197,7 +197,6 @@ def main(submit_arguments):
 
     print(f"\n{'~' * 30}\n{task.upper()}\n{'~' * 30}")
     # Brute: we only consider english for now
-    eval_languages = {k: v for k, v in eval_languages.items() if k == "en"}
     for eval_language in eval_languages.keys():
         try:
             print(
@@ -247,11 +246,8 @@ def main(submit_arguments):
                 if not task == "qa":
                     ev = eval_trainer.evaluate()
                 else:
-                    print(eval_trainer)
                     predictions, _, _ = eval_trainer.predict(tokenized_datasets)
-                    print("predictions:", predictions)
                     start_logits, end_logits = predictions
-                    print(f"start_logits: {start_logits.shape}, end_logits: {end_logits.shape}")
                     ev = compute_metrics(start_logits, end_logits, tokenized_datasets, dataset_eval)
 
                 print(f"Evaluation results for {name}:")
