@@ -2,6 +2,7 @@ import re
 from collections import OrderedDict
 import torch
 import evaluate
+import collections
 from huggingface_hub import HfApi
 from qq import LanguageData, TagType
 from urielplus import urielplus
@@ -12,7 +13,7 @@ import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from transformers import EvalPrediction
 
-metric = evaluate.load("seqeval")
+metrics = {"ner": evaluate.load("seqeval"), "qa": evaluate.load("squad")}
 
 api = HfApi()
 
@@ -30,18 +31,18 @@ try:
 except SystemExit:
     print("already using Glottocodes")
 
-task2ds = {"ner": "unimelb-nlp/wikiann", "pos": "universal_dependencies", "copa": "xcopa"}
+task2ds = {"ner": "unimelb-nlp/wikiann", "pos": "universal_dependencies", "copa": "xcopa", "qa": "google/xquad"}
 
 
 def get_eval_languages(task):
     if task in ["ner", "copa"]:
         eval_languages = get_dataset_config_names(task2ds[task])
         return {lan: lan for lan in eval_languages if len(lan) <= 3}
-    elif task == "pos":
+    elif task in ["pos", "qa"]:
         ud_datasets = get_dataset_config_names(task2ds[task])
         eval_languages = {}
         for ds in ud_datasets:
-            lang = ds.split("_")[0]
+            lang = ds.split("_")[0] if task == "pos" else ds.split(".")[1]
             try:
                 ld.get(lang, tag_type=TagType.BCP_47_CODE)
                 eval_languages[lang] = ds
@@ -53,6 +54,7 @@ def get_eval_languages(task):
 
 def load_eval(task, eval_language, eval_languages):
     dataset = load_dataset(task2ds[task], eval_languages[eval_language], trust_remote_code="True")
+
     if "test" in dataset.keys():
         dataset_eval = dataset["test"]
     elif "validation" in dataset.keys():
@@ -172,6 +174,42 @@ def preprocess(dataset, task, tokenizer):
         dataset_eval = preprocess_dataset(dataset)
         return dataset_eval
 
+    elif task == "qa":
+
+        def preprocess_validation_examples(examples):
+            questions = [q.strip() for q in examples["question"]]
+            inputs = tokenizer(
+                questions,
+                examples["context"],
+                max_length=384,
+                truncation="only_second",
+                stride=128,
+                return_overflowing_tokens=True,
+                return_offsets_mapping=True,
+                padding="max_length",
+            )
+
+            sample_map = inputs.pop("overflow_to_sample_mapping")
+            example_ids = []
+
+            for i in range(len(inputs["input_ids"])):
+                sample_idx = sample_map[i]
+                example_ids.append(examples["id"][sample_idx])
+
+                sequence_ids = inputs.sequence_ids(i)
+                offset = inputs["offset_mapping"][i]
+                inputs["offset_mapping"][i] = [o if sequence_ids[k] == 1 else None for k, o in enumerate(offset)]
+
+            inputs["example_id"] = example_ids
+            return inputs
+
+        dataset_eval = dataset.map(
+            preprocess_validation_examples,
+            batched=True,
+            remove_columns=dataset.column_names,
+        )
+        return dataset_eval
+
 
 def get_compute_metrics(task, label_names=None):
     if task == "ner":
@@ -186,7 +224,7 @@ def get_compute_metrics(task, label_names=None):
                 [label_names[pred] for (pred, lab) in zip(prediction, label) if lab != -100]
                 for prediction, label in zip(predictions, labels)
             ]
-            all_metrics = metric.compute(predictions=true_predictions, references=true_labels)
+            all_metrics = metrics[task].compute(predictions=true_predictions, references=true_labels)
             return {
                 "precision": all_metrics["overall_precision"],
                 "recall": all_metrics["overall_recall"],
@@ -236,6 +274,42 @@ def get_compute_metrics(task, label_names=None):
         def compute_metrics(p: EvalPrediction):
             preds = np.argmax(p.predictions, axis=1)
             return {"acc": (preds == p.label_ids).mean()}
+    elif task == "qa":
+        n_best = 20
+        max_answer_length = 30
+
+        def compute_metrics(eval_preds):
+            start_logits, end_logits = eval_preds
+            example_to_features = collections.defaultdict(list)
+            for idx, feature in enumerate(eval_preds.features):
+                example_to_features[feature["example_id"]].append(idx)
+
+            predicted_answers = []
+            for example in eval_preds.examples:
+                f_idxs = example_to_features[example["id"]]
+                best = {"score": -1e6, "text": ""}
+
+                # Loop through all features associated with that example
+                for feature_index in example_to_features[f_idxs]:
+                    starts = np.argsort(start_logits[feature_index])[-n_best:]
+                    ends = np.argsort(end_logits[feature_index])[-n_best:]
+                    offsets = eval_preds.features[feature_index]["offset_mapping"]
+
+                    for start_index in starts:
+                        for end_index in ends:
+                            # Skip answers that are not fully in the context
+                            if offsets[start_index] is None or offsets[end_index] is None:
+                                continue
+                            # Skip answers with a length that is either < 0 or > max_answer_length
+                            if end_index < start_index or end_index - start_index + 1 > max_answer_length:
+                                continue
+                            score = start_logits[feature_index][start_index] + end_logits[feature_index][end_index]
+                            text = example["context"][offsets[start_index][0] : offsets[end_index][1]]
+                            if score > best["score"]:
+                                best = {"score": score, "text": text}
+                predicted_answers.append({"id": example["id"], "prediction_text": best["text"]})
+            refs = [{"id": ex["id"], "answers": ex["answers"]} for ex in eval_preds.examples]
+            return metrics[task].compute(predictions=predicted_answers, references=refs)
 
     return compute_metrics
 
