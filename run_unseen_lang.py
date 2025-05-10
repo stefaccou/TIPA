@@ -8,10 +8,10 @@ from custom_submission_utils import find_master, update_submission_log
 def main(submit_arguments):
     from unseen_eval import (
         get_eval_languages,
-        # load_adapter_model,
         load_eval,
         preprocess,
         get_compute_metrics,
+        get_trainer_kwargs,
         get_available_adapters,
         merge_loaded_adapters,
         typological_approximation,
@@ -19,7 +19,6 @@ def main(submit_arguments):
     )
 
     from transformers import (
-        TrainingArguments,
         AutoTokenizer,
         HfArgumentParser,
         XLMRobertaTokenizerFast,
@@ -171,7 +170,6 @@ def main(submit_arguments):
         DataCollatorForTokenClassification(tokenizer=tokenizer) if not task == "qa" else DefaultDataCollator()
     )
 
-    # model = load_adapter_model(task)
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
 
     to_load = get_available_adapters(local=["eu", "sr"])
@@ -224,23 +222,9 @@ def main(submit_arguments):
                     model.active_adapters = name
                 # prepare the common arguments
                 compute_metrics = get_compute_metrics(task, label_names)
-
-                trainer_kwargs = {
-                    "model": model,
-                    "args": TrainingArguments(
-                        output_dir="./eval_output",
-                        # remove_unused_columns=False,
-                        fp16=True,
-                    ),
-                    "eval_dataset": tokenized_datasets,
-                }
-                # only include data_collator if task isn’t “copa”
-                if task != "copa":
-                    trainer_kwargs["data_collator"] = data_collator
-                if task != "qa":
-                    trainer_kwargs["compute_metrics"] = compute_metrics
-                else:
-                    trainer_kwargs["processing_class"] = tokenizer
+                trainer_kwargs = get_trainer_kwargs(
+                    task, model, tokenized_datasets, tokenizer, data_collator, compute_metrics
+                )
                 # instantiate
                 eval_trainer = AdapterTrainer(**trainer_kwargs)
                 if not task == "qa":
