@@ -337,6 +337,7 @@ def get_trainer_kwargs(task, model, tokenized_datasets, tokenizer, data_collator
         trainer_kwargs["processing_class"] = tokenizer
     if task != "copa":
         trainer_kwargs["data_collator"] = data_collator
+    return trainer_kwargs
 
 
 def get_available_adapters(local=False):

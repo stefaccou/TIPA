@@ -135,7 +135,7 @@ def main(submit_arguments):
 
 if __name__ == "__main__":
     debug = False
-    job_name = f"{'debug_' * debug}better_qa_adapter"
+    job_name = "debug_" * debug + "better_qa_adapter"
 
     master_dir = find_master()
 
