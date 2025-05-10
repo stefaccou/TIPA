@@ -113,8 +113,8 @@ def main(submit_arguments):
         learning_rate=1e-4,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
-        save_steps=250,
-        num_train_epochs=1,
+        save_steps=1000,
+        max_steps=50000,
         weight_decay=0.01,
         overwrite_output_dir=True,
         # The next line is important to ensure the dataset labels are properly passed to the model
@@ -135,7 +135,7 @@ def main(submit_arguments):
 
 if __name__ == "__main__":
     debug = True
-    job_name = f"{'debug_' * debug}qa_adapter"
+    job_name = f"{'debug_' * debug}better_qa_adapter"
 
     master_dir = find_master()
 
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     parameters = {
         "slurm_partition": partition,
         # "slurm_time": "03:00:00",
-        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '5:00:00'}",
+        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '10:00:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",
