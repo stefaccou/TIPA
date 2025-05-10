@@ -215,6 +215,7 @@ def main(submit_arguments):
                 else:
                     model.active_adapters = name
                 # prepare the common arguments
+                compute_metrics = get_compute_metrics(task, label_names)
                 trainer_kwargs = {
                     "model": model,
                     "args": TrainingArguments(
@@ -222,14 +223,21 @@ def main(submit_arguments):
                         remove_unused_columns=False,
                     ),
                     "eval_dataset": tokenized_datasets,
-                    "compute_metrics": get_compute_metrics(task, label_names),
                 }
                 # only include data_collator if task isn’t “copa”
                 if task != "copa":
                     trainer_kwargs["data_collator"] = data_collator
                 # instantiate
                 eval_trainer = AdapterTrainer(**trainer_kwargs)
-                ev = eval_trainer.evaluate()
+                if not task == "qa":
+                    trainer_kwargs["compute_metrics"] = compute_metrics
+                    ev = eval_trainer.evaluate()
+                else:
+                    predictions, _, _ = eval_trainer.predict(tokenized_datasets)
+                    # 2) compute EM/F1 with your compute_metrics()
+                    start_logits, end_logits = predictions
+                    ev = compute_metrics(start_logits, end_logits, tokenized_datasets, dataset_eval)
+
                 print(f"Evaluation results for {name}:")
                 print(ev)
                 # we empty the cache and model
