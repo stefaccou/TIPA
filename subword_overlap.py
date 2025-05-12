@@ -89,8 +89,13 @@ def main(submit_arguments):
         )
     elif task == "qa":
         source_corpus = load_dataset("squad")
+        print(source_corpus.features)
         tokenized_corpus = source_corpus["train"].map(
-            lambda x: tokenizer(x["context"], x["question"], x["choice1"], x["choice2"], truncation=True),
+            lambda x: tokenizer(
+                x["context"],
+                x["question"],  # x["choice1"], x["choice2"], truncation=True),
+                truncation=True,
+            ),
             batched=True,
         )
     elif task == "copa":
