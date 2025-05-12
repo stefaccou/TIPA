@@ -89,7 +89,8 @@ def main(submit_arguments):
         )
     elif task == "qa":
         source_corpus = load_dataset("squad")
-        print(source_corpus.features)
+        # we print the features of the dataset
+        print(source_corpus["train"].features)
         tokenized_corpus = source_corpus["train"].map(
             lambda x: tokenizer(
                 x["context"],
