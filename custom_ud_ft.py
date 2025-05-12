@@ -157,7 +157,8 @@ def main(submit_arguments):
     )
     trainer = Trainer(
         model=model,
-        args=training_args,
+        # args=training_args,
+        args=debug_args,
         train_dataset=tokenized_datasets["train"],
         eval_dataset=tokenized_datasets["validation"],
         data_collator=data_collator,
@@ -169,7 +170,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    debug = False
+    debug = True
     job_name = "debug_" * debug + "finetune_pos"
 
     master_dir = find_master()
