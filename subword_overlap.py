@@ -172,7 +172,7 @@ def main(submit_arguments):
         }
         print(f"Token overlap: {overlap:.2%} ({overlap_abs} tokens)")
     # Once we have all, we save the results
-    output_dir = os.path.join("./experiments_dir", "token_overlap")
+    output_dir = os.path.join("./experiment_folder", "token_overlap")
     os.makedirs(output_dir, exist_ok=True)
     output_file = os.path.join(output_dir, f"{task}_token_overlap.json")
     with open(output_file, "w") as f:
