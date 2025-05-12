@@ -331,7 +331,6 @@ def get_trainer_kwargs(task, model, tokenized_datasets, tokenizer, data_collator
     )
     trainer_kwargs = {"model": model, "args": args, "eval_dataset": tokenized_datasets}
     if task != "qa":
-        trainer_kwargs["remove_unused_columns"] = False
         trainer_kwargs["compute_metrics"] = compute_metrics
     else:
         trainer_kwargs["processing_class"] = tokenizer
