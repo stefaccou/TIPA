@@ -90,7 +90,6 @@ def main(submit_arguments):
     elif task == "qa":
         source_corpus = load_dataset("squad")
         # we print the features of the dataset
-        print(source_corpus["train"].features)
         tokenized_corpus = source_corpus["train"].map(
             lambda x: tokenizer(
                 x["context"],
@@ -118,7 +117,6 @@ def main(submit_arguments):
         for token in example["input_ids"]:
             source_tokens.add(token)
     # we print the first few
-    print("source tokens: ", list(source_tokens)[:10])
 
     token_overlaps = {}
     for eval_language in eval_languages.keys():
@@ -129,7 +127,6 @@ def main(submit_arguments):
 
         # Load and preprocess the dataset
         dataset_eval = load_eval(task, eval_language, eval_languages)
-        print(dataset_eval.features)
         # we do the same here
         if task == "ner":
             tokenized_eval = dataset_eval.map(
@@ -161,7 +158,6 @@ def main(submit_arguments):
             for token in example["input_ids"]:
                 validation_tokens.add(token)
         # we print the first few
-        print("validation tokens: ", list(validation_tokens)[:10])
         # we calculate the overlap
         overlap = len(source_tokens.intersection(validation_tokens)) / len(source_tokens)
         # we also save the absolute number of overlap tokens
