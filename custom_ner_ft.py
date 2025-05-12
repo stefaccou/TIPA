@@ -128,9 +128,22 @@ def main(submit_arguments):
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
     )
+    debug_args = TrainingArguments(
+        output_dir=data_args.output_dir,
+        eval_strategy="epoch",
+        learning_rate=1e-4,
+        per_device_train_batch_size=16,
+        per_device_eval_batch_size=16,
+        max_steps=1000,
+        num_train_epochs=2,
+        weight_decay=0.01,
+        overwrite_output_dir=True,
+        # The next line is important to ensure the dataset labels are properly passed to the model
+        remove_unused_columns=False,
+    )
     trainer = Trainer(
         model=model,
-        args=training_args,
+        args=debug_args,
         train_dataset=tokenized_datasets["train"],
         eval_dataset=tokenized_datasets["validation"],
         data_collator=data_collator,
@@ -157,7 +170,7 @@ if __name__ == "__main__":
     parameters = {
         "slurm_partition": partition,
         # "slurm_time": "03:00:00",
-        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '07:30:00'}",
+        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '05:30:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith(('gpu_p100', 'gpu_v100')) else 'wice'}",
