@@ -8,23 +8,15 @@ def main(submit_arguments):
     from datasets import load_dataset
     from dataclasses import dataclass, field
     from transformers import (
-        TrainingArguments,
-        AutoTokenizer,
         AutoModelForTokenClassification,
+        TrainingArguments,
+        XLMRobertaTokenizerFast,
         HfArgumentParser,
         DataCollatorForTokenClassification,
+        Trainer,
     )
-    from adapters import AdapterTrainer, init
-    from adapters.composition import Stack
-    import evaluate
     import numpy as np
-
-    metric = evaluate.load("seqeval")
-    tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-    raw_datasets = load_dataset("wikiann", "en")
-    data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
-    ner_feature = raw_datasets["train"].features["ner_tags"]
-    label_names = ner_feature.feature.names
+    from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 
     @dataclass
     class DataTrainingArguments:
@@ -50,39 +42,40 @@ def main(submit_arguments):
 
     print("passed args: ", data_args)
 
-    def align_labels_with_tokens(labels, word_ids):
-        new_labels = []
-        current_word = None
-        for word_id in word_ids:
-            if word_id != current_word:
-                # Start of a new word!
-                current_word = word_id
-                label = -100 if word_id is None else labels[word_id]
-                new_labels.append(label)
-            elif word_id is None:
-                # Special token
-                new_labels.append(-100)
-            else:
-                # Same word as previous token
-                label = labels[word_id]
-                # If the label is B-XXX we change it to I-XXX
-                if label % 2 == 1:
-                    label += 1
-                new_labels.append(label)
+    tokenizer = XLMRobertaTokenizerFast.from_pretrained("xlm-roberta-base")
+    raw_datasets = load_dataset("universal_dependencies", "en_ewt", trust_remote_code=True)
+    data_collator = DataCollatorForTokenClassification(tokenizer)
 
-        return new_labels
+    label_names = raw_datasets["train"].features["upos"].feature.names
+    id2label = {i: label for i, label in enumerate(label_names)}
+    label2id = {v: k for k, v in id2label.items()}
 
     def tokenize_and_align_labels(examples):
-        tokenized_inputs = tokenizer(examples["tokens"], truncation=True, is_split_into_words=True)
-        all_labels = examples["ner_tags"]
-        new_labels = []
-        for i, labels in enumerate(all_labels):
-            word_ids = tokenized_inputs.word_ids(i)
-            new_labels.append(align_labels_with_tokens(labels, word_ids))
+        tokenized = tokenizer(
+            examples["tokens"],
+            is_split_into_words=True,
+            truncation=True,
+            padding="max_length",
+            max_length=128,
+        )
+        all_labels = []
+        for i, labels in enumerate(examples["upos"]):
+            word_ids = tokenized.word_ids(batch_index=i)
+            previous_word_idx = None
+            label_ids = []
+            for word_idx in word_ids:
+                if word_idx is None:
+                    label_ids.append(-100)
+                elif word_idx != previous_word_idx:
+                    label_ids.append(labels[word_idx])
+                else:
+                    label_ids.append(-100)
+                previous_word_idx = word_idx
+            all_labels.append(label_ids)
+        tokenized["labels"] = all_labels
+        return tokenized
 
-        tokenized_inputs["labels"] = new_labels
-        return tokenized_inputs
-
+    # apply to train/validation
     tokenized_datasets = raw_datasets.map(
         tokenize_and_align_labels,
         batched=True,
@@ -90,25 +83,45 @@ def main(submit_arguments):
     )
 
     def compute_metrics(eval_preds):
-        logits, labels = eval_preds
-        predictions = np.argmax(logits, axis=-1)
+        """
+        eval_preds: tuple(logits, label_ids)
+          - logits: np.array of shape (batch_size, seq_len, num_labels)
+          - label_ids: np.array of shape (batch_size, seq_len)
+        """
+        logits, label_ids = eval_preds
+        # 1) take argmax over labels
+        pred_ids = np.argmax(logits, axis=-1)
 
-        # Remove ignored index (special tokens) and convert to labels
-        true_labels = [[label_names[lab] for lab in label if lab != -100] for label in labels]
-        true_predictions = [
-            [label_names[pred] for (pred, lab) in zip(prediction, label) if lab != -100]
-            for prediction, label in zip(predictions, labels)
-        ]
-        all_metrics = metric.compute(predictions=true_predictions, references=true_labels)
+        # 2) flatten, filtering out the -100 padding label
+        true_labels = []
+        true_preds = []
+        for pred_seq, label_seq in zip(pred_ids, label_ids):
+            for pred, lab in zip(pred_seq, label_seq):
+                if lab == -100:
+                    continue
+                true_labels.append(lab)
+                true_preds.append(pred)
+
+        # 3) compute metrics
+        acc = accuracy_score(true_labels, true_preds)
+        # you can choose 'macro' or 'micro' or 'weighted' averages
+        prec_macro = precision_score(true_labels, true_preds, average="macro", zero_division=0)
+        rec_macro = recall_score(true_labels, true_preds, average="macro", zero_division=0)
+        f1_macro = f1_score(true_labels, true_preds, average="macro", zero_division=0)
+
+        prec_micro = precision_score(true_labels, true_preds, average="micro", zero_division=0)
+        rec_micro = recall_score(true_labels, true_preds, average="micro", zero_division=0)
+        f1_micro = f1_score(true_labels, true_preds, average="micro", zero_division=0)
+
         return {
-            "precision": all_metrics["overall_precision"],
-            "recall": all_metrics["overall_recall"],
-            "f1": all_metrics["overall_f1"],
-            "accuracy": all_metrics["overall_accuracy"],
+            "accuracy": acc,
+            "precision_macro": prec_macro,
+            "recall_macro": rec_macro,
+            "f1_macro": f1_macro,
+            "precision_micro": prec_micro,
+            "recall_micro": rec_micro,
+            "f1_micro": f1_micro,
         }
-
-    id2label = {i: label for i, label in enumerate(label_names)}
-    label2id = {v: k for k, v in id2label.items()}
 
     model = AutoModelForTokenClassification.from_pretrained(
         "xlm-roberta-base",
@@ -116,54 +129,34 @@ def main(submit_arguments):
         label2id=label2id,
     )
 
-    init(model)
-    model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", load_as="en")
-    model.add_adapter("ner")
-    model.train_adapter(["ner"])
-    model.active_adapters = Stack("en", "ner")
-    """config = AutoConfig.from_pretrained(
-        "xlm-roberta-base",
-    )
-    model = AutoAdapterModel.from_pretrained(
-        "xlm-roberta-base",
-        config=config,
-    )
-    # (Optionally) load language adapters if needed
-    model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", load_as="en")
-    model.add_adapter("ner")
-    model.add_multiple_choice_head("ner", num_choices=len(label_names), id2label=id2label)
-    model.train_adapter(["ner"])
-    model.active_adapters = Stack("en", "ner")"""
-    # print(model.active_adapters)
-
     training_args = TrainingArguments(
         output_dir=data_args.output_dir,
         eval_strategy="epoch",
         learning_rate=1e-4,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
-        save_steps=25000,
         num_train_epochs=100,
         weight_decay=0.01,
+        save_steps=25000,
         overwrite_output_dir=True,
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
     )
-    trainer = AdapterTrainer(
+    trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_datasets["train"],
         eval_dataset=tokenized_datasets["validation"],
         data_collator=data_collator,
+        tokenizer=tokenizer,  # future versions will accept `processing_class` instead
         compute_metrics=compute_metrics,
-        tokenizer=tokenizer,
     )
-    trainer.train()
     # we save the ner adapter as "ner_adapter"
+    trainer.train()
 
 
 if __name__ == "__main__":
-    job_name = "better_ner_adapter"
+    job_name = "better_ud_adapter"
 
     master_dir = find_master()
 
