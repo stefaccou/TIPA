@@ -7,7 +7,12 @@ from huggingface_hub import HfApi
 from qq import LanguageData, TagType
 from urielplus import urielplus
 from datasets import load_dataset, get_dataset_config_names
-from transformers import TrainingArguments
+from transformers import (
+    TrainingArguments,
+    AutoModelForTokenClassification,
+    AutoModelForMultipleChoice,
+    AutoModelForQuestionAnswering,
+)
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from transformers import EvalPrediction
@@ -530,3 +535,14 @@ def typological_approximation(target, glots, distance_type, limit=None):
     weights = {k: v for k, v in zip(weights.keys(), soft_weights)}
     # print(f"Weights after softmax: {weights}")
     return weights
+
+
+def load_finetuned_model(task):
+    model_type = {
+        "ner": AutoModelForTokenClassification,
+        "pos": AutoModelForTokenClassification,
+        "copa": AutoModelForMultipleChoice,
+        "qa": AutoModelForQuestionAnswering,
+    }
+    model = model_type[task].from_pretrained(f"finetuned_models/xlm_{task}_finetune")
+    return model

@@ -12,6 +12,7 @@ def main(submit_arguments):
         preprocess,
         get_compute_metrics,
         get_trainer_kwargs,
+        load_finetuned_model,
     )
 
     from transformers import (
@@ -20,7 +21,6 @@ def main(submit_arguments):
         XLMRobertaTokenizerFast,
         DataCollatorForTokenClassification,
         DefaultDataCollator,
-        AutoModelForTokenClassification,
         Trainer,
     )
 
@@ -144,8 +144,7 @@ def main(submit_arguments):
     data_collator = (
         DataCollatorForTokenClassification(tokenizer=tokenizer) if not task == "qa" else DefaultDataCollator()
     )
-
-    model = AutoModelForTokenClassification.from_pretrained(f"finetuned_models/xlm_{task}_finetune")
+    model = load_finetuned_model(task)
 
     if not custom_args.limit:
         limit_str = ""
