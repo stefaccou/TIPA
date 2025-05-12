@@ -110,6 +110,11 @@ def main(submit_arguments):
             },
         )
 
+        retry: Optional[bool] = field(
+            default=False,
+            metadata={"help": ("Option to re-run only previously failed languages.")},
+        )
+
         def __post_init__(self):
             # we check if distance is in the list of available distances
             # OR a list combination of these types
@@ -125,6 +130,14 @@ def main(submit_arguments):
                 raise ValueError(
                     f"Distance type {self.distance_type} not in featural, syntactic, phonological, geographic, genetic, morphological, inventory"
                 )
+            if self.retry:
+                # we check if a file exists with failed languages
+                if not os.path.exists(
+                    f"./experiment_folder/logs/failed_languages_{self.task}{'_' + self.output_name if self.output_name else ''}.txt"
+                ):
+                    raise ValueError(
+                        f"File with failed languages {self.task} does not exist. Please run the script without --retry first."
+                    )
 
     parser = HfArgumentParser(CustomArguments)
     # we remove sys.argv as it interferes with parsing
@@ -162,7 +175,10 @@ def main(submit_arguments):
             "r",
         ) as f:
             failed_languages = f.read().splitlines()
-        eval_languages = {k: v for k, v in eval_languages.items() if k not in failed_languages}
+        if custom_args.retry:
+            eval_languages = {k: v for k, v in eval_languages.items() if k in failed_languages}
+        else:
+            eval_languages = {k: v for k, v in eval_languages.items() if k not in failed_languages}
 
     Tokenizer = XLMRobertaTokenizerFast if task == "pos" else AutoTokenizer
     tokenizer = Tokenizer.from_pretrained("xlm-roberta-base")
@@ -247,6 +263,7 @@ def main(submit_arguments):
 
             evaluations = {}
             weights = {}
+            glots = get_glots(to_load)
             # we check if the adapter has already been created before
             for distance_type in distance_types:
                 adapter_name = f"reconstructed_{eval_language}_{distance_type}{limit_str}"
@@ -264,9 +281,12 @@ def main(submit_arguments):
                     )
 
                 else:
-                    target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
+                    if eval_language in glots.keys():
+                        target_glot = glots[eval_language]
+                    else:
+                        target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
                     weights[distance_type] = typological_approximation(
-                        target_glot, get_glots(to_load), distance_type, custom_args.limit
+                        target_glot, glots, distance_type, custom_args.limit
                     )
 
                     merge_loaded_adapters(
@@ -307,10 +327,11 @@ def main(submit_arguments):
                         # we have to calculate these if we skipped the adapter creation
                         # we set limit to one so we only get the best adapter
                         if weights[distance_type] == {}:
-                            target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
-                            weights[distance_type] = typological_approximation(
-                                target_glot, get_glots(to_load), distance_type, 1
-                            )
+                            if eval_language in glots.keys():
+                                target_glot = glots[eval_language]
+                            else:
+                                target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
+                            weights[distance_type] = typological_approximation(target_glot, glots, distance_type, 1)
 
                         # we load the closest adapter
                         closest_adapter = max(weights[distance_type], key=weights[distance_type].get)
@@ -367,7 +388,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    debug = False
+    debug = True
     job_name = debug * "debug_" + "unseen_task"
 
     master_dir = find_master()
