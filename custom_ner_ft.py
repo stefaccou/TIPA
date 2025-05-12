@@ -134,7 +134,7 @@ def main(submit_arguments):
         learning_rate=1e-4,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
-        max_steps=1000,
+        max_steps=5000,
         num_train_epochs=2,
         weight_decay=0.01,
         overwrite_output_dir=True,
