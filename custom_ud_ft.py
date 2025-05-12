@@ -142,6 +142,19 @@ def main(submit_arguments):
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
     )
+    debug_args = TrainingArguments(
+        output_dir=data_args.output_dir,
+        eval_strategy="epoch",
+        learning_rate=1e-4,
+        per_device_train_batch_size=16,
+        per_device_eval_batch_size=16,
+        num_train_epochs=100,
+        weight_decay=0.01,
+        save_steps=200,
+        overwrite_output_dir=True,
+        # The next line is important to ensure the dataset labels are properly passed to the model
+        remove_unused_columns=False,
+    )
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -156,7 +169,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    debug = True
+    debug = False
     job_name = "debug_" * debug + "finetune_pos"
 
     master_dir = find_master()
@@ -170,7 +183,7 @@ if __name__ == "__main__":
     partition = f"gpu_p100{'_debug' * debug}"
     parameters = {
         "slurm_partition": partition,
-        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '10:00:00'}",
+        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '8:00:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",
