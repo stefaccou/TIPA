@@ -156,7 +156,8 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "better_ud_adapter"
+    debug = True
+    job_name = "debug_" * debug + "finetune_pos"
 
     master_dir = find_master()
 
@@ -166,11 +167,10 @@ if __name__ == "__main__":
     run_count = update_submission_log(experiments_dir, job_name)
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
-    partition = "gpu_p100"
+    partition = f"gpu_p100{'_debug' * debug}"
     parameters = {
         "slurm_partition": partition,
-        # "slurm_time": "03:00:00",
-        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '5:00:00'}",
+        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '10:00:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",

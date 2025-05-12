@@ -145,7 +145,7 @@ def main(submit_arguments):
         DataCollatorForTokenClassification(tokenizer=tokenizer) if not task == "qa" else DefaultDataCollator()
     )
 
-    model = AutoModelForTokenClassification.from_pretrained("finetuned_models/xlm_ner_finetune")
+    model = AutoModelForTokenClassification.from_pretrained(f"finetuned_models/xlm_{task}_finetune")
 
     if not custom_args.limit:
         limit_str = ""
