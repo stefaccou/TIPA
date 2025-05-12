@@ -123,6 +123,7 @@ def main(submit_arguments):
 
         # Load and preprocess the dataset
         dataset_eval = load_eval(task, eval_language, eval_languages)
+        print(dataset_eval.features)
         # we do the same here
         if task == "ner":
             tokenized_eval = dataset_eval.map(
@@ -136,7 +137,11 @@ def main(submit_arguments):
             )
         elif task == "qa":
             tokenized_eval = dataset_eval.map(
-                lambda x: tokenizer(x["context"], x["question"], x["choice1"], x["choice2"], truncation=True),
+                lambda x: tokenizer(
+                    x["context"],
+                    x["question"],  # x["choice1"], x["choice2"], truncation=True),
+                    truncation=True,
+                ),
                 batched=True,
             )
         elif task == "copa":
