@@ -116,7 +116,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    debug = True
+    debug = False
     job_name = debug * "debug_" + "finetune_copa"
 
     master_dir = find_master()
