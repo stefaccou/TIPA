@@ -175,6 +175,7 @@ def main(submit_arguments):
     # we filter out the languages that have failed before
     # we first check if the file exists:
     if custom_args.eval_override:
+        print(f"Overriding evaluation languages with {custom_args.eval_override}")
         eval_languages = {k: v for k, v in eval_languages.items if k in custom_args.eval_override}
     elif os.path.exists(
         f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt"
