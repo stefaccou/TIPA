@@ -128,22 +128,10 @@ def main(submit_arguments):
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
     )
-    debug_args = TrainingArguments(
-        output_dir=data_args.output_dir,
-        eval_strategy="epoch",
-        learning_rate=1e-4,
-        per_device_train_batch_size=16,
-        per_device_eval_batch_size=16,
-        max_steps=5000,
-        num_train_epochs=2,
-        weight_decay=0.01,
-        overwrite_output_dir=True,
-        # The next line is important to ensure the dataset labels are properly passed to the model
-        remove_unused_columns=False,
-    )
+
     trainer = Trainer(
         model=model,
-        args=debug_args,
+        args=training_args,
         train_dataset=tokenized_datasets["train"],
         eval_dataset=tokenized_datasets["validation"],
         data_collator=data_collator,
@@ -155,7 +143,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    debug = True
+    debug = False
     job_name = debug * "debug_" + "ner_finetune"
 
     master_dir = find_master()
