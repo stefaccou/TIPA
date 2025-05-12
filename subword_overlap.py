@@ -94,7 +94,7 @@ def main(submit_arguments):
         tokenized_corpus = source_corpus["train"].map(
             lambda x: tokenizer(
                 x["context"],
-                x["question"],  # x["choice1"], x["choice2"], truncation=True),
+                x["question"],
                 truncation=True,
             ),
             batched=True,
@@ -102,11 +102,11 @@ def main(submit_arguments):
     elif task == "copa":
         source_corpus = load_dataset("super_glue", "copa")
         tokenized_corpus = source_corpus["train"].map(
-            lambda x: tokenizer(x["premise"], x["question"], truncation=True),
+            lambda x: tokenizer(x["premise"], x["question"], x["choice1"], x["choice2"], truncation=True),
             batched=True,
         )
         tokenized_eval = source_corpus["validation"].map(
-            lambda x: tokenizer(x["premise"], x["question"], truncation=True),
+            lambda x: tokenizer(x["premise"], x["question"], x["choice1"], x["choice2"], truncation=True),
             batched=True,
         )
         # we concatenate the training and validation sets
@@ -145,14 +145,14 @@ def main(submit_arguments):
             tokenized_eval = dataset_eval.map(
                 lambda x: tokenizer(
                     x["context"],
-                    x["question"],  # x["choice1"], x["choice2"], truncation=True),
+                    x["question"],
                     truncation=True,
                 ),
                 batched=True,
             )
         elif task == "copa":
             tokenized_eval = dataset_eval.map(
-                lambda x: tokenizer(x["premise"], x["question"], truncation=True),
+                lambda x: tokenizer(x["premise"], x["question"], x["choice1"], x["choice2"], truncation=True),
                 batched=True,
             )
         # we make a set of all the tokens in the source corpus
