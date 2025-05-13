@@ -120,10 +120,16 @@ def main(submit_arguments):
 
     token_overlaps = {}
     for eval_language in eval_languages.keys():
-        print(
-            "\n\n",
-            f"Evaluating token overlap for {task} on {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
-        )
+        try:
+            print(
+                "\n\n",
+                f"Evaluating token overlap for {task} on {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
+            )
+        except KeyError:
+            print(
+                "\n\n",
+                f"Evaluating token overlap for {task} on {eval_language} (no ld data)",
+            )
 
         # Load and preprocess the dataset
         dataset_eval = load_eval(task, eval_language, eval_languages)
