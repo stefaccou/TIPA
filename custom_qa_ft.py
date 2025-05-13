@@ -111,11 +111,10 @@ def main(submit_arguments):
         learning_rate=1e-4,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
-        # save_steps=5000,
-        save_steps=200,
+        save_steps=5000,
         max_steps=50000,
         weight_decay=0.01,
-        overwrite_output_dir=True,
+        overwrite_output_dir=False,
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
     )
@@ -147,7 +146,7 @@ if __name__ == "__main__":
     partition = f"gpu_p100{'_debug' * debug}"
     parameters = {
         "slurm_partition": partition,
-        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '10:30:00'}",
+        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '8:30:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",
