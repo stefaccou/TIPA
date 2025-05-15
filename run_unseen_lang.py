@@ -462,7 +462,5 @@ if __name__ == "__main__":
     # job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
 
     # job = executor.submit(main, job_input)
-    print("parameters:", parameters)
-    print("job input:", job_input)
-    # job = executor.submit(main)
+    job = executor.submit(main)
     print("job submitted")

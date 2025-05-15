@@ -20,10 +20,10 @@ settings=(base eu sr extended)
 
 # for each setting, map disable_baselines and local_adapters
 declare -A disable_baselines=(
-  ["base"]=true
-  ["eu"]=true
-  ["sr"]=true
-  ["extended"]=false
+  ["base"]=True
+  ["eu"]=True
+  ["sr"]=True
+  ["extended"]=False
 )
 
 declare -A local_adapters=(
