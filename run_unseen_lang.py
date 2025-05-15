@@ -429,7 +429,6 @@ if __name__ == "__main__":
     partition = f"gpu_p100{debug * '_debug'}"
     # some shenanigans to pass a time argument through submitit
     first = sys.argv[1]
-    print(first)
     if first.startswith("--"):
         job_input = sys.argv[1:]
         time = "02:30:00"
