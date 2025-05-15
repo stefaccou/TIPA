@@ -373,15 +373,15 @@ def main(submit_arguments):
                 model.delete_adapter("no_train_gain")
                 model.delete_adapter(task)
 
-            if not os.path.exists(f"./trained_adapters/typological/{eval_language}"):
-                os.makedirs(f"./trained_adapters/typological/{eval_language}")
+            if not os.path.exists(f"./eval_output/approximation/{eval_language}"):
+                os.makedirs(f"./eval_output/approximation/{eval_language}")
             # we save this
             if custom_args.output_name:
                 output_file = (
-                    f"./trained_adapters/typological/{eval_language}/{task}_{custom_args.output_name}{limit_str}.json"
+                    f"./eval_output/approximation/{eval_language}/{task}_{custom_args.output_name}{limit_str}.json"
                 )
             else:
-                output_file = f"./trained_adapters/typological/{eval_language}/{task}_eval{limit_str}.json"
+                output_file = f"./eval_output/approximation/{eval_language}/{task}_eval{limit_str}.json"
             with open(output_file, "w") as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
