@@ -121,6 +121,9 @@ def main(submit_arguments):
                 "nargs": "+",
             },
         )
+        local_adapters: Optional[List[str]] = field(
+            default=None, metadata={"help": ("Local language adapters to load in"), "nargs": "+"}
+        )
 
         def __post_init__(self):
             # we check if distance is in the list of available distances
@@ -198,7 +201,7 @@ def main(submit_arguments):
 
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
 
-    to_load = get_available_adapters(local=["eu", "sr"])
+    to_load = get_available_adapters(local=custom_args.local_adapters)
     for link, id in to_load.items():
         try:
             model.load_adapter(link, load_as=id)
@@ -263,8 +266,8 @@ def main(submit_arguments):
                 print(f"Evaluation results for {name}:")
                 print(ev)
                 # we empty the cache and model
-                model.cpu()
-                del model
+                # model.cpu()
+                # del model
                 del eval_trainer
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
@@ -274,6 +277,10 @@ def main(submit_arguments):
             evaluations = {}
             weights = {}
             glots = get_glots(to_load)
+            if eval_language in glots.keys():
+                target_glot = glots[eval_language]
+            else:
+                target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
             # we check if the adapter has already been created before
             for distance_type in distance_types:
                 adapter_name = f"reconstructed_{eval_language}_{distance_type}{limit_str}"
@@ -291,10 +298,6 @@ def main(submit_arguments):
                     )
 
                 else:
-                    if eval_language in glots.keys():
-                        target_glot = glots[eval_language]
-                    else:
-                        target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
                     weights[distance_type] = typological_approximation(
                         target_glot, glots, distance_type, custom_args.limit
                     )
@@ -315,12 +318,12 @@ def main(submit_arguments):
                 # delete the adapter for further iterations
                 model.delete_adapter(task)
 
-            model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
-            # we calculate the baseline of using the english language model and the task adapter
-            print("evaluating on baseline (english model + task adapter)")
-            evaluations["baseline_en"] = run_eval(model, "en")
-            model.delete_adapter(task)
             if not custom_args.disable_baselines:
+                model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
+                # we calculate the baseline of using the english language model and the task adapter
+                print("evaluating on baseline (english model + task adapter)")
+                evaluations["baseline_en"] = run_eval(model, "en")
+                model.delete_adapter(task)
                 model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
                 print("evaluating on baseline (only task adapter")
                 # we calculate a baseline (just task adapter)
@@ -337,12 +340,7 @@ def main(submit_arguments):
                         # we have to calculate these if we skipped the adapter creation
                         # we set limit to one so we only get the best adapter
                         if weights[distance_type] == {}:
-                            if eval_language in glots.keys():
-                                target_glot = glots[eval_language]
-                            else:
-                                target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
                             weights[distance_type] = typological_approximation(target_glot, glots, distance_type, 1)
-
                         # we load the closest adapter
                         closest_adapter = max(weights[distance_type], key=weights[distance_type].get)
                         print(
@@ -351,9 +349,28 @@ def main(submit_arguments):
                         evaluations[f"baseline_closest_{distance_type}"] = run_eval(model, closest_adapter)
                     except Exception as e:
                         print(f"Error finding closest adapter: {e}")
+                # we calculate the No Train but Gain baseline (english + closest adapter)
+                # for this, we retrieve the closest available adapter that is NOT english OR the language itself
+                # we do this to ensure fair comparison: the basleine of using the language itself is already included
+                if "featural" in weights.keys() and len(weights["featural"]) >= 3:
+                    train_gain = weights["featural"]
+                else:
+                    train_gain = typological_approximation(target_glot, glots, "featural", 3)
+                    # we select the highest that is not the language itself (eval_language) or english (en)
+                if eval_language in train_gain.keys():
+                    del train_gain[eval_language]
+                if "en" in train_gain.keys():
+                    del train_gain["en"]
+                related = max(train_gain, key=train_gain.get)
+                # as no preferred value for lambda is found by Klimaszewski, we do equal weighting for en and related
+                merge_loaded_adapters(
+                    model, merge_adapter_name="no_train_gain", weights={"en": 0.5, related: 0.5}, delete_other=False
+                )
+                evaluations["no_train_gain"] = run_eval(model, "no_train_gain")
 
-                # we delete the added adapters
+                # we now delete the added adapters
                 model.delete_adapter("huge_avg_adapter")
+                model.delete_adapter("no_train_gain")
                 model.delete_adapter(task)
 
             if not os.path.exists(f"./trained_adapters/typological/{eval_language}"):
@@ -410,10 +427,22 @@ if __name__ == "__main__":
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
     partition = f"gpu_p100{debug * '_debug'}"
+    # some shenanigans to pass a time argument through submitit
+    first = sys.argv[1]
+    print(first)
+    if first.startswith("--"):
+        job_input = sys.argv[1:]
+        time = "02:30:00"
+    else:
+        job_input = sys.argv[2:]
+        if len(first) == 1:
+            time = f"0{first}:00:00"
+        else:
+            time = first
     parameters = {
         "slurm_partition": partition,
         # "slurm_time": "03:00:00",
-        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '02:30:00'}",
+        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else time}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith(('gpu_p100', 'gpu_v100')) else 'wice'}",
@@ -430,8 +459,10 @@ if __name__ == "__main__":
     executor = submitit.AutoExecutor(folder=str(experiments_dir))
     executor.update_parameters(**parameters)
 
-    job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
+    # job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
 
-    job = executor.submit(main, job_input)
+    # job = executor.submit(main, job_input)
+    print("parameters:", parameters)
+    print("job input:", job_input)
     # job = executor.submit(main)
     print("job submitted")
