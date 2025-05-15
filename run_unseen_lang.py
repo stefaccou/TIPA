@@ -323,8 +323,8 @@ def main(submit_arguments):
                 # we calculate the baseline of using the english language model and the task adapter
                 print("evaluating on baseline (english model + task adapter)")
                 evaluations["baseline_en"] = run_eval(model, "en")
-                model.delete_adapter(task)
-                model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
+                # model.delete_adapter(task)
+                # model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
                 print("evaluating on baseline (only task adapter")
                 # we calculate a baseline (just task adapter)
                 evaluations["baseline_task_adapter"] = run_eval(model, task)
@@ -362,10 +362,12 @@ def main(submit_arguments):
                 if "en" in train_gain.keys():
                     del train_gain["en"]
                 related = max(train_gain, key=train_gain.get)
+                model.delete_adapter(task)
                 # as no preferred value for lambda is found by Klimaszewski, we do equal weighting for en and related
                 merge_loaded_adapters(
                     model, merge_adapter_name="no_train_gain", weights={"en": 0.5, related: 0.5}, delete_other=False
                 )
+                model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
                 evaluations["no_train_gain"] = run_eval(model, "no_train_gain")
 
                 # we now delete the added adapters
