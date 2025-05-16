@@ -230,7 +230,16 @@ def main(submit_arguments):
                 "\n\n",
                 f"Evaluating {task} on {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
             )
+            if custom_args.output_name:
+                output_file = (
+                    f"./eval_output/approximation/{eval_language}/{task}_{custom_args.output_name}{limit_str}.json"
+                )
+            else:
+                output_file = f"./eval_output/approximation/{eval_language}/{task}_eval{limit_str}.json"
 
+            if os.path.exists(output_file):
+                print(f"Skipping {eval_language} as it has already been processed. Output file: {output_file}")
+                continue
             # Load and preprocess the dataset
             dataset_eval = load_eval(task, eval_language, eval_languages)
             tokenized_datasets = preprocess(dataset_eval, task, tokenizer)
