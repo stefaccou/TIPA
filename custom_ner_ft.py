@@ -141,7 +141,7 @@ def main(submit_arguments):
         data_collator=data_collator,
         compute_metrics=compute_metrics,
         tokenizer=tokenizer,
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=10)],
     )
     trainer.train()
     # we save the ner adapter as "ner_adapter"
