@@ -181,6 +181,7 @@ def main(submit_arguments):
                         train_hits.append(label)
             # we calculate the overlap
             overlap = len(set(train_hits)) / len(validation_tokens)
+            token_overlaps[eval_language]["entity_overlap"] = overlap
     # Once we have all, we save the results
     output_dir = os.path.join("./eval_output", "token_overlap")
     os.makedirs(output_dir, exist_ok=True)
