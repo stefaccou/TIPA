@@ -266,9 +266,9 @@ def main(submit_arguments):
                 print(f"Evaluation results for {name}:")
                 print(ev)
                 # we empty the cache and model
-                model.cpu()
-                del model
-                del eval_trainer
+                # model.cpu()
+                # del model
+                eval_trainer = None
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
                 gc.collect()
@@ -362,14 +362,14 @@ def main(submit_arguments):
                 if "en" in train_gain.keys():
                     del train_gain["en"]
                 related = max(train_gain, key=train_gain.get)
-                model.delete_adapter(task)
+                if task in model.active_adapters:
+                    model.delete_adapter(task)
                 # as no preferred value for lambda is found by Klimaszewski, we do equal weighting for en and related
                 merge_loaded_adapters(
                     model, merge_adapter_name="no_train_gain", weights={"en": 0.5, related: 0.5}, delete_other=False
                 )
                 model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
                 evaluations["no_train_gain"] = run_eval(model, "no_train_gain")
-
                 # we now delete the added adapters
                 model.delete_adapter("huge_avg_adapter")
                 model.delete_adapter("no_train_gain")
