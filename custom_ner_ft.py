@@ -123,6 +123,7 @@ def main(submit_arguments):
         num_train_epochs=100,
         load_best_model_at_end=True,
         metric_for_best_model="f1",
+        greater_is_better=True,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
         learning_rate=1e-4,
@@ -148,7 +149,7 @@ def main(submit_arguments):
 
 if __name__ == "__main__":
     debug = False
-    job_name = debug * "debug_" + "finetune_ner_convergence"
+    job_name = debug * "debug_" + "convergence_ner_finetune"
 
     master_dir = find_master()
 

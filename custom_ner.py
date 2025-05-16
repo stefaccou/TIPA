@@ -13,6 +13,7 @@ def main(submit_arguments):
         AutoModelForTokenClassification,
         HfArgumentParser,
         DataCollatorForTokenClassification,
+        EarlyStoppingCallback,
     )
     from adapters import AdapterTrainer, init
     from adapters.composition import Stack
@@ -139,6 +140,10 @@ def main(submit_arguments):
     training_args = TrainingArguments(
         output_dir=data_args.output_dir,
         eval_strategy="epoch",
+        save_strategy="epoch",
+        load_best_model_at_end=True,
+        metric_for_best_model="f1",
+        greater_is_better=True,
         learning_rate=1e-4,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
@@ -157,13 +162,15 @@ def main(submit_arguments):
         data_collator=data_collator,
         compute_metrics=compute_metrics,
         tokenizer=tokenizer,
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
     )
     trainer.train()
     # we save the ner adapter as "ner_adapter"
 
 
 if __name__ == "__main__":
-    job_name = "better_ner_adapter"
+    debug = False
+    job_name = debug * "debug_" + "convergence_ner_adapter"
 
     master_dir = find_master()
 
@@ -173,14 +180,14 @@ if __name__ == "__main__":
     run_count = update_submission_log(experiments_dir, job_name)
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
-    partition = "gpu_p100"
+    partition = f"gpu_p100{debug * '_debug'}"
     parameters = {
         "slurm_partition": partition,
         # "slurm_time": "03:00:00",
-        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '5:00:00'}",
+        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '05:30:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
-            "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",
+            "clusters": f"{'genius' if partition.startswith(('gpu_p100', 'gpu_v100')) else 'wice'}",
             "account": os.environ["ACCOUNT_INFO"],  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
