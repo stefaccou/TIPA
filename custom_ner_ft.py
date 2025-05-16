@@ -13,6 +13,7 @@ def main(submit_arguments):
         AutoModelForTokenClassification,
         HfArgumentParser,
         Trainer,
+        EarlyStoppingCallback,
     )
     from transformers import DataCollatorForTokenClassification
     import evaluate
@@ -118,11 +119,13 @@ def main(submit_arguments):
     training_args = TrainingArguments(
         output_dir=data_args.output_dir,
         eval_strategy="epoch",
-        learning_rate=1e-4,
+        save_strategy="epoch",
+        num_train_epochs=100,
+        load_best_model_at_end=True,
+        metric_for_best_model="f1",
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
-        save_steps=25000,
-        num_train_epochs=100,
+        learning_rate=1e-4,
         weight_decay=0.01,
         overwrite_output_dir=True,
         # The next line is important to ensure the dataset labels are properly passed to the model
@@ -137,13 +140,14 @@ def main(submit_arguments):
         data_collator=data_collator,
         compute_metrics=compute_metrics,
         tokenizer=tokenizer,
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
     )
     trainer.train()
     # we save the ner adapter as "ner_adapter"
 
 
 if __name__ == "__main__":
-    debug = False
+    debug = True
     job_name = debug * "debug_" + "finetune_ner"
 
     master_dir = find_master()
