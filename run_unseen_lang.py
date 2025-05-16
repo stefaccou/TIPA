@@ -29,7 +29,6 @@ def main(submit_arguments):
     from adapters.composition import Stack
 
     import os
-    import gc
     import json
     import torch
     from qq import LanguageData, TagType
@@ -280,7 +279,7 @@ def main(submit_arguments):
                 eval_trainer = None
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
-                gc.collect()
+                # gc.collect()
                 return ev
 
             evaluations = {}
@@ -358,6 +357,7 @@ def main(submit_arguments):
                         evaluations[f"baseline_closest_{distance_type}"] = run_eval(model, closest_adapter)
                     except Exception as e:
                         print(f"Error finding closest adapter: {e}")
+                model.delete_adapter(task)
                 # we calculate the No Train but Gain baseline (english + closest adapter)
                 # for this, we retrieve the closest available adapter that is NOT english OR the language itself
                 # we do this to ensure fair comparison: the basleine of using the language itself is already included
@@ -371,8 +371,7 @@ def main(submit_arguments):
                 if "en" in train_gain.keys():
                     del train_gain["en"]
                 related = max(train_gain, key=train_gain.get)
-                if task in model.active_adapters:
-                    model.delete_adapter(task)
+                print("calculating no train but gain baseline")
                 # as no preferred value for lambda is found by Klimaszewski, we do equal weighting for en and related
                 merge_loaded_adapters(
                     model, merge_adapter_name="no_train_gain", weights={"en": 0.5, related: 0.5}, delete_other=False
