@@ -207,7 +207,7 @@ if __name__ == "__main__":
     parameters = {
         "slurm_partition": partition,
         # "slurm_time": "03:00:00",
-        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '00:30:00'}",
+        "slurm_time": f"{'00:30:00' if partition.endswith('debug') else '00:30:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith(('gpu_p100', 'gpu_v100')) else 'wice'}",
