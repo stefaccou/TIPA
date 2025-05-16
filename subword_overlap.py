@@ -112,10 +112,9 @@ def main(submit_arguments):
         tokenized_corpus = concatenate_datasets([tokenized_corpus, tokenized_eval])
 
     # we make a set of all the tokens in the source corpus
-    source_tokens = set()
+    train_vocab = set()
     for example in tokenized_corpus:
-        for token in example["input_ids"]:
-            source_tokens.add(token)
+        train_vocab.update(example["input_ids"])
     # we print the first few
 
     token_overlaps = {}
@@ -158,30 +157,44 @@ def main(submit_arguments):
                 lambda x: tokenizer(x["premise"], x["question"], x["choice1"], x["choice2"], truncation=True),
                 batched=True,
             )
-        # we make a set of all the tokens in the source corpus
-        validation_tokens = set()
-        for example in tokenized_eval:
-            for token in example["input_ids"]:
-                validation_tokens.add(token)
-        # we print the first few
-        # we calculate the overlap
-        overlap = len(source_tokens.intersection(validation_tokens)) / len(validation_tokens)
-        # we also save the absolute number of overlap tokens
-        overlap_abs = len(source_tokens.intersection(validation_tokens))
+
+        test_tokens = [token for example in tokenized_eval for token in example["input_ids"]]
+        total_test_tokens = len(test_tokens)
+
+        # token-level coverage
+        if total_test_tokens > 0:
+            overlap_count = sum(1 for token in test_tokens if token in train_vocab)
+            token_coverage = overlap_count / total_test_tokens
+        else:
+            overlap_count = 0
+            token_coverage = 0.0
+
+        # calculate type-level coverage
+        test_vocab = set(test_tokens)
+        if test_vocab:
+            type_overlap_count = len(test_vocab.intersection(train_vocab))
+            type_overlap = type_overlap_count / len(test_vocab)
+        else:
+            type_overlap_count = 0
+            type_overlap = 0.0
+
         token_overlaps[eval_language] = {
-            "overlap": overlap,
-            "overlap_abs": overlap_abs,
+            "token_coverage": token_coverage,
+            "overlap_count": overlap_count,
+            "type_overlap": type_overlap,
+            "type_overlap_count": type_overlap_count,
         }
-        print(f"Token overlap: {overlap:.2%} ({overlap_abs} tokens)")
+        print(f"Token coverage: {token_coverage:.2%} ({overlap_count} of {total_test_tokens} tokens)")
+        print(f"Type-level overlap: {type_overlap:.2%} ({type_overlap_count} unique tokens)")
         if task == "ner":
             train_hits = []
             for example in tokenized_corpus:
                 for token, label in zip(example["input_ids"], example["ner_tags"]):
-                    if token in validation_tokens:
+                    if token in test_vocab:
                         train_hits.append(label)
             # we calculate the overlap
-            overlap = len(set(train_hits)) / len(validation_tokens)
-            token_overlaps[eval_language]["entity_overlap"] = overlap
+            entity_overlap = len(set(train_hits)) / len(test_vocab) if test_vocab else 0
+            token_overlaps[eval_language]["entity_overlap"] = entity_overlap
     # Once we have all, we save the results
     output_dir = os.path.join("./eval_output", "token_overlap")
     os.makedirs(output_dir, exist_ok=True)
