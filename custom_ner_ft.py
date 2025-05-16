@@ -148,7 +148,7 @@ def main(submit_arguments):
 
 if __name__ == "__main__":
     debug = False
-    job_name = debug * "debug_" + "finetune_ner"
+    job_name = debug * "debug_" + "finetune_ner_convergence"
 
     master_dir = find_master()
 
