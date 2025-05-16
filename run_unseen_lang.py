@@ -31,6 +31,7 @@ def main(submit_arguments):
     import os
     import json
     import torch
+    import gc
     from qq import LanguageData, TagType
 
     from dataclasses import dataclass, field
@@ -279,7 +280,7 @@ def main(submit_arguments):
                 eval_trainer = None
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
-                # gc.collect()
+                gc.collect()
                 return ev
 
             evaluations = {}
@@ -319,7 +320,7 @@ def main(submit_arguments):
                         if not os.path.exists(adapter_path):
                             os.makedirs(adapter_path)
                         model.save_adapter(adapter_path, adapter_name)
-                model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
+                model.load_adapter(f"./trained_adapters/task_adapters/{task}_convergence", load_as=task)
                 print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
                 evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
                 model.delete_adapter(adapter_name)
@@ -327,12 +328,12 @@ def main(submit_arguments):
                 model.delete_adapter(task)
 
             if not custom_args.disable_baselines:
-                model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
+                model.load_adapter(f"./trained_adapters/task_adapters/{task}_convergence", load_as=task)
                 # we calculate the baseline of using the english language model and the task adapter
                 print("evaluating on baseline (english model + task adapter)")
                 evaluations["baseline_en"] = run_eval(model, "en")
-                # model.delete_adapter(task)
-                # model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
+                model.delete_adapter(task)
+                model.load_adapter(f"./trained_adapters/task_adapters/{task}_convergence", load_as=task)
                 print("evaluating on baseline (only task adapter")
                 # we calculate a baseline (just task adapter)
                 evaluations["baseline_task_adapter"] = run_eval(model, task)
@@ -359,29 +360,36 @@ def main(submit_arguments):
                     except Exception as e:
                         print(f"Error finding closest adapter: {e}")
                 model.delete_adapter(task)
+
                 # we calculate the No Train but Gain baseline (english + closest adapter)
                 # for this, we retrieve the closest available adapter that is NOT english OR the language itself
                 # we do this to ensure fair comparison: the basleine of using the language itself is already included
-                if "featural" in weights.keys() and len(weights["featural"]) >= 3:
-                    train_gain = weights["featural"]
-                else:
-                    train_gain = typological_approximation(target_glot, glots, "featural", 3)
-                    # we select the highest that is not the language itself (eval_language) or english (en)
-                if eval_language in train_gain.keys():
-                    train_gain[eval_language] = 0
-                if "en" in train_gain.keys():
-                    train_gain["en"] = 0
-                related = max(train_gain, key=train_gain.get)
-                print(f"calculating no train but gain baseline with closest adapter {related}")
-                # as no preferred value for lambda is found by Klimaszewski, we do equal weighting for en and related
-                merge_loaded_adapters(
-                    model, merge_adapter_name="no_train_gain", weights={"en": 0.5, related: 0.5}, delete_other=False
-                )
-                model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
-                evaluations["no_train_gain"] = run_eval(model, "no_train_gain")
-                # we now delete the added adapters
-                model.delete_adapter("no_train_gain")
-                model.delete_adapter(task)
+                try:
+                    if "featural" in weights.keys() and len(weights["featural"]) >= 3:
+                        train_gain = weights["featural"]
+                    else:
+                        train_gain = typological_approximation(target_glot, glots, "featural", 3)
+                        # we select the highest that is not the language itself (eval_language) or english (en)
+                    if eval_language in train_gain.keys():
+                        train_gain[eval_language] = 0
+                    if "en" in train_gain.keys():
+                        train_gain["en"] = 0
+                    related = max(train_gain, key=train_gain.get)
+                    print(f"calculating no train but gain baseline with closest adapter {related}")
+                    # as no preferred value for lambda is found by Klimaszewski, we do equal weighting for en and related
+                    merge_loaded_adapters(
+                        model, merge_adapter_name="no_train_gain", weights={"en": 0.5, related: 0.5}, delete_other=False
+                    )
+                    model.load_adapter(f"./trained_adapters/task_adapters/{task}_convergence", load_as=task)
+                    evaluations["no_train_gain"] = run_eval(model, "no_train_gain")
+                    # we now delete the added adapters
+                    model.delete_adapter("no_train_gain")
+                    model.delete_adapter(task)
+                except Exception as e:
+                    print(f"Error calculating no train but gain baseline: {e}")
+                    # we print the active adapters: the model layers
+                    print(model.roberta.encoder.layer[0].output.adapters)
+                    continue
 
             if not os.path.exists(f"./eval_output/approximation/{eval_language}"):
                 os.makedirs(f"./eval_output/approximation/{eval_language}")
