@@ -341,6 +341,7 @@ def main(submit_arguments):
                 print("evaluating on baseline (non-weighted average)")
                 model.load_adapter("./trained_adapters/typological/huge_avg_adapter", load_as="huge_avg_adapter")
                 evaluations["baseline_avg_adapter"] = run_eval(model, "huge_avg_adapter")
+                model.delete_adapter("huge_avg_adapter")
                 # we calculate the baseline of using the typologically closest model and the task adapter
                 print("evaluating on baseline (closest model + task adapter)")
                 for distance_type in distance_types:
@@ -367,11 +368,11 @@ def main(submit_arguments):
                     train_gain = typological_approximation(target_glot, glots, "featural", 3)
                     # we select the highest that is not the language itself (eval_language) or english (en)
                 if eval_language in train_gain.keys():
-                    del train_gain[eval_language]
+                    train_gain[eval_language] = 0
                 if "en" in train_gain.keys():
-                    del train_gain["en"]
+                    train_gain["en"] = 0
                 related = max(train_gain, key=train_gain.get)
-                print("calculating no train but gain baseline")
+                print(f"calculating no train but gain baseline with closest adapter {related}")
                 # as no preferred value for lambda is found by Klimaszewski, we do equal weighting for en and related
                 merge_loaded_adapters(
                     model, merge_adapter_name="no_train_gain", weights={"en": 0.5, related: 0.5}, delete_other=False
@@ -379,7 +380,6 @@ def main(submit_arguments):
                 model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
                 evaluations["no_train_gain"] = run_eval(model, "no_train_gain")
                 # we now delete the added adapters
-                model.delete_adapter("huge_avg_adapter")
                 model.delete_adapter("no_train_gain")
                 model.delete_adapter(task)
 
