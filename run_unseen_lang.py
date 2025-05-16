@@ -319,7 +319,7 @@ def main(submit_arguments):
                         if not os.path.exists(adapter_path):
                             os.makedirs(adapter_path)
                         model.save_adapter(adapter_path, adapter_name)
-                model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
+                model.load_adapter(f"./trained_adapters/task_adapters/{task}_convergence", load_as=task)
                 print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
                 evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
                 model.delete_adapter(adapter_name)
@@ -327,12 +327,12 @@ def main(submit_arguments):
                 model.delete_adapter(task)
 
             if not custom_args.disable_baselines:
-                model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
+                model.load_adapter(f"./trained_adapters/task_adapters/{task}_convergence", load_as=task)
                 # we calculate the baseline of using the english language model and the task adapter
                 print("evaluating on baseline (english model + task adapter)")
                 evaluations["baseline_en"] = run_eval(model, "en")
                 # model.delete_adapter(task)
-                # model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
+                # model.load_adapter(f"./trained_adapters/task_adapters/{task}_convergence", load_as=task)
                 print("evaluating on baseline (only task adapter")
                 # we calculate a baseline (just task adapter)
                 evaluations["baseline_task_adapter"] = run_eval(model, task)
@@ -377,7 +377,7 @@ def main(submit_arguments):
                 merge_loaded_adapters(
                     model, merge_adapter_name="no_train_gain", weights={"en": 0.5, related: 0.5}, delete_other=False
                 )
-                model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
+                model.load_adapter(f"./trained_adapters/task_adapters/{task}_convergence", load_as=task)
                 evaluations["no_train_gain"] = run_eval(model, "no_train_gain")
                 # we now delete the added adapters
                 model.delete_adapter("no_train_gain")
@@ -425,7 +425,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    debug = False
+    debug = True
     job_name = debug * "debug_" + "unseen_task"
 
     master_dir = find_master()
