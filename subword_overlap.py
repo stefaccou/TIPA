@@ -165,7 +165,7 @@ def main(submit_arguments):
                 validation_tokens.add(token)
         # we print the first few
         # we calculate the overlap
-        overlap = len(source_tokens.intersection(validation_tokens)) / len(source_tokens)
+        overlap = len(source_tokens.intersection(validation_tokens)) / len(validation_tokens)
         # we also save the absolute number of overlap tokens
         overlap_abs = len(source_tokens.intersection(validation_tokens))
         token_overlaps[eval_language] = {
@@ -173,6 +173,14 @@ def main(submit_arguments):
             "overlap_abs": overlap_abs,
         }
         print(f"Token overlap: {overlap:.2%} ({overlap_abs} tokens)")
+        if task == "ner":
+            train_hits = []
+            for example in tokenized_corpus:
+                for token, label in zip(example["input_ids"], example["ner_tags"]):
+                    if token in validation_tokens:
+                        train_hits.append(label)
+            # we calculate the overlap
+            overlap = len(set(train_hits)) / len(validation_tokens)
     # Once we have all, we save the results
     output_dir = os.path.join("./eval_output", "token_overlap")
     os.makedirs(output_dir, exist_ok=True)
@@ -183,7 +191,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    debug = False
+    debug = True
     job_name = debug * "debug_" + "token_overlap"
 
     master_dir = find_master()
