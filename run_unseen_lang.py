@@ -30,8 +30,6 @@ def main(submit_arguments):
 
     import os
     import json
-    import torch
-    import gc
     from qq import LanguageData, TagType
 
     from dataclasses import dataclass, field
@@ -250,7 +248,7 @@ def main(submit_arguments):
             else:
                 label_names = None
 
-            # dataset is now ready to be used with adapters for cross-lingual transfer
+            compute_metrics = get_compute_metrics(task, label_names)
 
             def run_eval(model, name):
                 # we load in the task adapter
@@ -259,13 +257,12 @@ def main(submit_arguments):
                 else:
                     model.active_adapters = name
                 # prepare the common arguments
-                compute_metrics = get_compute_metrics(task, label_names)
                 trainer_kwargs = get_trainer_kwargs(
                     task, model, tokenized_datasets, tokenizer, data_collator, compute_metrics
                 )
                 # instantiate
                 eval_trainer = AdapterTrainer(**trainer_kwargs)
-                if not task == "qa":
+                if task != "qa":
                     ev = eval_trainer.evaluate()
                 else:
                     predictions, _, _ = eval_trainer.predict(tokenized_datasets)
@@ -278,9 +275,9 @@ def main(submit_arguments):
                 # model.cpu()
                 # del model
                 eval_trainer = None
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-                gc.collect()
+                # if torch.cuda.is_available():
+                #    torch.cuda.empty_cache()
+                # gc.collect()
                 return ev
 
             evaluations = {}
