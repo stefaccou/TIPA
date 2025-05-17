@@ -122,6 +122,15 @@ def main(submit_arguments):
         local_adapters: Optional[List[str]] = field(
             default=None, metadata={"help": ("Local language adapters to load in"), "nargs": "+"}
         )
+        reverse: Optional[bool] = field(
+            default=False,
+            metadata={
+                "help": (
+                    "Whether to reverse the order of the languages. "
+                    "Default False, it will keep the order of the languages."
+                )
+            },
+        )
 
         def __post_init__(self):
             # we check if distance is in the list of available distances
@@ -221,7 +230,9 @@ def main(submit_arguments):
             limit_p = f"/{str(custom_args.limit)}"
 
     print(f"\n{'~' * 30}\n{task.upper()}\n{'~' * 30}")
-    # Brute: we only consider english for now
+    # We reverse the order of the languages if custom_args.reverse
+    if custom_args.reverse:
+        eval_languages = {k: v for k, v in reversed(eval_languages.items())}
     for eval_language in eval_languages.keys():
         try:
             print(
