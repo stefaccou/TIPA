@@ -102,6 +102,8 @@ def main(submit_arguments):
 
         inputs["start_positions"] = start_positions
         inputs["end_positions"] = end_positions
+        inputs["example_id"] = examples["id"]
+        inputs["offset_mapping"] = offset_mapping
         return inputs
 
     def compute_metrics(eval_pred: EvalPrediction, features, examples, n_best=20):
@@ -198,7 +200,7 @@ def main(submit_arguments):
     )
     trainer.train()
     # we save the qa adapter as "qa_adapter"
-    model.save_adapter(data_args.output_dir, "qa_adapter")
+    model.save_adapter(data_args.output_dir, "qa")
 
 
 if __name__ == "__main__":
