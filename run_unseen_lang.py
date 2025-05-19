@@ -452,7 +452,7 @@ if __name__ == "__main__":
     run_count = update_submission_log(experiments_dir, job_name)
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
-    partition = f"gpu_p100{debug * '_debug'}"
+    partition = f"gpu_a100{debug * '_debug'}"
     # some shenanigans to pass a time argument through submitit
     first = sys.argv[1]
     if first.startswith("--"):
