@@ -213,7 +213,7 @@ def main(submit_arguments):
 
 if __name__ == "__main__":
     debug = False
-    job_name = "debug_" * debug + "convergence_qa_adapter"
+    job_name = "debug_" * debug + "convergence_qa_adapter_a"
 
     master_dir = find_master()
 
