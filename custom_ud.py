@@ -168,7 +168,7 @@ def main(submit_arguments):
     )
     # we save the ner adapter as "ner_adapter"
     trainer.train()
-    model.save_adapter("ud_pos", data_args.output_dir)
+    model.save_adapter(data_args.output_dir, "pos_adapter")
 
 
 if __name__ == "__main__":
