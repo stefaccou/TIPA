@@ -188,7 +188,6 @@ def main(submit_arguments):
         compute_metrics=lambda p: compute_metrics(p, tokenized_for_val, raw_datasets["validation"]),
         tokenizer=tokenizer,
         callbacks=[EarlyStoppingCallback(early_stopping_patience=10)],
-        processing_class=tokenizer,
     )
     trainer.train()
     # we save the qa finetune as "qa"
