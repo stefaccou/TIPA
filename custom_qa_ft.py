@@ -214,7 +214,7 @@ if __name__ == "__main__":
     run_count = update_submission_log(experiments_dir, job_name)
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
-    partition = f"gpu_p100{'_debug' * debug}"
+    partition = f"gpu_a100{'_debug' * debug}"
     parameters = {
         "slurm_partition": partition,
         "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '5:30:00'}",
