@@ -125,6 +125,7 @@ def main(submit_arguments):
     )
     trainer.train()
     # we save the copa adapter as "copa_adapter"
+    model.save_adapter(data_args.output_dir, "copa")
 
 
 if __name__ == "__main__":
