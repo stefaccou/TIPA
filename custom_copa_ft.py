@@ -123,7 +123,7 @@ def main(submit_arguments):
         training_args.resume_from_checkpoint = last_checkpoint
     else:
         print("No checkpoint found, starting training from scratch.")
-        trainer.train()
+    trainer.train()
 
 
 if __name__ == "__main__":
