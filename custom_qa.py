@@ -187,6 +187,7 @@ def main(submit_arguments):
     )
     trainer.train()
     # we save the qa adapter as "qa_adapter"
+    model.save_adapter(data_args.output_dir, "qa_adapter")
 
 
 if __name__ == "__main__":
