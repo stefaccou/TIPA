@@ -7,12 +7,23 @@ from custom_submission_utils import find_master, update_submission_log
 def main(submit_arguments):
     from datasets import load_dataset
     from dataclasses import dataclass, field
-    from transformers import TrainingArguments, AutoTokenizer, AutoModelForQuestionAnswering, HfArgumentParser
+    from transformers import (
+        TrainingArguments,
+        AutoTokenizer,
+        AutoModelForQuestionAnswering,
+        HfArgumentParser,
+        EvalPrediction,
+        EarlyStoppingCallback,
+    )
     from adapters import AdapterTrainer, init
     from adapters.composition import Stack
     from transformers import DefaultDataCollator
+    import evaluate
+    import collections
+    import numpy as np
+    from tqdm import tqdm
 
-    # metric = evaluate.load("squad")
+    metric = evaluate.load("squad")
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
     raw_datasets = load_dataset("squad")
     data_collator = DefaultDataCollator()
@@ -93,6 +104,45 @@ def main(submit_arguments):
         inputs["end_positions"] = end_positions
         return inputs
 
+    def compute_metrics(eval_pred: EvalPrediction, features, examples, n_best=20):
+        start_logits, end_logits = eval_pred.predictions
+        example_to_features = collections.defaultdict(list)
+        for i, f in enumerate(features):
+            example_to_features[f["example_id"]].append(i)
+
+        predicted_answers = []
+        for example in tqdm(examples):
+            qid = example["id"]
+            context = example["context"]
+            feature_indices = example_to_features[qid]
+            best_answer = ""
+            best_score = -float("inf")
+
+            # Iterate over features for this example
+            for idx in feature_indices:
+                start_logit = start_logits[idx]
+                end_logit = end_logits[idx]
+                offsets = features[idx]["offset_mapping"]
+
+                # Select top n_best start/end indices
+                start_idxs = np.argsort(start_logit)[-n_best:]
+                end_idxs = np.argsort(end_logit)[-n_best:]
+                for si in start_idxs:
+                    for ei in end_idxs:
+                        if si <= ei and offsets[si] and offsets[ei]:
+                            score = start_logit[si] + end_logit[ei]
+                            if score > best_score:
+                                best_score = score
+                                best_answer = context[offsets[si][0] : offsets[ei][1]]
+
+            if best_answer == "":
+                best_answer = ""  # No valid span found
+            predicted_answers.append({"id": qid, "prediction_text": best_answer})
+
+        references = [{"id": ex["id"], "answers": ex["answers"]} for ex in examples]
+        results = metric.compute(predictions=predicted_answers, references=references)
+        return {"exact_match": results["exact_match"], "f1": results["f1"]}
+
     tokenized_datasets = raw_datasets.map(
         preprocess_function,
         batched=True,
@@ -110,11 +160,15 @@ def main(submit_arguments):
     training_args = TrainingArguments(
         output_dir=data_args.output_dir,
         eval_strategy="epoch",
+        save_strategy="epoch",
+        load_best_model_at_end=True,
+        metric_for_best_model="f1",
+        greater_is_better=True,
         learning_rate=1e-4,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
-        save_steps=1000,
-        max_steps=50000,
+        save_steps=25000,
+        num_train_epochs=100,
         weight_decay=0.01,
         overwrite_output_dir=True,
         # The next line is important to ensure the dataset labels are properly passed to the model
@@ -126,7 +180,9 @@ def main(submit_arguments):
         train_dataset=tokenized_datasets["train"],
         eval_dataset=tokenized_datasets["validation"],
         data_collator=data_collator,
-        # compute_metrics=compute_metrics,
+        compute_metrics=lambda p: compute_metrics(p, tokenized_datasets["validation"], raw_datasets["validation"]),
+        tokenizer=tokenizer,
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=10)],
         processing_class=tokenizer,
     )
     trainer.train()
@@ -134,8 +190,8 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    debug = False
-    job_name = "debug_" * debug + "better_qa_adapter"
+    debug = True
+    job_name = "debug_" * debug + "convergence_qa_adapter"
 
     master_dir = find_master()
 
