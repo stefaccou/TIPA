@@ -18,6 +18,7 @@ def main(submit_arguments):
         EarlyStoppingCallback,
     )
     import numpy as np
+    from transformers.trainer_utils import get_last_checkpoint
 
     @dataclass
     class DataTrainingArguments:
@@ -103,7 +104,7 @@ def main(submit_arguments):
         num_train_epochs=100,
         weight_decay=0.01,
         save_steps=25000,
-        overwrite_output_dir=True,
+        overwrite_output_dir=False,
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
     )
@@ -116,8 +117,13 @@ def main(submit_arguments):
         compute_metrics=compute_metrics,
         callbacks=[EarlyStoppingCallback(early_stopping_patience=10)],
     )
-    trainer.train()
-    # we save the copa adapter as "copa_adapter"
+    last_checkpoint = get_last_checkpoint(data_args.output_dir)
+    if last_checkpoint is not None:
+        print(f"Resuming training from checkpoint: {last_checkpoint}")
+        training_args.resume_from_checkpoint = last_checkpoint
+    else:
+        print("No checkpoint found, starting training from scratch.")
+        trainer.train()
 
 
 if __name__ == "__main__":
