@@ -105,42 +105,50 @@ def main(submit_arguments):
         return inputs
 
     def compute_metrics(eval_pred: EvalPrediction, features, examples, n_best=20):
+        max_answer_length = 30
         start_logits, end_logits = eval_pred.predictions
         example_to_features = collections.defaultdict(list)
-        for i, f in enumerate(features):
-            example_to_features[f["example_id"]].append(i)
+        for idx, feature in enumerate(features):
+            example_to_features[feature["example_id"]].append(idx)
 
         predicted_answers = []
         for example in tqdm(examples):
-            qid = example["id"]
+            example_id = example["id"]
             context = example["context"]
-            feature_indices = example_to_features[qid]
-            best_answer = ""
-            best_score = -float("inf")
+            answers = []
 
-            # Iterate over features for this example
-            for idx in feature_indices:
-                start_logit = start_logits[idx]
-                end_logit = end_logits[idx]
-                offsets = features[idx]["offset_mapping"]
+            # Loop through all features associated with that example
+            for feature_index in example_to_features[example_id]:
+                start_logit = start_logits[feature_index]
+                end_logit = end_logits[feature_index]
+                offsets = features[feature_index]["offset_mapping"]
 
-                # Select top n_best start/end indices
-                start_idxs = np.argsort(start_logit)[-n_best:]
-                end_idxs = np.argsort(end_logit)[-n_best:]
-                for si in start_idxs:
-                    for ei in end_idxs:
-                        if si <= ei and offsets[si] and offsets[ei]:
-                            score = start_logit[si] + end_logit[ei]
-                            if score > best_score:
-                                best_score = score
-                                best_answer = context[offsets[si][0] : offsets[ei][1]]
+                start_indexes = np.argsort(start_logit)[-1 : -n_best - 1 : -1].tolist()
+                end_indexes = np.argsort(end_logit)[-1 : -n_best - 1 : -1].tolist()
+                for start_index in start_indexes:
+                    for end_index in end_indexes:
+                        # Skip answers that are not fully in the context
+                        if offsets[start_index] is None or offsets[end_index] is None:
+                            continue
+                        # Skip answers with a length that is either < 0 or > max_answer_length
+                        if end_index < start_index or end_index - start_index + 1 > max_answer_length:
+                            continue
 
-            if best_answer == "":
-                best_answer = ""  # No valid span found
-            predicted_answers.append({"id": qid, "prediction_text": best_answer})
+                        answer = {
+                            "text": context[offsets[start_index][0] : offsets[end_index][1]],
+                            "logit_score": start_logit[start_index] + end_logit[end_index],
+                        }
+                        answers.append(answer)
 
-        references = [{"id": ex["id"], "answers": ex["answers"]} for ex in examples]
-        results = metric.compute(predictions=predicted_answers, references=references)
+            # Select the answer with the best score
+            if len(answers) > 0:
+                best_answer = max(answers, key=lambda x: x["logit_score"])
+                predicted_answers.append({"id": example_id, "prediction_text": best_answer["text"]})
+            else:
+                predicted_answers.append({"id": example_id, "prediction_text": ""})
+
+        theoretical_answers = [{"id": ex["id"], "answers": ex["answers"]} for ex in examples]
+        results = metric.compute(predictions=predicted_answers, references=theoretical_answers)
         return {"exact_match": results["exact_match"], "f1": results["f1"]}
 
     tokenized_datasets = raw_datasets.map(
@@ -148,6 +156,8 @@ def main(submit_arguments):
         batched=True,
         remove_columns=raw_datasets["train"].column_names,
     )
+    tokenized_for_val = tokenized_datasets["validation"]
+    stripped = tokenized_datasets.remove_columns(["offset_mapping", "example_id"])
 
     model = AutoModelForQuestionAnswering.from_pretrained("xlm-roberta-base")
 
@@ -178,10 +188,10 @@ def main(submit_arguments):
     trainer = AdapterTrainer(
         model=model,
         args=training_args,
-        train_dataset=tokenized_datasets["train"],
-        eval_dataset=tokenized_datasets["validation"],
+        train_dataset=stripped["train"],
+        eval_dataset=stripped["validation"],
         data_collator=data_collator,
-        compute_metrics=lambda p: compute_metrics(p, tokenized_datasets["validation"], raw_datasets["validation"]),
+        compute_metrics=lambda p: compute_metrics(p, tokenized_for_val, raw_datasets["validation"]),
         tokenizer=tokenizer,
         callbacks=[EarlyStoppingCallback(early_stopping_patience=10)],
         processing_class=tokenizer,
