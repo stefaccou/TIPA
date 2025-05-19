@@ -173,8 +173,8 @@ def main(submit_arguments):
         output_dir=data_args.output_dir,
         eval_strategy="steps",
         save_strategy="steps",
-        eval_steps=200,
-        save_steps=200,
+        eval_steps=500,
+        save_steps=500,
         load_best_model_at_end=True,
         metric_for_best_model="f1",
         greater_is_better=True,
@@ -204,7 +204,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    debug = True
+    debug = False
     job_name = "debug_" * debug + "convergence_qa_adapter"
 
     master_dir = find_master()
