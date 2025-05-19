@@ -15,6 +15,7 @@ def main(submit_arguments):
         EvalPrediction,
         EarlyStoppingCallback,
     )
+    from transformers.trainer_utils import get_last_checkpoint
     from adapters import AdapterTrainer, init
     from adapters.composition import Stack
     from transformers import DefaultDataCollator
@@ -183,7 +184,7 @@ def main(submit_arguments):
         per_device_eval_batch_size=16,
         num_train_epochs=10,
         weight_decay=0.01,
-        overwrite_output_dir=True,
+        overwrite_output_dir=False,
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
     )
@@ -198,6 +199,13 @@ def main(submit_arguments):
         callbacks=[EarlyStoppingCallback(early_stopping_patience=10)],
         processing_class=tokenizer,
     )
+    last_checkpoint = get_last_checkpoint(data_args.output_dir)
+    if last_checkpoint is not None:
+        print(f"Resuming training from checkpoint: {last_checkpoint}")
+        training_args.resume_from_checkpoint = last_checkpoint
+    else:
+        print("No checkpoint found, starting training from scratch.")
+    trainer.train()
     trainer.train()
     # we save the qa adapter as "qa_adapter"
     model.save_adapter(data_args.output_dir, "qa")
@@ -218,7 +226,7 @@ if __name__ == "__main__":
     partition = f"gpu_p100{'_debug' * debug}"
     parameters = {
         "slurm_partition": partition,
-        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '10:00:00'}",
+        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '6:00:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",
