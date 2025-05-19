@@ -14,6 +14,7 @@ def main(submit_arguments):
         HfArgumentParser,
         DataCollatorForTokenClassification,
         Trainer,
+        EarlyStoppingCallback,
     )
     import numpy as np
     from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
@@ -132,7 +133,11 @@ def main(submit_arguments):
     training_args = TrainingArguments(
         output_dir=data_args.output_dir,
         eval_strategy="epoch",
+        save_strategy="epoch",
         learning_rate=1e-4,
+        load_best_model_at_end=True,
+        metric_for_best_model="f1_macro",
+        greater_is_better=True,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
         num_train_epochs=100,
@@ -152,6 +157,7 @@ def main(submit_arguments):
         data_collator=data_collator,
         tokenizer=tokenizer,  # future versions will accept `processing_class` instead
         compute_metrics=compute_metrics,
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=10)],
     )
     # we save the ner adapter as "ner_adapter"
     trainer.train()
@@ -159,7 +165,7 @@ def main(submit_arguments):
 
 if __name__ == "__main__":
     debug = False
-    job_name = "debug_" * debug + "finetune_pos"
+    job_name = "debug_" * debug + "convergence_finetune_pos"
 
     master_dir = find_master()
 
