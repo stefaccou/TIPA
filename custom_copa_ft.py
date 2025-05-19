@@ -121,7 +121,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    debug = False
+    debug = True
     job_name = debug * "debug_" + "convergence_finetune_copa"
 
     master_dir = find_master()
