@@ -52,7 +52,7 @@ def main(submit_arguments):
 
     print("passed args: ", data_args)
 
-    # From Huggingface question answering example
+    # From Huggingface question answering example, adapted for evaluation
     def preprocess_function(examples):
         questions = [q.strip() for q in examples["question"]]
         inputs = tokenizer(

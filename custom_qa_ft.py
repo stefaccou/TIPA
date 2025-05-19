@@ -14,9 +14,15 @@ def main(submit_arguments):
         HfArgumentParser,
         Trainer,
         DefaultDataCollator,
+        EvalPrediction,
+        EarlyStoppingCallback,
     )
+    import evaluate
+    import collections
+    import numpy as np
+    from tqdm import tqdm
 
-    # metric = evaluate.load("squad")
+    metric = evaluate.load("squad")
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
     raw_datasets = load_dataset("squad")
     data_collator = DefaultDataCollator()
@@ -45,7 +51,7 @@ def main(submit_arguments):
 
     print("passed args: ", data_args)
 
-    # From Huggingface question answering example
+    # From Huggingface question answering example, adapted slightly for evaluation
     def preprocess_function(examples):
         questions = [q.strip() for q in examples["question"]]
         inputs = tokenizer(
@@ -95,40 +101,98 @@ def main(submit_arguments):
 
         inputs["start_positions"] = start_positions
         inputs["end_positions"] = end_positions
+        inputs["example_id"] = examples["id"]
+        inputs["offset_mapping"] = offset_mapping
         return inputs
+
+    def compute_metrics(eval_pred: EvalPrediction, features, examples, n_best=20):
+        max_answer_length = 30
+        start_logits, end_logits = eval_pred.predictions
+        example_to_features = collections.defaultdict(list)
+        for idx, feature in enumerate(features):
+            example_to_features[feature["example_id"]].append(idx)
+
+        predicted_answers = []
+        for example in tqdm(examples):
+            example_id = example["id"]
+            context = example["context"]
+            answers = []
+
+            # Loop through all features associated with that example
+            for feature_index in example_to_features[example_id]:
+                start_logit = start_logits[feature_index]
+                end_logit = end_logits[feature_index]
+                offsets = features[feature_index]["offset_mapping"]
+
+                start_indexes = np.argsort(start_logit)[-1 : -n_best - 1 : -1].tolist()
+                end_indexes = np.argsort(end_logit)[-1 : -n_best - 1 : -1].tolist()
+                for start_index in start_indexes:
+                    for end_index in end_indexes:
+                        # Skip answers that are not fully in the context
+                        if offsets[start_index] is None or offsets[end_index] is None:
+                            continue
+                        # Skip answers with a length that is either < 0 or > max_answer_length
+                        if end_index < start_index or end_index - start_index + 1 > max_answer_length:
+                            continue
+
+                        answer = {
+                            "text": context[offsets[start_index][0] : offsets[end_index][1]],
+                            "logit_score": start_logit[start_index] + end_logit[end_index],
+                        }
+                        answers.append(answer)
+
+            # Select the answer with the best score
+            if len(answers) > 0:
+                best_answer = max(answers, key=lambda x: x["logit_score"])
+                predicted_answers.append({"id": example_id, "prediction_text": best_answer["text"]})
+            else:
+                predicted_answers.append({"id": example_id, "prediction_text": ""})
+
+        theoretical_answers = [{"id": ex["id"], "answers": ex["answers"]} for ex in examples]
+        results = metric.compute(predictions=predicted_answers, references=theoretical_answers)
+        return {"exact_match": results["exact_match"], "f1": results["f1"]}
 
     tokenized_datasets = raw_datasets.map(
         preprocess_function,
         batched=True,
         remove_columns=raw_datasets["train"].column_names,
     )
-
+    tokenized_for_val = tokenized_datasets["validation"]
+    stripped = tokenized_datasets.remove_columns(["offset_mapping", "example_id"])
     model = AutoModelForQuestionAnswering.from_pretrained("xlm-roberta-base")
 
     training_args = TrainingArguments(
         output_dir=data_args.output_dir,
-        eval_strategy="epoch",
+        eval_strategy="steps",
+        save_strategy="steps",
+        eval_steps=500,
+        save_steps=500,
+        load_best_model_at_end=True,
+        metric_for_best_model="f1",
+        greater_is_better=True,
         learning_rate=1e-4,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
-        save_steps=5000,
-        max_steps=50000,
+        num_train_epochs=10,
         weight_decay=0.01,
-        overwrite_output_dir=False,
+        overwrite_output_dir=True,
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
     )
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=tokenized_datasets["train"],
-        eval_dataset=tokenized_datasets["validation"],
+        train_dataset=stripped["train"],
+        eval_dataset=stripped["validation"],
         data_collator=data_collator,
-        # compute_metrics=compute_metrics,
+        compute_metrics=lambda p: compute_metrics(p, tokenized_for_val, raw_datasets["validation"]),
+        tokenizer=tokenizer,
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=10)],
         processing_class=tokenizer,
     )
     trainer.train()
-    # we save the qa adapter as "qa_adapter"
+    # we save the qa finetune as "qa"
+    model.save_adapter(data_args.output_dir, "qa")
 
 
 if __name__ == "__main__":
