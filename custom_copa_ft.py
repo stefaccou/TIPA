@@ -5,7 +5,7 @@ from custom_submission_utils import find_master, update_submission_log
 
 
 def main(submit_arguments):
-    from datasets import load_dataset, concatenate_datasets
+    from datasets import load_dataset
     from dataclasses import dataclass, field
     from transformers import (
         TrainingArguments,
@@ -15,6 +15,7 @@ def main(submit_arguments):
         AutoConfig,
         EvalPrediction,
         HfArgumentParser,
+        EarlyStoppingCallback,
     )
     import numpy as np
 
@@ -75,7 +76,7 @@ def main(submit_arguments):
         dataset.set_format(columns=["input_ids", "attention_mask", "labels"])
         return dataset
 
-    def compute_accuracy(p: EvalPrediction):
+    def compute_metrics(p: EvalPrediction):
         preds = np.argmax(p.predictions, axis=1)
         return {"acc": (preds == p.label_ids).mean()}
 
@@ -91,25 +92,29 @@ def main(submit_arguments):
 
     training_args = TrainingArguments(
         output_dir=data_args.output_dir,
-        # eval_strategy="epoch",
-        learning_rate=1e-5,
-        per_device_train_batch_size=32,
-        # per_device_eval_batch_size=16,
-        # num_train_epochs=100,
+        eval_strategy="epoch",
+        save_strategy="epoch",
+        learning_rate=1e-4,
+        load_best_model_at_end=True,
+        metric_for_best_model="acc",
+        greater_is_better=True,
+        per_device_train_batch_size=16,
+        per_device_eval_batch_size=16,
+        num_train_epochs=100,
         weight_decay=0.01,
-        max_steps=10000,
+        save_steps=25000,
         overwrite_output_dir=True,
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
     )
-    train_dataset = concatenate_datasets([tokenized_datasets["train"], tokenized_datasets["validation"]])
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=train_dataset,
-        # train_dataset=tokenized_datasets["train"],
-        # eval_dataset=tokenized_datasets["validation"],
-        compute_metrics=compute_accuracy,
+        train_dataset=tokenized_datasets["train"],
+        eval_dataset=tokenized_datasets["validation"],
+        processing_class=tokenizer,
+        compute_metrics=compute_metrics,
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=10)],
     )
     trainer.train()
     # we save the copa adapter as "copa_adapter"
