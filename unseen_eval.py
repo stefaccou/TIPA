@@ -522,6 +522,7 @@ def typological_approximation(target, glots, distance_type, limit=None):
             n = min(limit, len(weights))
             # we sort the weights
             sorted_weights = sorted(weights.items(), key=lambda x: x[1], reverse=True)
+            print(sorted_weights)
             # we take the first n
             sorted_weights = sorted_weights[:n]
             # we convert back to dict
