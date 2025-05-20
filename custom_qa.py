@@ -202,17 +202,16 @@ def main(submit_arguments):
     last_checkpoint = get_last_checkpoint(data_args.output_dir)
     if last_checkpoint is not None:
         print(f"Resuming training from checkpoint: {last_checkpoint}")
-        training_args.resume_from_checkpoint = last_checkpoint
+        trainer.train(resume_from_checkpoint=last_checkpoint)
     else:
         print("No checkpoint found, starting training from scratch.")
-    trainer.train()
-    trainer.train()
+        trainer.train()
     # we save the qa adapter as "qa_adapter"
     model.save_adapter(data_args.output_dir, "qa")
 
 
 if __name__ == "__main__":
-    debug = False
+    debug = True
     job_name = "debug_" * debug + "convergence_qa_adapter_a"
 
     master_dir = find_master()
