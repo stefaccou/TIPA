@@ -522,12 +522,15 @@ def typological_approximation(target, glots, distance_type, limit=None):
             n = min(limit, len(weights))
             # we sort the weights
             sorted_weights = sorted(weights.items(), key=lambda x: x[1], reverse=True)
-            print(sorted_weights)
+            # print(sorted_weights)
             # we take the first n
             sorted_weights = sorted_weights[:n]
             # we convert back to dict
             weights = {k: v for k, v in sorted_weights}
-
+    # we first check if all weights are 0:
+    if sum(weights.values()) == 0:
+        print("All weights are 0, returning empty dict")
+        return {}
     # print(f"Weights before softmax: {weights}")
     soft_weights = torch.softmax(torch.tensor(list(weights.values())), dim=0)
     # we need to convert to list

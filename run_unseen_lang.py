@@ -318,7 +318,9 @@ def main(submit_arguments):
                     weights[distance_type] = typological_approximation(
                         target_glot, glots, distance_type, custom_args.limit
                     )
-
+                    if weights == {}:
+                        print(f"No adapters found for {eval_language} with distance type {distance_type}")
+                        continue
                     merge_loaded_adapters(
                         model, merge_adapter_name=adapter_name, weights=weights[distance_type], delete_other=False
                     )
@@ -446,7 +448,7 @@ if __name__ == "__main__":
 
     master_dir = find_master()
 
-    # Set the experiment folder as a subdirectory of 'Master_thesis'
+    # Set the experi    ment folder as a subdirectory of 'Master_thesis'
     experiments_dir = master_dir / "experiment_folder"
 
     run_count = update_submission_log(experiments_dir, job_name)
