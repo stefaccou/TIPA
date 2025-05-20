@@ -199,7 +199,7 @@ def main(submit_arguments):
         print("No checkpoint found, starting training from scratch.")
     trainer.train()
     # we save the qa finetune as "qa"
-    model.save_adapter(data_args.output_dir, "qa")
+    trainer.save_model(data_args.output_dir)
 
 
 if __name__ == "__main__":
