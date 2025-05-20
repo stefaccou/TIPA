@@ -48,25 +48,6 @@ def main(submit_arguments):
             metadata={"help": ("The task to perform (ner, copa or pos)")},
         )
 
-        disable_baselines: Optional[bool] = field(
-            default=False,
-            metadata={
-                "help": (
-                    "Whether to calculate the baselines. "
-                    "Default True, it will calculate the baselines for the adapter combinations."
-                )
-            },
-        )
-        limit: Optional[float] = field(
-            default=None,
-            metadata={
-                "help": (
-                    "The limit for the distance types. If <1, it will remove all languages with a distance score lower than limit. "
-                    "If >=1, it works as a top-k languages filter with the highest similarity."
-                )
-            },
-        )
-
         output_name: Optional[str] = field(
             default=None,
             metadata={
@@ -146,16 +127,6 @@ def main(submit_arguments):
     )
     model = load_finetuned_model(task)
 
-    if not custom_args.limit:
-        limit_str = ""
-    else:
-        if custom_args.limit < 1:
-            decimal = str(custom_args.limit).split(".")[1]
-            limit_str = f"_0{decimal}"
-        else:
-            custom_args.limit = int(custom_args.limit)
-            limit_str = f"_{str(custom_args.limit)}"
-
     print(f"\n{'~' * 30}\n{task.upper()}\n{'~' * 30}")
     # Brute: we only consider english for now
     for eval_language in eval_languages.keys():
@@ -212,11 +183,9 @@ def main(submit_arguments):
                 os.makedirs(f"./finetuned_models/results/{eval_language}")
             # we save this
             if custom_args.output_name:
-                output_file = (
-                    f"./finetuned_models/results/{eval_language}/{task}_{custom_args.output_name}{limit_str}.json"
-                )
+                output_file = f"./finetuned_models/results/{eval_language}/{task}_{custom_args.output_name}.json"
             else:
-                output_file = f"./finetuned_models/results/{eval_language}/{task}_eval{limit_str}.json"
+                output_file = f"./finetuned_models/results/{eval_language}/{task}_eval.json"
             with open(output_file, "w") as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
