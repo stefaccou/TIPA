@@ -1,0 +1,18 @@
+{
+    "reconstructed_syntactic": {
+        "eval_loss": 3.6971607208251953,
+        "eval_model_preparation_time": 0.0282,
+        "eval_acc": 0.562,
+        "eval_runtime": 2.3918,
+        "eval_samples_per_second": 209.049,
+        "eval_steps_per_second": 26.34
+    },
+    "reconstructed_morphological": {
+        "eval_loss": 3.711244583129883,
+        "eval_model_preparation_time": 0.0281,
+        "eval_acc": 0.564,
+        "eval_runtime": 2.3926,
+        "eval_samples_per_second": 208.981,
+        "eval_steps_per_second": 26.332
+    }
+}

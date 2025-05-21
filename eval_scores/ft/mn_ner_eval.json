@@ -1,0 +1,13 @@
+{
+    "finetuned_model": {
+        "eval_loss": 3.2572362422943115,
+        "eval_model_preparation_time": 0.0022,
+        "eval_precision": 0.47619047619047616,
+        "eval_recall": 0.4424778761061947,
+        "eval_f1": 0.45871559633027525,
+        "eval_accuracy": 0.7208538587848933,
+        "eval_runtime": 0.196,
+        "eval_samples_per_second": 510.25,
+        "eval_steps_per_second": 66.333
+    }
+}

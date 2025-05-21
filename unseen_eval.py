@@ -58,7 +58,10 @@ def get_eval_languages(task):
 
 
 def load_eval(task, eval_language, eval_languages):
-    dataset = load_dataset(task2ds[task], eval_languages[eval_language], trust_remote_code="True")
+    if task == "copa" and eval_language == "en":
+        dataset=load_dataset("super_glue", "copa", trust_remote_code="True")
+    else:
+        dataset = load_dataset(task2ds[task], eval_languages[eval_language], trust_remote_code="True")
 
     if "test" in dataset.keys():
         dataset_eval = dataset["test"]

@@ -1,0 +1,14 @@
+{
+    "reconstructed_featural": {
+        "exact_match": 56.72268907563025,
+        "f1": 73.40892191989776
+    },
+    "reconstructed_syntactic": {
+        "exact_match": 56.80672268907563,
+        "f1": 73.42716555356402
+    },
+    "reconstructed_morphological": {
+        "exact_match": 57.563025210084035,
+        "f1": 74.05462957299704
+    }
+}

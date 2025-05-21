@@ -1,0 +1,24 @@
+{
+    "reconstructed_syntactic": {
+        "eval_loss": 1.2955753803253174,
+        "eval_model_preparation_time": 0.0281,
+        "eval_precision": 0.3546511627906977,
+        "eval_recall": 0.5446428571428571,
+        "eval_f1": 0.4295774647887324,
+        "eval_accuracy": 0.6359084406294707,
+        "eval_runtime": 0.3026,
+        "eval_samples_per_second": 330.508,
+        "eval_steps_per_second": 42.966
+    },
+    "reconstructed_morphological": {
+        "eval_loss": 1.2956466674804688,
+        "eval_model_preparation_time": 0.028,
+        "eval_precision": 0.3588235294117647,
+        "eval_recall": 0.5446428571428571,
+        "eval_f1": 0.4326241134751773,
+        "eval_accuracy": 0.6344778254649499,
+        "eval_runtime": 0.2931,
+        "eval_samples_per_second": 341.135,
+        "eval_steps_per_second": 44.348
+    }
+}

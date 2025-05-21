@@ -1,0 +1,44 @@
+{
+    "reconstructed_featural": {
+        "eval_loss": 7.355749130249023,
+        "eval_model_preparation_time": 0.0299,
+        "eval_accuracy": 0.34019832189168575,
+        "eval_precision_macro": 0.18852019504960685,
+        "eval_recall_macro": 0.1853266950822466,
+        "eval_f1_macro": 0.12897113227640647,
+        "eval_precision_micro": 0.34019832189168575,
+        "eval_recall_micro": 0.34019832189168575,
+        "eval_f1_micro": 0.34019832189168575,
+        "eval_runtime": 0.5619,
+        "eval_samples_per_second": 174.423,
+        "eval_steps_per_second": 23.138
+    },
+    "reconstructed_syntactic": {
+        "eval_loss": 7.353511333465576,
+        "eval_model_preparation_time": 0.0287,
+        "eval_accuracy": 0.33943554538520215,
+        "eval_precision_macro": 0.18341940568406379,
+        "eval_recall_macro": 0.18441814282970653,
+        "eval_f1_macro": 0.12848504098262561,
+        "eval_precision_micro": 0.33943554538520215,
+        "eval_recall_micro": 0.33943554538520215,
+        "eval_f1_micro": 0.33943554538520215,
+        "eval_runtime": 1.3084,
+        "eval_samples_per_second": 74.903,
+        "eval_steps_per_second": 9.936
+    },
+    "reconstructed_morphological": {
+        "eval_loss": 7.348657131195068,
+        "eval_model_preparation_time": 0.0286,
+        "eval_accuracy": 0.33714721586575136,
+        "eval_precision_macro": 0.19527258541435644,
+        "eval_recall_macro": 0.18351912094258752,
+        "eval_f1_macro": 0.12802651541227947,
+        "eval_precision_micro": 0.33714721586575136,
+        "eval_recall_micro": 0.33714721586575136,
+        "eval_f1_micro": 0.33714721586575136,
+        "eval_runtime": 0.5583,
+        "eval_samples_per_second": 175.538,
+        "eval_steps_per_second": 23.286
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "reconstructed_featural": {
+        "eval_loss": 1.5631639957427979,
+        "eval_model_preparation_time": 0.0284,
+        "eval_accuracy": 0.8589363970152789,
+        "eval_precision_macro": 0.6448855114742282,
+        "eval_recall_macro": 0.6853732986834078,
+        "eval_f1_macro": 0.6248225255209663,
+        "eval_precision_micro": 0.8589363970152789,
+        "eval_recall_micro": 0.8589363970152789,
+        "eval_f1_micro": 0.8589363970152789,
+        "eval_runtime": 4.7785,
+        "eval_samples_per_second": 186.668,
+        "eval_steps_per_second": 23.438
+    }
+}
