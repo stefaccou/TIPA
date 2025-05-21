@@ -182,6 +182,8 @@ def main(submit_arguments):
     task = custom_args.task
 
     eval_languages = get_eval_languages(task)
+    if custom_args.eval_override and custom_args.eval_override[0] == "en":
+        eval_languages = {"en": "en"}
     # we filter out the languages that have failed before
     # we first check if the file exists:
     if custom_args.eval_override:
