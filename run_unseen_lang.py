@@ -440,7 +440,7 @@ def main(submit_arguments):
                 "a",
             ) as f:
                 f.write(f"{eval_language}\n")
-                print(f"KeyError {e}, skipping this language")
+            print(f"KeyError {e}, skipping this language")
 
 
 if __name__ == "__main__":
