@@ -234,6 +234,7 @@ def main(submit_arguments):
     if custom_args.reverse:
         eval_languages = {k: v for k, v in reversed(eval_languages.items())}
     for eval_language in eval_languages.keys():
+        print(eval_language)
         try:
             print(
                 "\n\n",
