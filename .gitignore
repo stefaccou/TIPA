@@ -162,3 +162,9 @@ cython_debug/
 #.idea/
 
 .python-version
+
+
+# data json files
+eval_scores
+language-arithmetic
+trained_adapters
