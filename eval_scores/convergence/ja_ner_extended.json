@@ -1,0 +1,68 @@
+{
+    "reconstructed_featural": {
+        "eval_loss": 1.4132648706436157,
+        "eval_model_preparation_time": 0.0283,
+        "eval_precision": 0.11202804352588915,
+        "eval_recall": 0.22027570361860999,
+        "eval_f1": 0.1485210824417873,
+        "eval_accuracy": 0.6722762043374007,
+        "eval_runtime": 83.4108,
+        "eval_samples_per_second": 119.889,
+        "eval_steps_per_second": 14.986
+    },
+    "baseline_en": {
+        "eval_loss": 1.5399671792984009,
+        "eval_model_preparation_time": 0.0275,
+        "eval_precision": 0.10141645575240886,
+        "eval_recall": 0.1639862148190695,
+        "eval_f1": 0.12532579768992289,
+        "eval_accuracy": 0.6666825002945055,
+        "eval_runtime": 83.2907,
+        "eval_samples_per_second": 120.061,
+        "eval_steps_per_second": 15.008
+    },
+    "baseline_task_adapter": {
+        "eval_loss": 1.4060187339782715,
+        "eval_model_preparation_time": 0.028,
+        "eval_precision": 0.08936092955700799,
+        "eval_recall": 0.17669442848937392,
+        "eval_f1": 0.11869393267097521,
+        "eval_accuracy": 0.676277678764825,
+        "eval_runtime": 76.5587,
+        "eval_samples_per_second": 130.619,
+        "eval_steps_per_second": 16.327
+    },
+    "baseline_avg_adapter": {
+        "eval_loss": 1.5121184587478638,
+        "eval_model_preparation_time": 0.0285,
+        "eval_precision": 0.037850961837763805,
+        "eval_recall": 0.043653072946582425,
+        "eval_f1": 0.04054549698242806,
+        "eval_accuracy": 0.7141434830687851,
+        "eval_runtime": 83.2418,
+        "eval_samples_per_second": 120.132,
+        "eval_steps_per_second": 15.016
+    },
+    "baseline_closest_featural": {
+        "eval_loss": 1.3583903312683105,
+        "eval_model_preparation_time": 0.0281,
+        "eval_precision": 0.1266923458296785,
+        "eval_recall": 0.2385123492245836,
+        "eval_f1": 0.16548357368801217,
+        "eval_accuracy": 0.684833537903805,
+        "eval_runtime": 83.2872,
+        "eval_samples_per_second": 120.066,
+        "eval_steps_per_second": 15.008
+    },
+    "no_train_gain": {
+        "eval_loss": 1.47150719165802,
+        "eval_model_preparation_time": 0.03,
+        "eval_precision": 0.10982274741506647,
+        "eval_recall": 0.21352670878805285,
+        "eval_f1": 0.1450448692937963,
+        "eval_accuracy": 0.6571595231671309,
+        "eval_runtime": 83.3106,
+        "eval_samples_per_second": 120.033,
+        "eval_steps_per_second": 15.004
+    }
+}

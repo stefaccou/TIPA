@@ -1,0 +1,13 @@
+{
+    "reconstructed_featural": {
+        "eval_loss": 2.59613037109375,
+        "eval_model_preparation_time": 0.0294,
+        "eval_precision": 0.31125,
+        "eval_recall": 0.4035656401944895,
+        "eval_f1": 0.3514467184191955,
+        "eval_accuracy": 0.7070960475117756,
+        "eval_runtime": 3.0474,
+        "eval_samples_per_second": 328.152,
+        "eval_steps_per_second": 41.019
+    }
+}

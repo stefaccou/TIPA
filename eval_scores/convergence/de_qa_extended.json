@@ -1,0 +1,26 @@
+{
+    "reconstructed_featural": {
+        "exact_match": 58.15126050420168,
+        "f1": 75.42844519215346
+    },
+    "baseline_en": {
+        "exact_match": 57.73109243697479,
+        "f1": 74.96026978095158
+    },
+    "baseline_task_adapter": {
+        "exact_match": 58.15126050420168,
+        "f1": 75.31509104753387
+    },
+    "baseline_avg_adapter": {
+        "exact_match": 54.78991596638655,
+        "f1": 71.36378353586201
+    },
+    "baseline_closest_featural": {
+        "exact_match": 56.470588235294116,
+        "f1": 73.9999921240261
+    },
+    "no_train_gain": {
+        "exact_match": 58.48739495798319,
+        "f1": 75.53991654147222
+    }
+}

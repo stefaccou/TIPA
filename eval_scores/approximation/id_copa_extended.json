@@ -1,0 +1,50 @@
+{
+    "reconstructed_featural": {
+        "eval_loss": 3.121763229370117,
+        "eval_model_preparation_time": 0.029,
+        "eval_acc": 0.584,
+        "eval_runtime": 2.3965,
+        "eval_samples_per_second": 208.639,
+        "eval_steps_per_second": 26.289
+    },
+    "baseline_en": {
+        "eval_loss": 3.2108354568481445,
+        "eval_model_preparation_time": 0.0281,
+        "eval_acc": 0.574,
+        "eval_runtime": 2.3971,
+        "eval_samples_per_second": 208.582,
+        "eval_steps_per_second": 26.281
+    },
+    "baseline_task_adapter": {
+        "eval_loss": 3.120584726333618,
+        "eval_model_preparation_time": 0.0288,
+        "eval_acc": 0.61,
+        "eval_runtime": 2.1664,
+        "eval_samples_per_second": 230.803,
+        "eval_steps_per_second": 29.081
+    },
+    "baseline_avg_adapter": {
+        "eval_loss": 3.1173460483551025,
+        "eval_model_preparation_time": 0.0304,
+        "eval_acc": 0.6,
+        "eval_runtime": 2.3962,
+        "eval_samples_per_second": 208.665,
+        "eval_steps_per_second": 26.292
+    },
+    "baseline_closest_featural": {
+        "eval_loss": 2.896512746810913,
+        "eval_model_preparation_time": 0.0305,
+        "eval_acc": 0.608,
+        "eval_runtime": 2.3974,
+        "eval_samples_per_second": 208.558,
+        "eval_steps_per_second": 26.278
+    },
+    "no_train_gain": {
+        "eval_loss": 2.9048027992248535,
+        "eval_model_preparation_time": 0.0293,
+        "eval_acc": 0.574,
+        "eval_runtime": 2.4008,
+        "eval_samples_per_second": 208.263,
+        "eval_steps_per_second": 26.241
+    }
+}

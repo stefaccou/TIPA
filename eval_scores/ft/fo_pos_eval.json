@@ -1,0 +1,16 @@
+{
+    "finetuned_model": {
+        "eval_loss": 3.594680070877075,
+        "eval_model_preparation_time": 0.0023,
+        "eval_accuracy": 0.6487702459508098,
+        "eval_precision_macro": 0.5284989373743204,
+        "eval_recall_macro": 0.4078715585215949,
+        "eval_f1_macro": 0.41817479644094085,
+        "eval_precision_micro": 0.6487702459508098,
+        "eval_recall_micro": 0.6487702459508098,
+        "eval_f1_micro": 0.6487702459508098,
+        "eval_runtime": 5.1585,
+        "eval_samples_per_second": 234.178,
+        "eval_steps_per_second": 29.272
+    }
+}
