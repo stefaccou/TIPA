@@ -125,7 +125,6 @@ def main(submit_arguments):
 
     print("custom args: ", custom_args)
 
-    metric = evaluate.load("seqeval")
     ld = LanguageData.from_db()
     u = urielplus.URIELPlus()
     u.set_cache(True)
@@ -144,6 +143,8 @@ def main(submit_arguments):
         distance_types = [custom_args.distance_type]
     else:
         distance_types = ["featural"]
+
+    metric = evaluate.load("seqeval")
 
     eval_languages = get_dataset_config_names("unimelb-nlp/wikiann")
     eval_languages = [lan for lan in eval_languages if len(lan) <= 3]
@@ -245,7 +246,6 @@ def main(submit_arguments):
             # dataset_en is now ready to be used with adapters for cross-lingual transfer
 
             ner_feature = dataset_eval.features["ner_tags"]
-
             label_names = ner_feature.feature.names
 
             def compute_metrics(eval_preds):

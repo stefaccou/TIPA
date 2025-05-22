@@ -165,7 +165,6 @@ def main(submit_arguments):
         callbacks=[EarlyStoppingCallback(early_stopping_patience=10)],
     )
     trainer.train()
-    # we save the ner adapter as "ner_adapter"
 
 
 if __name__ == "__main__":
