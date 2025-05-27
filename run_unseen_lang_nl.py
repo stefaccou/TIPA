@@ -8,7 +8,6 @@ from custom_submission_utils import find_master, update_submission_log
 def main(submit_arguments):
     from unseen_eval import (
         get_eval_languages,
-        load_eval,
         preprocess,
         get_compute_metrics,
         get_trainer_kwargs,
@@ -183,13 +182,12 @@ def main(submit_arguments):
     task = custom_args.task
 
     eval_languages = get_eval_languages(task)
-    if custom_args.eval_override and custom_args.eval_override[0] == "en":
-        eval_languages = {"en": "en"}
     # we filter out the languages that have failed before
     # we first check if the file exists:
     if custom_args.eval_override:
         print(f"Overriding evaluation languages with {custom_args.eval_override}")
         eval_languages = {k: v for k, v in eval_languages.items() if k in custom_args.eval_override}
+        eval_languages = {"nl", "nl"}
     elif os.path.exists(
         f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt"
     ):
@@ -254,7 +252,7 @@ def main(submit_arguments):
                 print(f"Skipping {eval_language} as it has already been processed. Output file: {output_file}")
                 continue
             # Load and preprocess the dataset
-            dataset_eval = load_eval(task, eval_language, eval_languages)
+            # dataset_eval = load_eval(task, eval_language, eval_languages)
             dataset_eval = load_dataset("GroNLP/squad-nl-v1.1", split="test")
             tokenized_datasets = preprocess(dataset_eval, task, tokenizer)
 
