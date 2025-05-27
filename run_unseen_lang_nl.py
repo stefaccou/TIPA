@@ -188,7 +188,7 @@ def main(submit_arguments):
     if custom_args.eval_override:
         print(f"Overriding evaluation languages with {custom_args.eval_override}")
         eval_languages = {k: v for k, v in eval_languages.items() if k in custom_args.eval_override}
-        eval_languages = {"nl", "nl"}
+        eval_languages = {"nl": "nl"}
         print("we set eval languages to ", eval_languages)
     elif os.path.exists(
         f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt"
