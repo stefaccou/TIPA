@@ -182,12 +182,14 @@ def main(submit_arguments):
     task = custom_args.task
 
     eval_languages = get_eval_languages(task)
+    print("eval languages first", eval_languages)
     # we filter out the languages that have failed before
     # we first check if the file exists:
     if custom_args.eval_override:
         print(f"Overriding evaluation languages with {custom_args.eval_override}")
         eval_languages = {k: v for k, v in eval_languages.items() if k in custom_args.eval_override}
         eval_languages = {"nl", "nl"}
+        print("we set eval languages to ", eval_languages)
     elif os.path.exists(
         f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt"
     ):
@@ -200,7 +202,7 @@ def main(submit_arguments):
             eval_languages = {k: v for k, v in eval_languages.items() if k in failed_languages}
         else:
             eval_languages = {k: v for k, v in eval_languages.items() if k not in failed_languages}
-
+        print("eval language are then changed to ", eval_languages)
     Tokenizer = XLMRobertaTokenizerFast if task == "pos" else AutoTokenizer
     tokenizer = Tokenizer.from_pretrained("xlm-roberta-base")
     data_collator = (
