@@ -1,4 +1,4 @@
-# master_thesis_adapters
+# ALMA: Aggregated Linguistic Model Adaptation
 
 Template repo for Python software and / or research projects.
 
