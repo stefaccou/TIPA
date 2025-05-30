@@ -1,4 +1,5 @@
-# ALMA: Aggregated Linguistic Model Adaptation
+# TIPA: Typologically Informed Parameter Aggregation
+## Or maybe ALMA: Aggregated Linguistic Model Adaptation
 
 Template repo for Python software and / or research projects.
 
