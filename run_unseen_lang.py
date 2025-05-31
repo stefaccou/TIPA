@@ -183,8 +183,6 @@ def main(submit_arguments):
     task = custom_args.task
     eval_languages = get_eval_languages(task)
 
-    if custom_args.eval_override and custom_args.eval_override[0] == "en":
-        eval_languages = {"en": "en"}
     # we filter out the languages that have failed before
     # we first check if the file exists:
     if custom_args.eval_override:
@@ -242,19 +240,20 @@ def main(submit_arguments):
     for eval_language in eval_languages.keys():
         print(eval_language)
         if task == "sib":
-            eval_language, script = eval_language
+            eval_lang, script = eval_language
         else:
+            eval_lang = eval_language
             script = None
         try:
             print(
                 "\n\n",
-                f"Evaluating {task} on {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
+                f"Evaluating {task} on {eval_lang} ({ld.get(eval_lang, tag_type=TagType.BCP_47_CODE).english_name})",
                 f"{script}",
             )
             if custom_args.output_name:
-                output_file = f"./eval_output/approximation/{eval_language}/{task}{f'_{script}' if script else ''}_{custom_args.output_name}{limit_str}.json"
+                output_file = f"./eval_output/approximation/{eval_lang}/{task}{f'_{script}' if script else ''}_{custom_args.output_name}{limit_str}.json"
             else:
-                output_file = f"./eval_output/approximation/{eval_language}/{task}{f'_{script}' if script else ''}_eval{limit_str}.json"
+                output_file = f"./eval_output/approximation/{eval_lang}/{task}{f'_{script}' if script else ''}_eval{limit_str}.json"
 
             if os.path.exists(output_file):
                 print(f"Skipping {eval_language} as it has already been processed. Output file: {output_file}")
@@ -304,17 +303,17 @@ def main(submit_arguments):
             evaluations = {}
             weights = {}
             glots = get_glots(to_load)
-            if eval_language in glots.keys():
-                target_glot = glots[eval_language]
+            if eval_lang in glots.keys():
+                target_glot = glots[eval_lang]
             else:
-                target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
+                target_glot = ld.get(eval_lang, tag_type=TagType.BCP_47_CODE).glottocode
             # we check if the adapter has already been created before
             for distance_type in distance_types:
-                adapter_name = f"reconstructed_{eval_language}_{distance_type}{limit_str}"
-                adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}_extended_{limit_p}"
+                adapter_name = f"reconstructed_{eval_lang}_{distance_type}{limit_str}"
+                adapter_path = f"./trained_adapters/typological/{eval_lang}/{distance_type}_extended_{limit_p}"
                 if custom_args.output_name:
                     adapter_path = (
-                        f"./trained_adapters/typological/{eval_language}/{distance_type}_{custom_args.output_name}"
+                        f"./trained_adapters/typological/{eval_lang}/{distance_type}_{custom_args.output_name}"
                     )
                 weights[distance_type] = {}
                 if os.path.exists(adapter_path):
@@ -329,7 +328,7 @@ def main(submit_arguments):
                         target_glot, glots, distance_type, custom_args.limit
                     )
                     if weights == {}:
-                        print(f"No adapters found for {eval_language} with distance type {distance_type}")
+                        print(f"No adapters found for {eval_lang} with distance type {distance_type}")
                         continue
                     merge_loaded_adapters(
                         model, merge_adapter_name=adapter_name, weights=weights[distance_type], delete_other=False
@@ -341,7 +340,7 @@ def main(submit_arguments):
                             os.makedirs(adapter_path)
                         model.save_adapter(adapter_path, adapter_name)
                 model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
-                print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
+                print(f"evaluating on reconstructed {eval_lang} adapter, distance type {distance_type}")
                 evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
                 model.delete_adapter(adapter_name)
                 # delete the adapter for further iterations
@@ -390,8 +389,8 @@ def main(submit_arguments):
                     else:
                         train_gain = typological_approximation(target_glot, glots, "featural", 3)
                         # we select the highest that is not the language itself (eval_language) or english (en)
-                    if eval_language in train_gain.keys():
-                        train_gain[eval_language] = 0
+                    if eval_lang in train_gain.keys():
+                        train_gain[eval_lang] = 0
                     if "en" in train_gain.keys():
                         train_gain["en"] = 0
                     related = max(train_gain, key=train_gain.get)
@@ -411,15 +410,15 @@ def main(submit_arguments):
                     print(model.roberta.encoder.layer[0].output.adapters)
                     continue
 
-            if not os.path.exists(f"./eval_output/approximation/{eval_language}"):
-                os.makedirs(f"./eval_output/approximation/{eval_language}")
+            if not os.path.exists(f"./eval_output/approximation/{eval_lang}"):
+                os.makedirs(f"./eval_output/approximation/{eval_lang}")
             # we save this
             with open(output_file, "w") as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
             # we write the language name to "done languages"
             # with open(done_file, "a") as f:
-            #    f.write(f"{eval_language}\n")
+            #    f.write(f"{eval_lang}\n")
         except RuntimeError as e:
             print(f"RuntimeError {e}, skipping this language")
             # we write this language to a file so we do not check it again
