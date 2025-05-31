@@ -68,7 +68,7 @@ def get_eval_languages(task):
         for ds in langs_scripts:
             lang, script = ds.split("_")
             try:
-                name = ld.get(lang, tag_type=TagType.ISO_639_3_CODE).english_name
+                name = ld.get(lang, tag_type=TagType.ISO_639_3_CODE).bcp_47_code
                 eval_languages[name] = ds
                 scripts[name] = script
             except KeyError:
