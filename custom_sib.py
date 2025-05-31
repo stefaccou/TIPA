@@ -11,12 +11,11 @@ def main(submit_arguments):
         TrainingArguments,
         AutoTokenizer,
         HfArgumentParser,
-        Trainer,
         DataCollatorWithPadding,
         EarlyStoppingCallback,
     )
     from transformers.trainer_utils import get_last_checkpoint
-    from adapters import AutoAdapterModel
+    from adapters import AutoAdapterModel, Stack, AdapterTrainer
     import evaluate
     import numpy as np
 
@@ -96,6 +95,8 @@ def main(submit_arguments):
         num_labels=7,
         id2label=id2label,
     )
+    model.train_adapter("sib")
+    model.active_adapters = Stack("en", "sib")
 
     training_args = TrainingArguments(
         output_dir=data_args.output_dir,
@@ -115,7 +116,7 @@ def main(submit_arguments):
         # The next line is important to ensure the dataset labels are properly passed to the model
         remove_unused_columns=False,
     )
-    trainer = Trainer(
+    trainer = AdapterTrainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_datasets["train"],
