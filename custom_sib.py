@@ -110,7 +110,7 @@ def main(submit_arguments):
         learning_rate=1e-4,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
-        num_train_epochs=100,
+        num_train_epochs=200,
         weight_decay=0.01,
         overwrite_output_dir=False,
         # The next line is important to ensure the dataset labels are properly passed to the model
@@ -134,7 +134,7 @@ def main(submit_arguments):
         print("No checkpoint found, starting training from scratch.")
     trainer.train()
     # we save the qa finetune as "qa"
-    trainer.save_adapter(data_args.output_dir, "sib")
+    model.save_adapter(data_args.output_dir, "sib")
 
 
 if __name__ == "__main__":
