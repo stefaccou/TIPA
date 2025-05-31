@@ -18,7 +18,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_sc
 from transformers import EvalPrediction
 from tqdm import tqdm
 
-metrics = {"ner": evaluate.load("seqeval"), "qa": evaluate.load("squad")}
+metrics = {"ner": evaluate.load("seqeval"), "qa": evaluate.load("squad"), "sib": evaluate.load("accuracy")}
 
 api = HfApi()
 
@@ -36,7 +36,13 @@ try:
 except SystemExit:
     print("already using Glottocodes")
 
-task2ds = {"ner": "unimelb-nlp/wikiann", "pos": "universal_dependencies", "copa": "xcopa", "qa": "google/xquad"}
+task2ds = {
+    "ner": "unimelb-nlp/wikiann",
+    "pos": "universal_dependencies",
+    "copa": "xcopa",
+    "qa": "google/xquad",
+    "sib": "Davlan/sib200",
+}
 
 
 def get_eval_languages(task):
@@ -55,6 +61,20 @@ def get_eval_languages(task):
                 # print(f"Language {lang} not in database, skipping")
                 continue
         return eval_languages
+    elif task == "sib":
+        langs_scripts = get_dataset_config_names(task2ds[task])
+        eval_languages = {}
+        scripts = {}
+        for ds in langs_scripts:
+            lang, script = ds.split("_")
+            try:
+                name = ld.get(lang, tag_type=TagType.ISO_639_3_CODE).english_name
+                eval_languages[name] = ds
+                scripts[name] = script
+            except KeyError:
+                # print(f"Language {lang} not in database, skipping)
+                continue
+        return eval_languages, scripts
 
 
 def load_eval(task, eval_language, eval_languages):
@@ -213,6 +233,37 @@ def preprocess(dataset, task, tokenizer):
             remove_columns=dataset.column_names,
         )
         return dataset_eval
+    elif task == "sib":
+        label_list = [
+            "science/technology",
+            "travel",
+            "politics",
+            "sports",
+            "health",
+            "entertainment",
+            "geography",
+        ]
+        label2id = {label: i for i, label in enumerate(label_list)}
+
+        def preprocess_function(examples):
+            # Tokenize the "text" field; returns a dict with 'input_ids', 'attention_mask', etc.
+            tokens = tokenizer(
+                examples["text"],
+                padding="max_length",
+                truncation=True,
+                max_length=128,  # change max_length if you need longer/shorter
+            )
+            # Map each category string to its integer ID
+            # (when using batched=True, examples["category"] is a list of strings)
+            tokens["labels"] = [label2id[cat] for cat in examples["category"]]
+            return tokens
+
+        tokenized_datasets = dataset.map(
+            preprocess_function,
+            batched=True,
+            remove_columns=dataset.column_names,
+        )
+        return tokenized_datasets
 
 
 def get_compute_metrics(task, label_names=None):
@@ -278,6 +329,7 @@ def get_compute_metrics(task, label_names=None):
         def compute_metrics(p: EvalPrediction):
             preds = np.argmax(p.predictions, axis=1)
             return {"acc": (preds == p.label_ids).mean()}
+
     elif task == "qa":
         n_best = 20
         max_answer_length = 30
@@ -325,6 +377,12 @@ def get_compute_metrics(task, label_names=None):
 
             theoretical_answers = [{"id": ex["id"], "answers": ex["answers"]} for ex in examples]
             return metrics[task].compute(predictions=predicted_answers, references=theoretical_answers)
+    elif task == "sib":
+
+        def compute_metrics(eval_preds):
+            logits, labels = eval_preds
+            predictions = np.argmax(logits, axis=-1)
+            return metrics[task].compute(predictions=predictions, references=labels)
 
     return compute_metrics
 
@@ -336,7 +394,7 @@ def get_trainer_kwargs(task, model, tokenized_datasets, tokenizer, data_collator
     trainer_kwargs = {"model": model, "args": args, "eval_dataset": tokenized_datasets}
     if task != "qa":
         trainer_kwargs["compute_metrics"] = compute_metrics
-    else:
+    if task in ["qa", "sib"]:
         trainer_kwargs["processing_class"] = tokenizer
     if task != "copa":
         trainer_kwargs["data_collator"] = data_collator

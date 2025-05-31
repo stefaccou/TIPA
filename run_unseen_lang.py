@@ -24,6 +24,7 @@ def main(submit_arguments):
         XLMRobertaTokenizerFast,
         DataCollatorForTokenClassification,
         DefaultDataCollator,
+        DataCollatorWithPadding,
     )
     from adapters import AdapterTrainer, AutoAdapterModel
     from adapters.composition import Stack
@@ -180,8 +181,11 @@ def main(submit_arguments):
         distance_types = ["featural"]
 
     task = custom_args.task
-
-    eval_languages = get_eval_languages(task)
+    if not task == "sib":
+        eval_languages = get_eval_languages(task)
+        scripts = {k: None for k in eval_languages.keys()}
+    else:
+        eval_languages, scripts = get_eval_languages(task)
     if custom_args.eval_override and custom_args.eval_override[0] == "en":
         eval_languages = {"en": "en"}
     # we filter out the languages that have failed before
@@ -204,9 +208,12 @@ def main(submit_arguments):
 
     Tokenizer = XLMRobertaTokenizerFast if task == "pos" else AutoTokenizer
     tokenizer = Tokenizer.from_pretrained("xlm-roberta-base")
-    data_collator = (
-        DataCollatorForTokenClassification(tokenizer=tokenizer) if not task == "qa" else DefaultDataCollator()
-    )
+    if task == "qa":
+        data_collator = DefaultDataCollator()
+    elif task == "sib":
+        data_collator = DataCollatorWithPadding(tokenizer)
+    else:
+        data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
 
@@ -237,17 +244,17 @@ def main(submit_arguments):
         eval_languages = {k: v for k, v in reversed(eval_languages.items())}
     for eval_language in eval_languages.keys():
         print(eval_language)
+        script = scripts[eval_language]
         try:
             print(
                 "\n\n",
                 f"Evaluating {task} on {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
+                f"{scripts[eval_language]}",
             )
             if custom_args.output_name:
-                output_file = (
-                    f"./eval_output/approximation/{eval_language}/{task}_{custom_args.output_name}{limit_str}.json"
-                )
+                output_file = f"./eval_output/approximation/{eval_language}{('_' + script) if script else ''}/{task}_{custom_args.output_name}{limit_str}.json"
             else:
-                output_file = f"./eval_output/approximation/{eval_language}/{task}_eval{limit_str}.json"
+                output_file = f"./eval_output/approximation/{eval_language}{('_' + script) if script else ''}/{task}_eval{limit_str}.json"
 
             if os.path.exists(output_file):
                 print(f"Skipping {eval_language} as it has already been processed. Output file: {output_file}")
