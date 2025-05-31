@@ -74,6 +74,7 @@ def get_eval_languages(task):
             except KeyError:
                 # print(f"Language {lang} not in database, skipping)
                 continue
+        print(eval_languages)
         return eval_languages, scripts
 
 
