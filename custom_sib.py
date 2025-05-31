@@ -90,7 +90,7 @@ def main(submit_arguments):
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
     # we will add a "sib" adapter, and a "sib" classification head
     model.add_adapter("sib")
-    model.load_adapter("./trained_adapters/mono/en", load_as="en")
+    model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", load_as="en")
     model.add_classification_head(
         "sib",
         num_labels=7,
