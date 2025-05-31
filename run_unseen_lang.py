@@ -242,7 +242,7 @@ def main(submit_arguments):
     for eval_language in eval_languages.keys():
         print(eval_language)
         if task == "sib":
-            eval_language, script = eval_languages
+            eval_language, script = eval_language
         else:
             script = None
         try:
@@ -252,9 +252,9 @@ def main(submit_arguments):
                 f"{script}",
             )
             if custom_args.output_name:
-                output_file = f"./eval_output/approximation/{eval_language}{('_' + script) if script else ''}/{task}_{custom_args.output_name}{limit_str}.json"
+                output_file = f"./eval_output/approximation/{eval_language}/{task}{f'_{script}' if script else ''}_{custom_args.output_name}{limit_str}.json"
             else:
-                output_file = f"./eval_output/approximation/{eval_language}{('_' + script) if script else ''}/{task}_eval{limit_str}.json"
+                output_file = f"./eval_output/approximation/{eval_language}/{task}{f'_{script}' if script else ''}_eval{limit_str}.json"
 
             if os.path.exists(output_file):
                 print(f"Skipping {eval_language} as it has already been processed. Output file: {output_file}")
@@ -414,12 +414,6 @@ def main(submit_arguments):
             if not os.path.exists(f"./eval_output/approximation/{eval_language}"):
                 os.makedirs(f"./eval_output/approximation/{eval_language}")
             # we save this
-            if custom_args.output_name:
-                output_file = (
-                    f"./eval_output/approximation/{eval_language}/{task}_{custom_args.output_name}{limit_str}.json"
-                )
-            else:
-                output_file = f"./eval_output/approximation/{eval_language}/{task}_eval{limit_str}.json"
             with open(output_file, "w") as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
