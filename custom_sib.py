@@ -138,7 +138,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    debug = True
+    debug = False
     job_name = "debug_" * debug + "convergence_sib_adapter"
 
     master_dir = find_master()
