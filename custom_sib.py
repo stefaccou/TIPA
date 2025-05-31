@@ -107,7 +107,7 @@ def main(submit_arguments):
         load_best_model_at_end=True,
         metric_for_best_model="accuracy",
         greater_is_better=True,
-        learning_rate=1e-4,
+        learning_rate=1e-5,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
         num_train_epochs=200,
