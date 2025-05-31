@@ -64,18 +64,16 @@ def get_eval_languages(task):
     elif task == "sib":
         langs_scripts = get_dataset_config_names(task2ds[task])
         eval_languages = {}
-        scripts = {}
         for ds in langs_scripts:
             lang, script = ds.split("_")
             try:
                 name = ld.get(lang, tag_type=TagType.ISO_639_3_CODE).bcp_47_code
-                eval_languages[name] = ds
-                scripts[name] = script
+                eval_languages[(name, script)] = ds
             except KeyError:
                 # print(f"Language {lang} not in database, skipping)
                 continue
         print(eval_languages)
-        return eval_languages, scripts
+        return eval_languages
 
 
 def load_eval(task, eval_language, eval_languages):

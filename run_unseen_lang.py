@@ -181,11 +181,8 @@ def main(submit_arguments):
         distance_types = ["featural"]
 
     task = custom_args.task
-    if not task == "sib":
-        eval_languages = get_eval_languages(task)
-        scripts = {k: None for k in eval_languages.keys()}
-    else:
-        eval_languages, scripts = get_eval_languages(task)
+    eval_languages = get_eval_languages(task)
+
     if custom_args.eval_override and custom_args.eval_override[0] == "en":
         eval_languages = {"en": "en"}
     # we filter out the languages that have failed before
@@ -244,12 +241,15 @@ def main(submit_arguments):
         eval_languages = {k: v for k, v in reversed(eval_languages.items())}
     for eval_language in eval_languages.keys():
         print(eval_language)
-        script = scripts[eval_language]
+        if task == "sib":
+            eval_language, script = eval_languages
+        else:
+            script = None
         try:
             print(
                 "\n\n",
                 f"Evaluating {task} on {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
-                f"{scripts[eval_language]}",
+                f"{script}",
             )
             if custom_args.output_name:
                 output_file = f"./eval_output/approximation/{eval_language}{('_' + script) if script else ''}/{task}_{custom_args.output_name}{limit_str}.json"
