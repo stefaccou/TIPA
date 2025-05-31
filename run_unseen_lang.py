@@ -407,7 +407,7 @@ def main(submit_arguments):
                 except Exception as e:
                     print(f"Error calculating no train but gain baseline: {e}")
                     # we print the active adapters: the model layers
-                    print(model.roberta.encoder.layer[0].output.adapters)
+                    # print(model.roberta.encoder.layer[0].output.adapters)
                     continue
 
             if not os.path.exists(f"./eval_output/approximation/{eval_lang}"):
