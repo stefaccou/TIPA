@@ -191,11 +191,12 @@ def main(submit_arguments):
 
             if not os.path.exists(f"./finetuned_models/results/{eval_lang}"):
                 os.makedirs(f"./finetuned_models/results/{eval_lang}")
+
             # we save this
             if custom_args.output_name:
-                output_file = f"./finetuned_models/results/{eval_lang}/{task}_{custom_args.output_name}.json"
+                output_file = f"./finetuned_models/results/{eval_lang}/{task}{f'_{script}' if script else ''}_{custom_args.output_name}.json"
             else:
-                output_file = f"./finetuned_models/results/{eval_lang}/{task}_eval.json"
+                output_file = f"./finetuned_models/results/{eval_lang}/{task}{f'_{script}' if script else ''}_eval.json"
             with open(output_file, "w") as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
