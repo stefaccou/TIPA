@@ -63,6 +63,7 @@ def get_eval_languages(task):
         return eval_languages
     elif task == "sib":
         langs_scripts = get_dataset_config_names(task2ds[task])
+        langs_scripts = [lang for lang in langs_scripts if "Nkoo" not in lang]
         eval_languages = {}
         for ds in langs_scripts:
             lang, script = ds.split("_")
