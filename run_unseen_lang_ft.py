@@ -21,6 +21,7 @@ def main(submit_arguments):
         XLMRobertaTokenizerFast,
         DataCollatorForTokenClassification,
         DefaultDataCollator,
+        DataCollatorWithPadding,
         Trainer,
     )
 
@@ -122,20 +123,29 @@ def main(submit_arguments):
 
     Tokenizer = XLMRobertaTokenizerFast if task == "pos" else AutoTokenizer
     tokenizer = Tokenizer.from_pretrained("xlm-roberta-base")
-    data_collator = (
-        DataCollatorForTokenClassification(tokenizer=tokenizer) if not task == "qa" else DefaultDataCollator()
-    )
+    if task == "qa":
+        data_collator = DefaultDataCollator()
+    elif task == "sib":
+        data_collator = DataCollatorWithPadding(tokenizer)
+    else:
+        data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
+
     model = load_finetuned_model(task)
 
     print(f"\n{'~' * 30}\n{task.upper()}\n{'~' * 30}")
-    # Brute: we only consider english for now
+
     for eval_language in eval_languages.keys():
+        if task == "sib":
+            eval_lang, script = eval_language
+        else:
+            eval_lang = eval_language
+            script = None
         try:
             print(
                 "\n\n",
-                f"Evaluating {task} on {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
+                f"Evaluating {task} on {eval_lang} ({ld.get(eval_lang, tag_type=TagType.BCP_47_CODE).english_name})",
+                f"{script}",
             )
-
             # Load and preprocess the dataset
             dataset_eval = load_eval(task, eval_language, eval_languages)
             tokenized_datasets = preprocess(dataset_eval, task, tokenizer)
@@ -148,10 +158,10 @@ def main(submit_arguments):
 
             # dataset is now ready to be used with adapters for cross-lingual transfer
 
+            compute_metrics = get_compute_metrics(task, label_names)
+
             def run_eval(model, name):
                 # we load in the task adapter
-
-                compute_metrics = get_compute_metrics(task, label_names)
                 trainer_kwargs = get_trainer_kwargs(
                     task, model, tokenized_datasets, tokenizer, data_collator, compute_metrics
                 )
@@ -179,13 +189,13 @@ def main(submit_arguments):
             # we evaluate the model
             evaluations["finetuned_model"] = run_eval(model, "finetuned_model")
 
-            if not os.path.exists(f"./finetuned_models/results/{eval_language}"):
-                os.makedirs(f"./finetuned_models/results/{eval_language}")
+            if not os.path.exists(f"./finetuned_models/results/{eval_lang}"):
+                os.makedirs(f"./finetuned_models/results/{eval_lang}")
             # we save this
             if custom_args.output_name:
-                output_file = f"./finetuned_models/results/{eval_language}/{task}_{custom_args.output_name}.json"
+                output_file = f"./finetuned_models/results/{eval_lang}/{task}_{custom_args.output_name}.json"
             else:
-                output_file = f"./finetuned_models/results/{eval_language}/{task}_eval.json"
+                output_file = f"./finetuned_models/results/{eval_lang}/{task}_eval.json"
             with open(output_file, "w") as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")

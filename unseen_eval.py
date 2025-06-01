@@ -12,6 +12,7 @@ from transformers import (
     AutoModelForTokenClassification,
     AutoModelForMultipleChoice,
     AutoModelForQuestionAnswering,
+    AutoModelForSequenceClassification,
 )
 import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
@@ -604,6 +605,7 @@ def load_finetuned_model(task):
         "pos": AutoModelForTokenClassification,
         "copa": AutoModelForMultipleChoice,
         "qa": AutoModelForQuestionAnswering,
+        "sib": AutoModelForSequenceClassification,
     }
     model = model_type[task].from_pretrained(f"finetuned_models/xlm_{task}_finetune")
     return model
