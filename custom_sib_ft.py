@@ -93,7 +93,7 @@ def main(submit_arguments):
         output_dir=data_args.output_dir,
         eval_strategy="steps",
         save_strategy="steps",
-        eval_steps=500,
+        eval_steps=250,
         save_steps=1000,
         load_best_model_at_end=True,
         metric_for_best_model="accuracy",
@@ -101,7 +101,7 @@ def main(submit_arguments):
         learning_rate=1e-5,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
-        num_train_epochs=200,
+        num_train_epochs=1000,
         weight_decay=0.01,
         overwrite_output_dir=False,
         # The next line is important to ensure the dataset labels are properly passed to the model
