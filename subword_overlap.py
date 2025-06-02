@@ -125,15 +125,22 @@ def main(submit_arguments):
 
     token_overlaps = {}
     for eval_language in eval_languages.keys():
+        if task == "sib":
+            eval_lang, script = eval_language
+            eval_lang = eval_lang + "_" + script
+        else:
+            eval_lang = eval_language
+            script = None
+
         try:
             print(
                 "\n\n",
-                f"Evaluating token overlap for {task} on {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
+                f"Evaluating token overlap for {task} on {eval_lang} ({ld.get(eval_lang, tag_type=TagType.BCP_47_CODE).english_name})",
             )
         except KeyError:
             print(
                 "\n\n",
-                f"Evaluating token overlap for {task} on {eval_language} (no ld data)",
+                f"Evaluating token overlap for {task} on {eval_lang} (no ld data)",
             )
 
         # Load and preprocess the dataset
@@ -189,7 +196,7 @@ def main(submit_arguments):
             type_overlap_count = 0
             type_overlap = 0.0
 
-        token_overlaps[eval_language] = {
+        token_overlaps[eval_lang] = {
             "token_coverage": token_coverage,
             "overlap_count": overlap_count,
             "type_overlap": type_overlap,
@@ -205,7 +212,7 @@ def main(submit_arguments):
                         train_hits.append(label)
             # we calculate the overlap
             entity_overlap = len(set(train_hits)) / len(test_vocab) if test_vocab else 0
-            token_overlaps[eval_language]["entity_overlap"] = entity_overlap
+            token_overlaps[eval_lang]["entity_overlap"] = entity_overlap
     # Once we have all, we save the results
     output_dir = os.path.join("./eval_output", "token_overlap")
     os.makedirs(output_dir, exist_ok=True)
