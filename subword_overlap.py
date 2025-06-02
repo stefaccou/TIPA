@@ -110,6 +110,12 @@ def main(submit_arguments):
         )
         # we concatenate the training and validation sets
         tokenized_corpus = concatenate_datasets([tokenized_corpus, tokenized_eval])
+    elif task == "sib":
+        source_corpus = load_dataset("Davlan/sib200", "eng_Latn")
+        tokenized_corpus = source_corpus["train"].map(
+            lambda x: tokenizer(x["text"], truncation=True),
+            batched=True,
+        )
 
     # we make a set of all the tokens in the source corpus
     train_vocab = set()
@@ -155,6 +161,11 @@ def main(submit_arguments):
         elif task == "copa":
             tokenized_eval = dataset_eval.map(
                 lambda x: tokenizer(x["premise"], x["question"], x["choice1"], x["choice2"], truncation=True),
+                batched=True,
+            )
+        elif task == "sib":
+            tokenized_eval = dataset_eval.map(
+                lambda x: tokenizer(x["text"], truncation=True),
                 batched=True,
             )
 
