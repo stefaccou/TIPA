@@ -2,24 +2,22 @@
 import submitit
 import os
 import sys
-from custom_submission_utils import find_master, update_submission_log
+from cluster_submission_utils import find_master, update_submission_log
 
 
 def main(submit_arguments):
     from unseen_eval import get_available_adapters, merge_loaded_adapters, typological_approximation, get_glots
 
-    from transformers import TrainingArguments, AutoTokenizer, HfArgumentParser
+    from transformers import TrainingArguments, AutoTokenizer, EvalPrediction, HfArgumentParser
     from adapters import AdapterTrainer, AutoAdapterModel
     from adapters.composition import Stack
 
     from datasets import load_dataset, get_dataset_config_names
-    from transformers import DataCollatorForTokenClassification
     import os
     import gc
     import json
     import torch
     import numpy as np
-    import evaluate
     import random
     from urielplus import urielplus
     from qq import LanguageData, TagType
@@ -34,15 +32,6 @@ def main(submit_arguments):
 
         """
 
-        disable_baselines: Optional[bool] = field(
-            default=True,
-            metadata={
-                "help": (
-                    "Whether to calculate the baselines. "
-                    "Default True, it will calculate the baselines for the adapter combinations."
-                )
-            },
-        )
         distance_types_list: Optional[List[str]] = field(
             default=None,
             metadata={
@@ -82,15 +71,6 @@ def main(submit_arguments):
                 "help": (
                     "Whether to save the adapter after training. "
                     "If True, it will save the adapter to the trained_adapters folder."
-                )
-            },
-        )
-        output_name: Optional[str] = field(
-            default=None,
-            metadata={
-                "help": (
-                    "The name of the output file. "
-                    "If not specified, it will be saved as ner_eval.json in the trained_adapters folder."
                 )
             },
         )
@@ -144,13 +124,10 @@ def main(submit_arguments):
     else:
         distance_types = ["featural"]
 
-    metric = evaluate.load("seqeval")
-
-    eval_languages = get_dataset_config_names("unimelb-nlp/wikiann")
+    # we load in the dataset names
+    eval_languages = get_dataset_config_names("xcopa")
     eval_languages = [lan for lan in eval_languages if len(lan) <= 3]
-
     tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
-    data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 
     model = AutoAdapterModel.from_pretrained("xlm-roberta-base")
 
@@ -183,7 +160,6 @@ def main(submit_arguments):
             custom_args.limit = int(custom_args.limit)
             limit_str = f"_{str(custom_args.limit)}"
             limit_p = f"/{str(custom_args.limit)}"
-
     for i in range(iterations):
         eval_language = random.choice(eval_languages)
         eval_languages.remove(eval_language)
@@ -193,95 +169,56 @@ def main(submit_arguments):
                 "\n\n",
                 f"Evaluating on randomly chosen language {eval_language} ({ld.get(eval_language, tag_type=TagType.BCP_47_CODE).english_name})",
             )
-            dataset_eval = load_dataset("wikiann", eval_language, trust_remote_code=True)
-            if "test" in dataset_eval.keys():
-                dataset_eval = dataset_eval["test"]
-            elif "validation" in dataset_eval.keys():
-                dataset_eval = dataset_eval["validation"]
-            else:
-                dataset_eval = dataset_eval["train"]
+            dataset_eval = load_dataset("xcopa", eval_language, trust_remote_code=True)
 
-            def align_labels_with_tokens(labels, word_ids):
-                new_labels = []
-                current_word = None
-                for word_id in word_ids:
-                    if word_id != current_word:
-                        # Start of a new word!
-                        current_word = word_id
-                        label = -100 if word_id is None else labels[word_id]
-                        new_labels.append(label)
-                    elif word_id is None:
-                        # Special token
-                        new_labels.append(-100)
-                    else:
-                        # Same word as previous token
-                        label = labels[word_id]
-                        # If the label is B-XXX we change it to I-XXX
-                        if label % 2 == 1:
-                            label += 1
-                        new_labels.append(label)
+            def encode_batch(examples):
+                """Encodes a batch of input data using the model tokenizer."""
+                all_encoded = {"input_ids": [], "attention_mask": []}
+                # Iterate through all examples in this batch
+                for premise, question, choice1, choice2 in zip(
+                    examples["premise"], examples["question"], examples["choice1"], examples["choice2"]
+                ):
+                    sentences_a = [premise + " " + question for _ in range(2)]
+                    # Both answer choices are passed in an array according to the format needed for the multiple-choice prediction head
+                    sentences_b = [choice1, choice2]
+                    encoded = tokenizer(
+                        sentences_a,
+                        sentences_b,
+                        max_length=60,
+                        truncation=True,
+                        padding="max_length",
+                    )
+                    all_encoded["input_ids"].append(encoded["input_ids"])
+                    all_encoded["attention_mask"].append(encoded["attention_mask"])
+                return all_encoded
 
-                return new_labels
+            def preprocess_dataset(dataset):
+                # Encode the input data
+                dataset = dataset.map(encode_batch, batched=True)
+                # The transformers model expects the target class column to be named "labels"
+                dataset = dataset.rename_column("label", "labels")
+                # Transform to pytorch tensors and only output the required columns
+                dataset.set_format(columns=["input_ids", "attention_mask", "labels"])
+                return dataset
 
-            # Batch encoding function for NER
-            def tokenize_and_align_labels(examples):
-                tokenized_inputs = tokenizer(examples["tokens"], truncation=True, is_split_into_words=True)
-                all_labels = examples["ner_tags"]
-                new_labels = []
-                for i, labels in enumerate(all_labels):
-                    word_ids = tokenized_inputs.word_ids(i)
-                    new_labels.append(align_labels_with_tokens(labels, word_ids))
-
-                tokenized_inputs["labels"] = new_labels
-                return tokenized_inputs
-
-            # Load and preprocess WikiANN
-
-            tokenized_datasets = dataset_eval.map(
-                tokenize_and_align_labels,
-                batched=True,
-                remove_columns=dataset_eval.column_names,
-            )
-
-            # dataset_en is now ready to be used with adapters for cross-lingual transfer
-
-            ner_feature = dataset_eval.features["ner_tags"]
-            label_names = ner_feature.feature.names
-
-            def compute_metrics(eval_preds):
-                logits, labels = eval_preds
-                predictions = np.argmax(logits, axis=-1)
-
-                # Remove ignored index (special tokens) and convert to labels
-                true_labels = [[label_names[lab] for lab in label if lab != -100] for label in labels]
-                true_predictions = [
-                    [label_names[pred] for (pred, lab) in zip(prediction, label) if lab != -100]
-                    for prediction, label in zip(predictions, labels)
-                ]
-                all_metrics = metric.compute(predictions=true_predictions, references=true_labels)
-                return {
-                    "precision": all_metrics["overall_precision"],
-                    "recall": all_metrics["overall_recall"],
-                    "f1": all_metrics["overall_f1"],
-                    "accuracy": all_metrics["overall_accuracy"],
-                }
+            def compute_accuracy(p: EvalPrediction):
+                preds = np.argmax(p.predictions, axis=1)
+                return {"acc": (preds == p.label_ids).mean()}
 
             def run_eval(model, name):
                 # we load in the task adapter
-                if not name == "ner":
-                    model.active_adapters = Stack(name, "ner")
+                if not name == "copa":
+                    model.active_adapters = Stack(name, "copa")
                 else:
                     model.active_adapters = name
-
                 eval_trainer = AdapterTrainer(
                     model=model,
                     args=TrainingArguments(
                         output_dir="./eval_output",
                         remove_unused_columns=False,
                     ),
-                    data_collator=data_collator,
-                    eval_dataset=tokenized_datasets,
-                    compute_metrics=compute_metrics,
+                    eval_dataset=dataset_eval,
+                    compute_metrics=compute_accuracy,
                 )
                 ev = eval_trainer.evaluate()
                 print(f"Evaluation results for {name}:")
@@ -296,13 +233,22 @@ def main(submit_arguments):
 
                 return ev
 
+            # we preprocess the dataset
+            if "test" in dataset_eval:
+                dataset_eval = dataset_eval["test"]
+            elif "validation" in dataset_eval:
+                dataset_eval = dataset_eval["validation"]
+            else:
+                dataset_eval = dataset_eval["train"]
+            dataset_eval = preprocess_dataset(dataset_eval)
+
             evaluations = {}
             weights = {}
+
             # we check if the adapter has already been created before
             for distance_type in distance_types:
                 adapter_name = f"reconstructed_{eval_language}_{distance_type}{limit_str}"
                 adapter_path = f"./trained_adapters/typological/{eval_language}/{distance_type}{limit_p}"
-                weights[distance_type] = {}
                 if os.path.exists(adapter_path):
                     print("Adapter already exists, loading instead")
                     model.load_adapter(
@@ -315,7 +261,6 @@ def main(submit_arguments):
                     weights[distance_type] = typological_approximation(
                         target_glot, get_glots(to_load), distance_type, custom_args.limit
                     )
-
                     merge_loaded_adapters(
                         model, merge_adapter_name=adapter_name, weights=weights[distance_type], delete_other=False
                     )
@@ -325,72 +270,62 @@ def main(submit_arguments):
                         if not os.path.exists(adapter_path):
                             os.makedirs(adapter_path)
                         model.save_adapter(adapter_path, adapter_name)
-                model.load_adapter("./trained_adapters/ner", load_as="ner")
+                model.load_adapter("./trained_adapters/copa", load_as="copa")
                 print(f"evaluating on reconstructed {eval_language} adapter, distance type {distance_type}")
                 evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
                 model.delete_adapter(adapter_name)
                 # delete the adapter for further iterations
-                model.delete_adapter("ner")
+                model.delete_adapter("copa")
 
-            model.load_adapter("./trained_adapters/ner", load_as="ner")
+            # load in copa adapter AFTER creation of merged adapter
+            model.load_adapter("./trained_adapters/copa", load_as="copa")
+            print("evaluating on baseline (only task adapter")
+            # we calculate a baseline (just copa adapter)
+            evaluations["baseline_copa"] = run_eval(model, "copa")
+
+            # we calculate a baseline (just average over all adapter)
+            # we load the mono/huge_avg_adapter for this
+            print("evaluating on baseline (non-weighted average)")
+            model.load_adapter("./trained_adapters/typological/huge_avg_adapter", load_as="huge_avg_adapter")
+            evaluations["baseline_avg_adapter"] = run_eval(model, "huge_avg_adapter")
+
             # we calculate the baseline of using the english language model and the ner adapter
-            print("evaluating on baseline (english model + ner adapter)")
-            evaluations["baseline_en_ner"] = run_eval(model, "en")
-            model.delete_adapter("ner")
-            if not custom_args.disable_baselines:
-                model.load_adapter("./trained_adapters/ner", load_as="ner")
-                print("evaluating on baseline (only task adapter")
-                # we calculate a baseline (just ner adapter)
-                evaluations["baseline_ner"] = run_eval(model, "ner")
+            print("evaluating on baseline (english model + copa adapter)")
+            evaluations["baseline_en_copa"] = run_eval(model, "en")  # en is in the list of available adapters
 
-                # we calculate a baseline (just average over all adapter)
-                # we load the mono/huge_avg_adapter for this
-                print("evaluating on baseline (non-weighted average)")
-                model.load_adapter("./trained_adapters/typological/huge_avg_adapter", load_as="huge_avg_adapter")
-                evaluations["baseline_avg_adapter"] = run_eval(model, "huge_avg_adapter")
-
-                # we calculate the baseline of using the english language model and the ner adapter
-                print("evaluating on baseline (english model + ner adapter)")
-                evaluations["baseline_en_ner"] = run_eval(model, "en")  # en is in the list of available adapters
-
-                # we calculate the baseline of using the typologically closest model and the ner adapter
-                print("evaluating on baseline (closest model + ner adapter)")
-                for distance_type in distance_types:
-                    try:
-                        # we have to calculate these if we skipped the adapter creation
-                        # we set limit to one so we only get the best adapter
-                        if distance_type not in weights.keys():
-                            target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
-                            weights[distance_type] = typological_approximation(
-                                target_glot, get_glots(to_load), distance_type, 1
-                            )
-
-                        # we load the closest adapter
-                        closest_adapter = max(weights[distance_type], key=weights[distance_type].get)
-                        print(
-                            f"closest {distance_type} adapter is {closest_adapter} ({ld.get(closest_adapter, tag_type=TagType.BCP_47_CODE).english_name})"
+            # we calculate the baseline of using the typologically closest model and the ner adapter
+            print("evaluating on baseline (closest model + copa adapter)")
+            for distance_type in distance_types:
+                try:
+                    # we have to calculate these if we skipped the adapter creation
+                    # we set limit to one so we only get the best adapter
+                    if distance_type not in weights.keys():
+                        target_glot = ld.get(eval_language, tag_type=TagType.BCP_47_CODE).glottocode
+                        weights[distance_type] = typological_approximation(
+                            target_glot, get_glots(to_load), distance_type, 1
                         )
-                        evaluations["baseline_closest_ner"] = run_eval(model, closest_adapter)
-                    except Exception as e:
-                        print(f"Error finding closest adapter: {e}")
 
-                # we delete the added adapters
-                model.delete_adapter("huge_avg_adapter")
-                model.delete_adapter("ner")
+                    # we load the closest adapter
+                    closest_adapter = max(weights[distance_type], key=weights[distance_type].get)
+                    print(
+                        f"closest {distance_type} adapter is {closest_adapter} ({ld.get(closest_adapter, tag_type=TagType.BCP_47_CODE).english_name})"
+                    )
+                    evaluations["baseline_closest_ner"] = run_eval(model, closest_adapter)
+                except Exception as e:
+                    print(f"Error finding closest adapter: {e}")
+
+            # we delete the added adapters
+            model.delete_adapter("huge_avg_adapter")
+            model.delete_adapter("copa")
 
             # we save this
-            if custom_args.output_name:
-                output_file = (
-                    f"./trained_adapters/typological/{eval_language}/{custom_args.output_name}{limit_str}.json"
-                )
-            else:
-                output_file = f"./trained_adapters/typological/{eval_language}/ner_eval{limit_str}.json"
-            with open(output_file, "w") as f:
+            with open(
+                f"./trained_adapters/typological/{eval_language}/pos_eval{limit_str}.json",
+                "w",
+            ) as f:
                 json.dump(evaluations, f, indent=4)
                 print("Saved evaluations to file")
-            # we write the language name to "done languages"
-            # with open(done_file, "a") as f:
-            #    f.write(f"{eval_language}\n")
+
         except RuntimeError as e:
             print(f"RuntimeError {e}, skipping this language")
             # we write this language to a file so we do not check it again
@@ -409,7 +344,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "unseen_ner"
+    job_name = "unseen_copa"
 
     master_dir = find_master()
 
@@ -422,8 +357,7 @@ if __name__ == "__main__":
     partition = "gpu_p100"
     parameters = {
         "slurm_partition": partition,
-        # "slurm_time": "03:00:00",
-        "slurm_time": f"{'01:00:00' if partition.endswith('debug') else '03:30:00'}",
+        "slurm_time": f"{'00:10:00' if partition.endswith('debug') else '01:00:00'}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith('gpu_p100') else 'wice'}",
@@ -441,7 +375,7 @@ if __name__ == "__main__":
     executor.update_parameters(**parameters)
 
     job_input = sys.argv[1:] if len(sys.argv) > 1 else "default text"
-
+    # job_input = sys.argv[1] if len(sys.argv) > 1 else "default text"
     job = executor.submit(main, job_input)
     # job = executor.submit(main)
     print("job submitted")

@@ -1,3 +1,6 @@
+# This script copies the steps from the original cross-lingual transfer learning example from AdapterHub,
+# adapting it for use as a template for job submission and execution with the submitit ibrary
+
 import submitit
 import numpy as np
 import torch

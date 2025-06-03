@@ -6,7 +6,7 @@
 import sys
 import submitit
 import os
-from custom_submission_utils import find_master, update_submission_log
+from cluster_submission_utils import find_master, update_submission_log
 
 
 def main(submit_arguments):

@@ -1,37 +1,14 @@
 # TIPA: Typologically Informed Parameter Aggregation
-## Or maybe ALMA: Aggregated Linguistic Model Adaptation
 
-Template repo for Python software and / or research projects.
+TIPA is a package for typologically informed parameter aggregation.
+It provides tools to combine any number of architecturally identical modules, with a customisable weighting function.
+We also provide a weighting function based on typological distance between a source and target language for zero-shot cross-lingual transfer.
 
-1. Find and replace `master_thesis_adapters` with the name of the package and `**description**` with a brief description. Also change the author information in `pyproject.toml` and this readme where needed.
-2. Specify dependencies and minimal Python version.
-3. Choose a [license](https://choosealicense.com/) and paste it into `LICENSE`.
-4. Check if the pre-commit hooks make sense (e.g., check bash files if there are any, etc.)
-   [see here](https://pre-commit.com/hooks.html) and check `.pre-commit-config.yaml`.
-5. Run the following commands:
-
-   ```zsh
-   pyenv virtualenv 3.12.3 master_thesis_adapters # Create a `pyenv` virtual env
-   pyenv activate master_thesis_adapters
-   pyenv local master_thesis_adapters # And make it local so it's always active in this folder
-   pip install -e ".[dev]"
-   pre-commit install # associate with git repo
-   pre-commit autoupdate # update pre-commit hooks
-   pre-commit run --all-files
-   ```
-
-6. Everything should be ready for development!
-
-## Optional
-
-* Additional documentation are stored in `docs`.
-* Tests are put in `tests` and require development dependencies, which are listed under `dev` in `pyproject.toml`. These are installed using `pip install master_thesis_adapters[dev]`.
-* For usage of [`hydra`](https://github.com/facebookresearch/hydra) and [`submitit`](https://github.com/facebookincubator/submitit) in combination with the VSC, I've added configs that work for requesting single GPUs in `config/slurm`. The names of the files correspond to cluster and the GPUs available there, for more details see [Genius](https://docs.vscentrum.be/leuven/tier2_genius.html) and [wICE](https://docs.vscentrum.be/leuven/tier2_wice.html). Make sure to fill in your own `project` (provided by the VSC), `mail_user` and `slurm_time` (note that `debug` partitions have a 30 minute maximum).
+For more info, we refer to notebook "0_Method_implementation.ipynb" in the repository,
+or to our paper [TBD].
 
 ## Usage
 
 ```zsh
-pip install git+https://github.com/stefaccou/master_thesis_adapters
+pip install git+https://github.com/stefaccou/TIPA
 ```
-
-## License

@@ -24,7 +24,7 @@ https://huggingface.co/models?filter=fill-mask
 import submitit
 import sys
 import os
-from custom_submission_utils import find_master, update_submission_log
+from cluster_submission_utils import find_master, update_submission_log
 
 
 def main(submit_arguments):
