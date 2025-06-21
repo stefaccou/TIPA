@@ -336,8 +336,8 @@ def main(submit_arguments):
                     # )
                     model.average_adapter(
                         adapter_name=adapter_name,
-                        adapter_list=weights[distance_type].keys(),
-                        weights=weights[distance_type].values(),
+                        adapter_list=list(weights[distance_type].keys()),
+                        weights=list(weights[distance_type].values()),
                     )
                     # save this adapter
                     # check if directory exists first
