@@ -334,58 +334,34 @@ def main(submit_arguments):
     # In distributed training, the load_dataset function guarantee that only one local process can concurrently
     # download the dataset.
     if data_args.dataset_name is not None:
-        # Example: take only first 5% for train, and 0.5% for val
-        train_split = "train[0%:5%]"
-        val_split = "train[:0.5%]"
-
-        raw_train = load_dataset(
+        # Downloading and loading a dataset from the hub.
+        raw_datasets = load_dataset(
             data_args.dataset_name,
             data_args.dataset_config_name,
-            split=train_split,
             cache_dir=model_args.cache_dir,
             token=model_args.token,
             streaming=data_args.streaming,
             trust_remote_code=model_args.trust_remote_code,
         )
-        raw_val = load_dataset(
-            data_args.dataset_name,
-            data_args.dataset_config_name,
-            split=val_split,
-            cache_dir=model_args.cache_dir,
-            token=model_args.token,
-            streaming=data_args.streaming,
-            trust_remote_code=model_args.trust_remote_code,
-        )
-        raw_datasets = datasets.DatasetDict(train=raw_train, validation=raw_val)
-    # if data_args.dataset_name is not None:
-    #     # Downloading and loading a dataset from the hub.
-    #     raw_datasets = load_dataset(
-    #         data_args.dataset_name,
-    #         data_args.dataset_config_name,
-    #         cache_dir=model_args.cache_dir,
-    #         token=model_args.token,
-    #         streaming=data_args.streaming,
-    #         trust_remote_code=model_args.trust_remote_code,
-    #     )
-    #     if "validation" not in raw_datasets.keys():
-    #         raw_datasets["validation"] = load_dataset(
-    #             data_args.dataset_name,
-    #             data_args.dataset_config_name,
-    #             split=f"train[:{data_args.validation_split_percentage}%]",
-    #             cache_dir=model_args.cache_dir,
-    #             token=model_args.token,
-    #             streaming=data_args.streaming,
-    #             trust_remote_code=model_args.trust_remote_code,
-    #         )
-    #         raw_datasets["train"] = load_dataset(
-    #             data_args.dataset_name,
-    #             data_args.dataset_config_name,
-    #             split=f"train[{data_args.validation_split_percentage}%:]",
-    #             cache_dir=model_args.cache_dir,
-    #             token=model_args.token,
-    #             streaming=data_args.streaming,
-    #             trust_remote_code=model_args.trust_remote_code,
-    #         )
+        if "validation" not in raw_datasets.keys():
+            raw_datasets["validation"] = load_dataset(
+                data_args.dataset_name,
+                data_args.dataset_config_name,
+                split=f"train[:{data_args.validation_split_percentage}%]",
+                cache_dir=model_args.cache_dir,
+                token=model_args.token,
+                streaming=data_args.streaming,
+                trust_remote_code=model_args.trust_remote_code,
+            )
+            raw_datasets["train"] = load_dataset(
+                data_args.dataset_name,
+                data_args.dataset_config_name,
+                split=f"train[{data_args.validation_split_percentage}%:]",
+                cache_dir=model_args.cache_dir,
+                token=model_args.token,
+                streaming=data_args.streaming,
+                trust_remote_code=model_args.trust_remote_code,
+            )
     else:
         data_files = {}
         if data_args.train_file is not None:
@@ -538,18 +514,6 @@ def main(submit_arguments):
                 # receives the `special_tokens_mask`.
                 return_special_tokens_mask=True,
             )
-
-        # for debugging purposes
-        if not data_args.streaming:
-            if training_args.do_train and "train" in raw_datasets and data_args.max_train_samples is not None:
-                raw_datasets["train"] = raw_datasets["train"].select(
-                    range(min(len(raw_datasets["train"]), data_args.max_train_samples))
-                )
-
-            if training_args.do_eval and "validation" in raw_datasets and data_args.max_eval_samples is not None:
-                raw_datasets["validation"] = raw_datasets["validation"].select(
-                    range(min(len(raw_datasets["validation"]), data_args.max_eval_samples))
-                )
 
         with training_args.main_process_first(desc="dataset map tokenization"):
             if not data_args.streaming:
@@ -754,8 +718,9 @@ def main(submit_arguments):
 
 if __name__ == "__main__":
     job_name = "serbian_clm_adapter"
-    debug = True
+    debug = False
     partition = "p100"
+    time = "02:30:00"
 
     master_dir = find_master()
 
@@ -770,17 +735,16 @@ if __name__ == "__main__":
     first = sys.argv[1]
     if first.startswith("--"):
         job_input = sys.argv[1:]
-        time = "02:30:00"
+        pass_time = time
     else:
         job_input = sys.argv[2:]
         if len(first) == 1:
-            time = f"0{first}:00:00"
+            pass_time = f"0{first}:00:00"
         else:
-            time = first
+            pass_time = first
     parameters = {
         "slurm_partition": pass_partition,
-        # "slurm_time": "03:00:00",
-        "slurm_time": f"{'01:00:00' if pass_partition.endswith('debug') else time}",
+        "slurm_time": f"{'01:00:00' if pass_partition.endswith('debug') else pass_time}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if pass_partition.startswith(('gpu_p100', 'gpu_v100')) else 'wice'}",
