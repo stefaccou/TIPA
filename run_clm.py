@@ -515,6 +515,18 @@ def main(submit_arguments):
                 return_special_tokens_mask=True,
             )
 
+        # for debugging purposes
+        if not data_args.streaming:
+            if training_args.do_train and "train" in raw_datasets and data_args.max_train_samples is not None:
+                raw_datasets["train"] = raw_datasets["train"].select(
+                    range(min(len(raw_datasets["train"]), data_args.max_train_samples))
+                )
+
+            if training_args.do_eval and "validation" in raw_datasets and data_args.max_eval_samples is not None:
+                raw_datasets["validation"] = raw_datasets["validation"].select(
+                    range(min(len(raw_datasets["validation"]), data_args.max_eval_samples))
+                )
+
         with training_args.main_process_first(desc="dataset map tokenization"):
             if not data_args.streaming:
                 tokenized_datasets = raw_datasets.map(
