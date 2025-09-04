@@ -717,10 +717,10 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "serbian_clm_adapter"
+    job_name = "clm_adapter_serbian"
     debug = False
     partition = "p100"
-    time = "02:30:00"
+    time = "10:00:00"
 
     master_dir = find_master()
 
