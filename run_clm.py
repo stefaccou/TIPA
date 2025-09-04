@@ -717,7 +717,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "gemma_mlm"
+    job_name = "serbian clm adapter"
     debug = True
     partition = "p100"
 
