@@ -334,34 +334,58 @@ def main(submit_arguments):
     # In distributed training, the load_dataset function guarantee that only one local process can concurrently
     # download the dataset.
     if data_args.dataset_name is not None:
-        # Downloading and loading a dataset from the hub.
-        raw_datasets = load_dataset(
+        # Example: take only first 5% for train, and 0.5% for val
+        train_split = "train[0%:5%]"
+        val_split = "train[:0.5%]"
+
+        raw_train = load_dataset(
             data_args.dataset_name,
             data_args.dataset_config_name,
+            split=train_split,
             cache_dir=model_args.cache_dir,
             token=model_args.token,
             streaming=data_args.streaming,
             trust_remote_code=model_args.trust_remote_code,
         )
-        if "validation" not in raw_datasets.keys():
-            raw_datasets["validation"] = load_dataset(
-                data_args.dataset_name,
-                data_args.dataset_config_name,
-                split=f"train[:{data_args.validation_split_percentage}%]",
-                cache_dir=model_args.cache_dir,
-                token=model_args.token,
-                streaming=data_args.streaming,
-                trust_remote_code=model_args.trust_remote_code,
-            )
-            raw_datasets["train"] = load_dataset(
-                data_args.dataset_name,
-                data_args.dataset_config_name,
-                split=f"train[{data_args.validation_split_percentage}%:]",
-                cache_dir=model_args.cache_dir,
-                token=model_args.token,
-                streaming=data_args.streaming,
-                trust_remote_code=model_args.trust_remote_code,
-            )
+        raw_val = load_dataset(
+            data_args.dataset_name,
+            data_args.dataset_config_name,
+            split=val_split,
+            cache_dir=model_args.cache_dir,
+            token=model_args.token,
+            streaming=data_args.streaming,
+            trust_remote_code=model_args.trust_remote_code,
+        )
+        raw_datasets = datasets.DatasetDict(train=raw_train, validation=raw_val)
+    # if data_args.dataset_name is not None:
+    #     # Downloading and loading a dataset from the hub.
+    #     raw_datasets = load_dataset(
+    #         data_args.dataset_name,
+    #         data_args.dataset_config_name,
+    #         cache_dir=model_args.cache_dir,
+    #         token=model_args.token,
+    #         streaming=data_args.streaming,
+    #         trust_remote_code=model_args.trust_remote_code,
+    #     )
+    #     if "validation" not in raw_datasets.keys():
+    #         raw_datasets["validation"] = load_dataset(
+    #             data_args.dataset_name,
+    #             data_args.dataset_config_name,
+    #             split=f"train[:{data_args.validation_split_percentage}%]",
+    #             cache_dir=model_args.cache_dir,
+    #             token=model_args.token,
+    #             streaming=data_args.streaming,
+    #             trust_remote_code=model_args.trust_remote_code,
+    #         )
+    #         raw_datasets["train"] = load_dataset(
+    #             data_args.dataset_name,
+    #             data_args.dataset_config_name,
+    #             split=f"train[{data_args.validation_split_percentage}%:]",
+    #             cache_dir=model_args.cache_dir,
+    #             token=model_args.token,
+    #             streaming=data_args.streaming,
+    #             trust_remote_code=model_args.trust_remote_code,
+    #         )
     else:
         data_files = {}
         if data_args.train_file is not None:
