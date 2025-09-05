@@ -805,9 +805,9 @@ def main(submit_arguments):
 
 if __name__ == "__main__":
     job_name = "clm_adapter_serbian"
-    debug = True
+    debug = False
     partition = "p100"
-    time = "10:00:00"
+    time = "3:00:00"
 
     master_dir = find_master()
 
