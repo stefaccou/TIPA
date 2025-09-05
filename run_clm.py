@@ -241,6 +241,15 @@ def main(submit_arguments):
         )
         streaming: bool = field(default=False, metadata={"help": "Enable streaming mode"})
 
+        max_train_examples_load: Optional[int] = field(
+            default=None,
+            metadata={"help": "Hard cap on number of training rows loaded from source (applied at load time)."},
+        )
+        max_eval_examples_load: Optional[int] = field(
+            default=None,
+            metadata={"help": "Hard cap on number of eval/validation rows loaded from source (applied at load time)."},
+        )
+
         def __post_init__(self):
             if self.streaming:
                 require_version("datasets>=2.0.0", "The streaming feature requires `datasets>=2.0.0`")
@@ -333,6 +342,8 @@ def main(submit_arguments):
     #
     # In distributed training, the load_dataset function guarantee that only one local process can concurrently
     # download the dataset.
+    """ Original code, skipped for debugging
+
     if data_args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
         raw_datasets = load_dataset(
@@ -395,7 +406,83 @@ def main(submit_arguments):
                 cache_dir=model_args.cache_dir,
                 token=model_args.token,
             )
+    """
+    if data_args.dataset_name is not None:
+        # If the dataset already has 'train' and maybe 'validation' splits
+        has_val = False
+        try:
+            _tmp = load_dataset(
+                data_args.dataset_name,
+                data_args.dataset_config_name,
+                cache_dir=model_args.cache_dir,
+                token=model_args.token,
+                trust_remote_code=model_args.trust_remote_code,
+            )
+            has_val = "validation" in _tmp
+        except Exception:
+            pass
 
+        if has_val:
+            train_split = "train"
+            val_split = "validation"
+
+            if data_args.max_train_examples_load is not None:
+                train_split = f"{train_split}[:{data_args.max_train_examples_load}]"
+            if data_args.max_eval_examples_load is not None:
+                val_split = f"{val_split}[:{data_args.max_eval_examples_load}]"
+
+            raw_datasets = datasets.DatasetDict(
+                {
+                    "train": load_dataset(
+                        data_args.dataset_name,
+                        data_args.dataset_config_name,
+                        split=train_split,
+                        cache_dir=model_args.cache_dir,
+                        token=model_args.token,
+                        trust_remote_code=model_args.trust_remote_code,
+                    ),
+                    "validation": load_dataset(
+                        data_args.dataset_name,
+                        data_args.dataset_config_name,
+                        split=val_split,
+                        cache_dir=model_args.cache_dir,
+                        token=model_args.token,
+                        trust_remote_code=model_args.trust_remote_code,
+                    ),
+                }
+            )
+        else:
+            p = data_args.validation_split_percentage
+            # Build validation slice first
+            val_split = f"train[:{p}%]"
+            if data_args.max_eval_examples_load is not None:
+                val_split = f"{val_split}[:{data_args.max_eval_examples_load}]"
+
+            # Remaining slice is train
+            train_split = f"train[{p}%:]"
+            if data_args.max_train_examples_load is not None:
+                train_split = f"{train_split}[:{data_args.max_train_examples_load}]"
+
+            raw_datasets = datasets.DatasetDict(
+                {
+                    "validation": load_dataset(
+                        data_args.dataset_name,
+                        data_args.dataset_config_name,
+                        split=val_split,
+                        cache_dir=model_args.cache_dir,
+                        token=model_args.token,
+                        trust_remote_code=model_args.trust_remote_code,
+                    ),
+                    "train": load_dataset(
+                        data_args.dataset_name,
+                        data_args.dataset_config_name,
+                        split=train_split,
+                        cache_dir=model_args.cache_dir,
+                        token=model_args.token,
+                        trust_remote_code=model_args.trust_remote_code,
+                    ),
+                }
+            )
     # See more about loading any type of standard or custom dataset (from files, python dict, pandas DataFrame, etc) at
     # https://huggingface.co/docs/datasets/loading_datasets.
 
