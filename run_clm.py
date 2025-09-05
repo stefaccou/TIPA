@@ -804,10 +804,10 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "clm_adapter_serbian"
+    job_name = "clm_adapter_test"
     debug = False
     partition = "p100"
-    time = "3:00:00"
+    time = "2:00:00"
 
     master_dir = find_master()
 
@@ -835,8 +835,7 @@ if __name__ == "__main__":
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if pass_partition.startswith(('gpu_p100', 'gpu_v100')) else 'wice'}",
-            #  "account": os.environ["ACCOUNT_INFO"],  # replace with your account
-            "account": os.environ["LAGOM_ACCOUNT"],  # we use lagom credits
+            "account": os.environ["LAGOM_ACCOUNT"],  # we use lagom credits instead of "ACCOUNT_INFO"
             "nodes": 1,
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,
