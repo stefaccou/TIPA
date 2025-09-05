@@ -718,7 +718,7 @@ def main(submit_arguments):
 
 if __name__ == "__main__":
     job_name = "clm_adapter_serbian"
-    debug = False
+    debug = True
     partition = "p100"
     time = "10:00:00"
 
