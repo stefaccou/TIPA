@@ -837,7 +837,7 @@ if __name__ == "__main__":
     job_name = "clm_adapter_test"
     debug = False
     partition = "p100"
-    time = "2:00:00"
+    time = "2:30:00"
 
     master_dir = find_master()
 
