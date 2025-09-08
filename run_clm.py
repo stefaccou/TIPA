@@ -527,12 +527,14 @@ def main(submit_arguments):
         )
 
     if model_args.model_name_or_path:
+        """
         torch_dtype = (
             model_args.torch_dtype
             if model_args.torch_dtype in ["auto", None]
             else getattr(torch, model_args.torch_dtype)
         )
         # model = AutoModelForMaskedLM.from_pretrained(
+         pre-fix
         model = AutoModelForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             from_tf=bool(".ckpt" in model_args.model_name_or_path),
@@ -543,7 +545,21 @@ def main(submit_arguments):
             trust_remote_code=model_args.trust_remote_code,
             torch_dtype=torch_dtype,
             low_cpu_mem_usage=model_args.low_cpu_mem_usage,
+        )"""
+        # Force dtypes/attention that fit P100 and reduce mem
+        model = AutoModelForCausalLM.from_pretrained(
+            model_args.model_name_or_path,
+            from_tf=bool(".ckpt" in model_args.model_name_or_path),
+            config=config,
+            cache_dir=model_args.cache_dir,
+            revision=model_args.model_revision,
+            token=model_args.token,
+            trust_remote_code=model_args.trust_remote_code,
+            torch_dtype=torch.float16,  # override Gemma config (bf16) -> fp16
+            low_cpu_mem_usage=model_args.low_cpu_mem_usage,
+            attn_implementation="eager",  # as warned by Transformers for Gemma-3
         )
+
     else:
         logger.info("Training new model from scratch")
         # model = AutoModelForMaskedLM.from_config(config, trust_remote_code=model_args.trust_remote_code)
@@ -556,7 +572,7 @@ def main(submit_arguments):
     # on a small vocab and want a smaller embedding size, remove this test.
     embedding_size = model.get_input_embeddings().weight.shape[0]
     if len(tokenizer) > embedding_size:
-        model.resize_token_embeddings(len(tokenizer))
+        model.resize_token_embeddings(len(tokenizer), pad_to_multiple_of=8)
 
     # Preprocessing the datasets.
     # First we tokenize all the texts.
