@@ -287,7 +287,7 @@ def main(submit_arguments):
 
     # Sending telemetry. Tracking the example usage helps us better allocate resources to maintain them. The
     # information sent is the one passed as arguments along with your Python/PyTorch versions.
-    send_example_telemetry("run_mlm", model_args, data_args)
+    send_example_telemetry("run_clm", model_args, data_args)
 
     # Setup logging
     logging.basicConfig(
@@ -572,7 +572,7 @@ def main(submit_arguments):
     # on a small vocab and want a smaller embedding size, remove this test.
     embedding_size = model.get_input_embeddings().weight.shape[0]
     if len(tokenizer) > embedding_size:
-        model.resize_token_embeddings(len(tokenizer), pad_to_multiple_of=8)
+        model.resize_token_embeddings(len(tokenizer))
 
     # Preprocessing the datasets.
     # First we tokenize all the texts.
@@ -744,7 +744,21 @@ def main(submit_arguments):
 
     # Setup adapters
     # setup_adapter_training(model, adapter_args, data_args.dataset_name or "mlm")
-    setup_adapter_training(model, adapter_args, "mlm")
+    setup_adapter_training(model, adapter_args, "clm")
+
+    # GPT FIX for torch dtypes mismatch
+    model.config.use_cache = False
+    target_dtype = next(model.parameters()).dtype
+    device = training_args.device
+    model.to(device=device, dtype=target_dtype)
+    if hasattr(model, "invertible_adapters") and model.invertible_adapters is not None:
+        model.invertible_adapters.to(device=device, dtype=target_dtype)
+    for m in model.modules():
+        if "adapters" in m.__class__.__module__:
+            try:
+                m.to(device=device, dtype=target_dtype)
+            except Exception:
+                pass
     # Initialize our Trainer
     trainer_class = AdapterTrainer if adapter_args.train_adapter else Trainer
 
