@@ -38,7 +38,6 @@ def main(submit_arguments):
     from datasets import load_dataset
 
     import adapters
-    import evaluate
     import transformers
     from adapters import AdapterArguments, AdapterTrainer, setup_adapter_training
     from transformers import (
@@ -486,7 +485,9 @@ def main(submit_arguments):
     embedding_size = model.get_input_embeddings().weight.shape[0]
     if len(tokenizer) > embedding_size:
         model.resize_token_embeddings(len(tokenizer))
-
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token  # Gemma does this
+        model.config.pad_token_id = tokenizer.pad_token_id
     # Preprocessing the datasets.
     # First we tokenize all the texts.
     if training_args.do_train:
@@ -494,6 +495,7 @@ def main(submit_arguments):
     else:
         column_names = list(raw_datasets["validation"].features)
     text_column_name = "text" if "text" in column_names else column_names[0]
+    print("column names:", column_names)
 
     if data_args.max_seq_length is None:
         max_seq_length = tokenizer.model_max_length
@@ -528,7 +530,7 @@ def main(submit_arguments):
                 max_length=max_seq_length,
                 # We use this option because DataCollatorForLanguageModeling (see below) is more efficient when it
                 # receives the `special_tokens_mask`.
-                return_special_tokens_mask=True,
+                # return_special_tokens_mask=True,  # not needed in CLM?
             )
 
         with training_args.main_process_first(desc="dataset map tokenization"):
@@ -552,7 +554,7 @@ def main(submit_arguments):
         # We use `return_special_tokens_mask=True` because DataCollatorForLanguageModeling (see below) is more
         # efficient when it receives the `special_tokens_mask`.
         def tokenize_function(examples):
-            return tokenizer(examples[text_column_name], return_special_tokens_mask=True)
+            return tokenizer(examples[text_column_name])  # , return_special_tokens_mask=True)
 
         with training_args.main_process_first(desc="dataset map tokenization"):
             if not data_args.streaming:
@@ -627,23 +629,20 @@ def main(submit_arguments):
 
         def preprocess_logits_for_metrics(logits, labels):
             if isinstance(logits, tuple):
-                # Depending on the model and config, logits may contain extra tensors,
-                # like past_key_values, but logits always come first
                 logits = logits[0]
             return logits.argmax(dim=-1)
 
-        metric = evaluate.load("accuracy", cache_dir=model_args.cache_dir)
-
         def compute_metrics(eval_preds):
             preds, labels = eval_preds
-            # preds have the same shape as the labels, after the argmax(-1) has been calculated
-            # by preprocess_logits_for_metrics
-            labels = labels.reshape(-1)
-            preds = preds.reshape(-1)
+            # Shift: compare preds[:, :-1] to labels[:, 1:]
+            preds = preds[:, :-1].reshape(-1)
+            labels = labels[:, 1:].reshape(-1)
+            # If you use -100 to mask, keep it; otherwise, drop pad tokens if any
             mask = labels != -100
-            labels = labels[mask]
-            preds = preds[mask]
-            return metric.compute(predictions=preds, references=labels)
+            if mask.any():
+                labels = labels[mask]
+                preds = preds[mask]
+            return {"accuracy": (preds == labels).float().mean().item()}
 
     # Data collator
     # This one will take care of randomly masking the tokens.
