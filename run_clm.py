@@ -346,7 +346,7 @@ def main(submit_arguments):
         raw_datasets = load_dataset(
             data_args.dataset_name,
             data_args.dataset_config_name,
-            split=f"train{'[:' + data_args.max_load_samples + ']' if data_args.max_load_samples else ''}",
+            split=f"train{'[:' + str(data_args.max_load_samples) + ']' if data_args.max_load_samples else ''}",
             cache_dir=model_args.cache_dir,
             token=model_args.token,
             streaming=data_args.streaming,
