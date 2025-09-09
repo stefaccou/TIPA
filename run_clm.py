@@ -241,15 +241,6 @@ def main(submit_arguments):
         )
         streaming: bool = field(default=False, metadata={"help": "Enable streaming mode"})
 
-        max_train_examples_load: Optional[int] = field(
-            default=None,
-            metadata={"help": "Hard cap on number of training rows loaded from source (applied at load time)."},
-        )
-        max_eval_examples_load: Optional[int] = field(
-            default=None,
-            metadata={"help": "Hard cap on number of eval/validation rows loaded from source (applied at load time)."},
-        )
-
         def __post_init__(self):
             if self.streaming:
                 require_version("datasets>=2.0.0", "The streaming feature requires `datasets>=2.0.0`")
@@ -834,8 +825,8 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "clm_adapter_test"
-    debug = False
+    job_name = "clm_adapter_early_stop"
+    debug = True
     partition = "p100"
     time = "2:30:00"
 
