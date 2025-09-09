@@ -220,6 +220,15 @@ def main(submit_arguments):
                 )
             },
         )
+        max_load_samples: Optional[int] = field(
+            default=None,
+            metadata={
+                "help": (
+                    "For debugging purposes or quicker training, truncate the number of loaded examples to this "
+                    "value if set."
+                )
+            },
+        )
         max_train_samples: Optional[int] = field(
             default=None,
             metadata={
@@ -337,16 +346,18 @@ def main(submit_arguments):
         raw_datasets = load_dataset(
             data_args.dataset_name,
             data_args.dataset_config_name,
+            split=f"train{'[:' + data_args.max_load_samples + ']' if data_args.max_load_samples else ''}",
             cache_dir=model_args.cache_dir,
             token=model_args.token,
             streaming=data_args.streaming,
             trust_remote_code=model_args.trust_remote_code,
         )
         if "validation" not in raw_datasets.keys():
+            print("no val in keys")
             raw_datasets["validation"] = load_dataset(
                 data_args.dataset_name,
                 data_args.dataset_config_name,
-                split=f"train[:{data_args.validation_split_percentage}%]",
+                # split=f"train[:{data_args.validation_split_percentage}%]"
                 cache_dir=model_args.cache_dir,
                 token=model_args.token,
                 streaming=data_args.streaming,
@@ -361,7 +372,10 @@ def main(submit_arguments):
                 streaming=data_args.streaming,
                 trust_remote_code=model_args.trust_remote_code,
             )
+        else:
+            print("val was in keys")
     else:
+        print("using custom data files")
         data_files = {}
         if data_args.train_file is not None:
             data_files["train"] = data_args.train_file
@@ -515,6 +529,7 @@ def main(submit_arguments):
         max_seq_length = min(data_args.max_seq_length, tokenizer.model_max_length)
 
     if data_args.line_by_line:
+        print("using line by line")
         # When using line_by_line, we just tokenize each nonempty line.
         padding = "max_length" if data_args.pad_to_max_length else False
 
