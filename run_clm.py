@@ -355,6 +355,7 @@ def main(submit_arguments):
             streaming=data_args.streaming,
             trust_remote_code=model_args.trust_remote_code,
         )
+
         raw_datasets = datasets.DatasetDict()
         # we take a train and val split (default 5%)
         raw_datasets["train"] = loaded_datasets.train_test_split(
@@ -711,7 +712,7 @@ def main(submit_arguments):
         tokenizer=tokenizer,
         data_collator=data_collator,
         # compute_metrics=compute_metrics if training_args.do_eval and not is_torch_xla_available() else None,
-        compute_metrics=False,
+        compute_metrics=None,
         preprocess_logits_for_metrics=(
             preprocess_logits_for_metrics if training_args.do_eval and not is_torch_xla_available() else None
         ),
