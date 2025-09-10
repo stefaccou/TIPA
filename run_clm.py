@@ -703,7 +703,6 @@ def main(submit_arguments):
                 pass
     # Initialize our Trainer
     trainer_class = AdapterTrainer if adapter_args.train_adapter else Trainer
-    print("evaluating with model", model)
     trainer = trainer_class(
         model=model,
         args=training_args,
@@ -780,7 +779,7 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "clm_adapter_srp"
+    job_name = "clm_adapter"
     debug = False
     partition = "p100"
     time = "06:00:00"
