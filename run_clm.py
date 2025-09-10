@@ -494,7 +494,7 @@ def main(submit_arguments):
             revision=model_args.model_revision,
             token=model_args.token,
             trust_remote_code=model_args.trust_remote_code,
-            torch_dtype=torch.float16,  # override Gemma config (bf16) -> fp16
+            torch_dtype=torch.float32,
             low_cpu_mem_usage=model_args.low_cpu_mem_usage,
             attn_implementation="eager",  # as warned by Transformers for Gemma-3
         )
@@ -690,15 +690,14 @@ def main(submit_arguments):
 
     # GPT FIX for torch dtypes mismatch
     model.config.use_cache = False
-    target_dtype = next(model.parameters()).dtype
     device = training_args.device
-    model.to(device=device, dtype=target_dtype)
+    model.to(device=device)
     if hasattr(model, "invertible_adapters") and model.invertible_adapters is not None:
-        model.invertible_adapters.to(device=device, dtype=target_dtype)
+        model.invertible_adapters.to(device=device)
     for m in model.modules():
         if "adapters" in m.__class__.__module__:
             try:
-                m.to(device=device, dtype=target_dtype)
+                m.to(device=device)
             except Exception:
                 pass
     # Initialize our Trainer
