@@ -54,6 +54,7 @@ def main(submit_arguments):
         TrainingArguments,
         is_torch_xla_available,
         set_seed,
+        EarlyStoppingCallback,
     )
     from transformers.trainer_utils import get_last_checkpoint
     from transformers.utils import check_min_version, send_example_telemetry
@@ -715,6 +716,7 @@ def main(submit_arguments):
         preprocess_logits_for_metrics=(
             preprocess_logits_for_metrics if training_args.do_eval and not is_torch_xla_available() else None
         ),
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
     )
 
     # Training
@@ -741,7 +743,7 @@ def main(submit_arguments):
     # Evaluation
     if training_args.do_eval:
         logger.info("*** Evaluate ***")
-
+        print("evaluating on model:", model)
         metrics = trainer.evaluate()
 
         max_eval_samples = data_args.max_eval_samples if data_args.max_eval_samples is not None else len(eval_dataset)
