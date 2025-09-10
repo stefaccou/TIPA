@@ -716,7 +716,9 @@ def main(submit_arguments):
         preprocess_logits_for_metrics=(
             preprocess_logits_for_metrics if training_args.do_eval and not is_torch_xla_available() else None
         ),
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
+        callbacks=[
+            EarlyStoppingCallback(early_stopping_patience=3, early_stopping_threshold=0.0),
+        ],
     )
 
     # Training
