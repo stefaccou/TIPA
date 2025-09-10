@@ -341,9 +341,12 @@ def main(submit_arguments):
     #
     # In distributed training, the load_dataset function guarantee that only one local process can concurrently
     # download the dataset.
+
     if data_args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
-        raw_datasets = load_dataset(
+        # As the train set is large enough, we default to only using this here
+        # This allows us to limit the total downloading and processing size before size gets out of hand
+        loaded_datasets = load_dataset(
             data_args.dataset_name,
             data_args.dataset_config_name,
             split=f"train{'[:' + str(data_args.max_load_samples) + ']' if data_args.max_load_samples else ''}",
@@ -352,6 +355,16 @@ def main(submit_arguments):
             streaming=data_args.streaming,
             trust_remote_code=model_args.trust_remote_code,
         )
+        raw_datasets = datasets.DatasetDict()
+        # we take a train and val split (default 5%)
+        raw_datasets["train"] = loaded_datasets.train_test_split(
+            test_size=getattr(data_args, "validation_split_percentage", 5) / 100
+        )["train"]
+        raw_datasets["validation"] = loaded_datasets.train_test_split(
+            test_size=getattr(data_args, "validation_split_percentage", 5) / 100
+        )["test"]
+
+        """
         if "validation" not in raw_datasets.keys():
             print("no val in keys")
             raw_datasets["validation"] = load_dataset(
@@ -372,8 +385,7 @@ def main(submit_arguments):
                 streaming=data_args.streaming,
                 trust_remote_code=model_args.trust_remote_code,
             )
-        else:
-            print("val was in keys")
+        """
     else:
         print("using custom data files")
         data_files = {}
