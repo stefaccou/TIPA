@@ -780,10 +780,10 @@ def main(submit_arguments):
 
 
 if __name__ == "__main__":
-    job_name = "clm_adapter_eus_test"
-    debug = True
+    job_name = "clm_adapter_eus"
+    debug = False
     partition = "p100"
-    time = "00:30:00"
+    time = "06:00:00"
 
     master_dir = find_master()
 
