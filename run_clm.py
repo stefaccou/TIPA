@@ -667,9 +667,11 @@ def main(submit_arguments):
             # If you use -100 to mask, keep it; otherwise, drop pad tokens if any
             mask = labels != -100
             if mask.any():
-                labels = labels[mask]
                 preds = preds[mask]
-            return {"accuracy": (preds == labels).float().mean().item()}
+                labels = labels[mask]
+
+            acc = (preds == labels).mean()  # numpy bool mean -> float
+            return {"accuracy": float(acc)}
 
     # Data collator
     # This one will take care of randomly masking the tokens.
@@ -708,7 +710,8 @@ def main(submit_arguments):
         eval_dataset=eval_dataset if training_args.do_eval else None,
         tokenizer=tokenizer,
         data_collator=data_collator,
-        compute_metrics=compute_metrics if training_args.do_eval and not is_torch_xla_available() else None,
+        # compute_metrics=compute_metrics if training_args.do_eval and not is_torch_xla_available() else None,
+        compute_metrics=False,
         preprocess_logits_for_metrics=(
             preprocess_logits_for_metrics if training_args.do_eval and not is_torch_xla_available() else None
         ),
