@@ -343,7 +343,7 @@ def main(submit_arguments):
     # In distributed training, the load_dataset function guarantee that only one local process can concurrently
     # download the dataset.
 
-    if data_args.dataset_name is not None:
+    if data_args.dataset_name is not None and not data_args.streaming:
         # Downloading and loading a dataset from the hub.
         # As the train set is large enough, we default to only using this here
         # This allows us to limit the total downloading and processing size before size gets out of hand
@@ -353,7 +353,7 @@ def main(submit_arguments):
             split=f"train{'[:' + str(data_args.max_load_samples) + ']' if data_args.max_load_samples else ''}",
             cache_dir=model_args.cache_dir,
             token=model_args.token,
-            streaming=data_args.streaming,
+            streaming=False,
             trust_remote_code=model_args.trust_remote_code,
         )
 
@@ -388,6 +388,19 @@ def main(submit_arguments):
                 trust_remote_code=model_args.trust_remote_code,
             )
         """
+    elif data_args.dataset_name is not None and data_args.streaming:
+        print("using streaming")
+        raw_datasets = load_dataset(
+            data_args.dataset_name,
+            data_args.dataset_config_name,
+            cache_dir=model_args.cache_dir,
+            token=model_args.token,
+            streaming=data_args.streaming,
+            trust_remote_code=model_args.trust_remote_code,
+        )
+        raw_datasets["train"] = raw_datasets["train"].select(data_args.max_load_samples)
+        raw_datasets["validation"] = raw_datasets["validation"].select(data_args.max_load_samples/20)
+
     else:
         print("using custom data files")
         data_files = {}
