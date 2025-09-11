@@ -398,8 +398,8 @@ def main(submit_arguments):
             streaming=data_args.streaming,
             trust_remote_code=model_args.trust_remote_code,
         )
-        raw_datasets["train"] = raw_datasets["train"].select(data_args.max_load_samples)
-        raw_datasets["validation"] = raw_datasets["validation"].select(data_args.max_load_samples/20)
+        raw_datasets["train"] = raw_datasets["train"].take(data_args.max_load_samples)
+        raw_datasets["validation"] = raw_datasets["validation"].take(data_args.max_load_samples/20)
 
     else:
         print("using custom data files")
