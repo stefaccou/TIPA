@@ -719,7 +719,7 @@ def main(submit_arguments):
 
     # Training
     if training_args.do_train:
-        last_checkpoint = get_last_checkpoint(data_args.output_dir)
+        last_checkpoint = get_last_checkpoint(training_args.output_dir)
         if last_checkpoint is not None:
             print(f"Resuming training from checkpoint: {last_checkpoint}")
             trainer.train(resume_from_checkpoint=last_checkpoint)
@@ -727,7 +727,7 @@ def main(submit_arguments):
             print("No checkpoint found, starting training from scratch.")
             trainer.train()
         # we save the clm adapter as "clm"
-        model.save_adapter(data_args.output_dir, "clm")
+        model.save_adapter(training_args.output_dir, "clm")
 
     # Evaluation
     if training_args.do_eval:
