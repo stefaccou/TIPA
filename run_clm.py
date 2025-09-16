@@ -676,6 +676,7 @@ def main(submit_arguments):
 
     # Setup adapters
     # setup_adapter_training(model, adapter_args, data_args.dataset_name or "mlm")
+    print("adapter_args", adapter_args)
     setup_adapter_training(model, adapter_args, "clm")
 
     # GPT FIX for torch dtypes mismatch
@@ -769,7 +770,7 @@ def main(submit_arguments):
 if __name__ == "__main__":
     job_name = "clm_adapter"
     debug = True
-    partition = "a100"
+    partition = "p100"
     time = "04:00:00"
 
     master_dir = find_master()

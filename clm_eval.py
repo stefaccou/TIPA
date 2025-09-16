@@ -51,9 +51,10 @@ def main(submit_arguments):
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token  # Gemma does this
         model.config.pad_token_id = tokenizer.pad_token_id
-    dataset = datasets.load_dataset(
-        "openlanguagedata/flores_plus", dataset_args.language, cache_dir=dataset_args.cache_dir
-    )
+    # dataset = datasets.load_dataset(
+    #     "openlanguagedata/flores_plus", dataset_args.language, cache_dir=dataset_args.cache_dir
+    # )
+    dataset = datasets.load_from_disk(f"data/test/{dataset_args.language}")
 
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -70,8 +71,8 @@ def main(submit_arguments):
     tokenized_datasets = dataset.map(
         preprocess_function,
         batched=True,
-        # remove_columns=dataset.column_names,
-        remove_columns=dataset["devtest"].column_names,  # keep only model features
+        remove_columns=dataset.column_names,
+        # remove_columns=dataset["devtest"].column_names,  # keep only model features
     )
     # We use a CLM data collator: pads dynamically and sets labels=input_ids with -100 on padding
     data_collator = DataCollatorForLanguageModeling(
@@ -91,8 +92,8 @@ def main(submit_arguments):
     trainer = Trainer(
         model=model,
         args=training_args,
-        eval_dataset=tokenized_datasets["devtest"],
-        # eval_dataset=tokenized_datasets,
+        # eval_dataset=tokenized_datasets["devtest"],
+        eval_dataset=tokenized_datasets,
         data_collator=data_collator,
         tokenizer=tokenizer,
     )
