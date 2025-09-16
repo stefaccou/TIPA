@@ -681,7 +681,7 @@ def main(submit_arguments):
     # setup_adapter_training(model, adapter_args, "clm")
     adapter_name = "clm"
     if adapter_args.adapter_config is not None:
-        adapter_config = adapters.get_adapter_config(adapter_args.adapter_config)
+        adapter_config = adapter_args.adapter_config
     else:
         adapter_config = SeqBnConfig(mh_adapter=True, output_adapter=True, reduction_factor=16, non_linearity="relu")
     # custom setup for CLM
