@@ -25,7 +25,6 @@ from cluster_submission_utils import find_master, update_submission_log
 
 
 def main(submit_arguments):
-    print("starting main")
     import logging
     import math
     import os
@@ -52,7 +51,6 @@ def main(submit_arguments):
         HfArgumentParser,
         Trainer,
         TrainingArguments,
-        is_torch_xla_available,
         set_seed,
         EarlyStoppingCallback,
     )
@@ -347,14 +345,9 @@ def main(submit_arguments):
         # Downloading and loading a dataset from the hub.
         # As the train set is large enough, we default to only using this here
         # This allows us to limit the total downloading and processing size before size gets out of hand
-        loaded_datasets = load_dataset(
+        loaded_datasets = datasets.load_from_disk(
             data_args.dataset_name,
             data_args.dataset_config_name,
-            split=f"train{'[:' + str(data_args.max_load_samples) + ']' if data_args.max_load_samples else ''}",
-            cache_dir=model_args.cache_dir,
-            token=model_args.token,
-            streaming=False,
-            trust_remote_code=model_args.trust_remote_code,
         )
 
         raw_datasets = datasets.DatasetDict()
@@ -671,25 +664,6 @@ def main(submit_arguments):
             max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
             eval_dataset = eval_dataset.select(range(max_eval_samples))
 
-        def preprocess_logits_for_metrics(logits, labels):
-            if isinstance(logits, tuple):
-                logits = logits[0]
-            return logits.argmax(dim=-1)
-
-        def compute_metrics(eval_preds):
-            preds, labels = eval_preds
-            # Shift: compare preds[:, :-1] to labels[:, 1:]
-            preds = preds[:, :-1].reshape(-1)
-            labels = labels[:, 1:].reshape(-1)
-            # If you use -100 to mask, keep it; otherwise, drop pad tokens if any
-            mask = labels != -100
-            if mask.any():
-                preds = preds[mask]
-                labels = labels[mask]
-
-            acc = (preds == labels).mean()  # numpy bool mean -> float
-            return {"accuracy": float(acc)}
-
     # Data collator
     # This one will take care of randomly masking the tokens.
     pad_to_multiple_of_8 = data_args.line_by_line and training_args.fp16 and not data_args.pad_to_max_length
@@ -727,9 +701,6 @@ def main(submit_arguments):
         data_collator=data_collator,
         # compute_metrics=compute_metrics if training_args.do_eval and not is_torch_xla_available() else None,
         compute_metrics=None,
-        preprocess_logits_for_metrics=(
-            preprocess_logits_for_metrics if training_args.do_eval and not is_torch_xla_available() else None
-        ),
         callbacks=[
             EarlyStoppingCallback(early_stopping_patience=3, early_stopping_threshold=0.0),
         ],
@@ -742,6 +713,8 @@ def main(submit_arguments):
             checkpoint = training_args.resume_from_checkpoint
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
+        # we check the model
+        print("training on model:", model)
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
         # WE IMPLEMENT CUSTOM SAVING NAME
         trainer.save_model(training_args.output_dir)  # Saves the tokenizer too for easy upload

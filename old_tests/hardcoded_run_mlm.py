@@ -19,6 +19,7 @@ Fine-tuning the library models for masked language modeling (BERT, ALBERT, RoBER
 Here is the full list of checkpoints on the hub that can be fine-tuned by this script:
 https://huggingface.co/models?filter=fill-mask
 """
+
 # You can also adapt this script on your own masked language modeling task. Pointers for this are left as comments.
 import submitit
 import logging
@@ -237,8 +238,8 @@ class DataTrainingArguments:
         if self.streaming:
             require_version("datasets>=2.0.0", "The streaming feature requires `datasets>=2.0.0`")
 
-        #if self.dataset_name is None and self.train_file is None and self.validation_file is None:
-            # if self.dataset_name is None and self.train_file is None and self.train_files is None and self.validation_file is None:
+        # if self.dataset_name is None and self.train_file is None and self.validation_file is None:
+        # if self.dataset_name is None and self.train_file is None and self.train_files is None and self.validation_file is None:
         #    raise ValueError("Need either a dataset name or a training/validation file.")
         else:
             if self.train_file is not None:
@@ -256,24 +257,23 @@ def main(*args):
     # or by passing the --help flag to this script.
     # We now keep distinct sets of args, for a cleaner separation of concerns.
 
-    #parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments, AdapterArguments))
-    #if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        # If we pass only one argument to the script and it's the path to a json file,
-        # let's parse it to get our arguments.
+    # parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments, AdapterArguments))
+    # if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+    # If we pass only one argument to the script and it's the path to a json file,
+    # let's parse it to get our arguments.
     #    model_args, data_args, training_args, adapter_args = parser.parse_json_file(
     #        json_file=os.path.abspath(sys.argv[1])
     #    )
-    #else:
+    # else:
     #    model_args, data_args, training_args, adapter_args = parser.parse_args_into_dataclasses()
 
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments, AdapterArguments))
     if args and len(args) == 1 and args[0].endswith(".json"):
-        model_args, data_args, training_args, adapter_args = parser.parse_json_file(
-            json_file=os.path.abspath(args[0])
-        )
+        model_args, data_args, training_args, adapter_args = parser.parse_json_file(json_file=os.path.abspath(args[0]))
     else:
         model_args, data_args, training_args, adapter_args = parser.parse_args_into_dataclasses(
-            args=list(args) if args else None)
+            args=list(args) if args else None
+        )
 
     # Sending telemetry. Tracking the example usage helps us better allocate resources to maintain them. The
     # information sent is the one passed as arguments along with your Python/PyTorch versions.
@@ -404,6 +404,7 @@ def main(*args):
     # We combine these into a new iterable dataset
     def combined_gen():
         return alternating_iterator(dataset_english, dataset_german, lang_batch_size)
+
     print(" Combined generator created")
     raw_datasets = datasets.IterableDataset.from_generator(combined_gen)
 
@@ -412,10 +413,10 @@ def main(*args):
     model.load_adapter("AdapterHub/xlm-roberta-base-en-wiki_pfeiffer", adapter_name="en")
     model.load_adapter("AdapterHub/xlm-roberta-base-de-wiki_pfeiffer", adapter_name="de")
     print("downloaded adapters")
-    #model.load_adapter("trained_adapters/xnli_adapter", adapter_name="xnli_adapter")
+    # model.load_adapter("trained_adapters/xnli_adapter", adapter_name="xnli_adapter")
     model.add_adapter("germanic", config="pfeiffer")
     model.train_adapter(["germanic"])
-    #model.active_adapters = ac.Stack("germanic", ac.BatchSplit("en", "de", batch_sizes=lang_batch_size), "xnli_adapter")
+    # model.active_adapters = ac.Stack("germanic", ac.BatchSplit("en", "de", batch_sizes=lang_batch_size), "xnli_adapter")
     model.active_adapters = ac.Stack("germanic", ac.BatchSplit("en", "de", batch_sizes=lang_batch_size))
 
     print(" adapter activated", model.active_adapters)
@@ -429,11 +430,11 @@ def main(*args):
     # First we tokenize all the texts.
 
     if training_args.do_train:
-        #column_names = list(raw_datasets["train"].features)
+        # column_names = list(raw_datasets["train"].features)
         first_sample = next(iter(raw_datasets))
         column_names = list(first_sample.keys())
     else:
-        #column_names = list(raw_datasets["validation"].features)
+        # column_names = list(raw_datasets["validation"].features)
         first_sample = next(iter(raw_datasets))
         column_names = list(first_sample.keys())
     text_column_name = "text" if "text" in column_names else column_names[0]
@@ -555,13 +556,13 @@ def main(*args):
     if training_args.do_train:
         train_dataset = tokenized_datasets
 
-    #if training_args.do_train:
-    #    if "train" not in tokenized_datasets:
-    #        raise ValueError("--do_train requires a train dataset")
-    #    train_dataset = tokenized_datasets["train"]
+        # if training_args.do_train:
+        #    if "train" not in tokenized_datasets:
+        #        raise ValueError("--do_train requires a train dataset")
+        #    train_dataset = tokenized_datasets["train"]
         if data_args.max_train_samples is not None:
-        #    max_train_samples = min(len(train_dataset), data_args.max_train_samples)
-        #    train_dataset = train_dataset.select(range(max_train_samples))
+            #    max_train_samples = min(len(train_dataset), data_args.max_train_samples)
+            #    train_dataset = train_dataset.select(range(max_train_samples))
             train_dataset = train_dataset.take(data_args.max_train_samples)
     if training_args.do_eval:
         if "validation" not in tokenized_datasets:
@@ -570,7 +571,6 @@ def main(*args):
         if data_args.max_eval_samples is not None:
             max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
             eval_dataset = eval_dataset.select(range(max_eval_samples))
-
 
         def preprocess_logits_for_metrics(logits, labels):
             if isinstance(logits, tuple):
@@ -680,6 +680,7 @@ def _mp_fn(index):
     # For xla_spawn (TPUs)
     main()
 
+
 if __name__ == "__main__":
     parameters = {
         "slurm_partition": "gpu_a100",
@@ -700,4 +701,4 @@ if __name__ == "__main__":
     executor.update_parameters(**parameters)
 
     job = executor.submit(main, *sys.argv[1:])
-    #job.result()
+    # job.result()
