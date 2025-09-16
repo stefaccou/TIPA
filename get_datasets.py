@@ -18,7 +18,7 @@ def main(submit_arguments):
 
         # the list of languages to process, separated by spaces
         languages: Optional[str] = field(
-            default=None, metadata={"help": "List of languages to process, separated by spaces"}
+            default=None, metadata={"help": "List of languages to process, separated by comma"}
         )
         cache_dir: Optional[str] = field(
             default="data",
@@ -30,6 +30,10 @@ def main(submit_arguments):
 
     # add a comma to refer to first part of tuple output
     (dataset_args,) = parser.parse_args_into_dataclasses(submit_arguments)
+    if dataset_args.languages:
+        dataset_args.languages = [lang.strip() for lang in dataset_args.languages.split(",")]
+    else:
+        dataset_args.languages = []
 
     langs = {
         "Thai": ["tha_Thai"],
@@ -127,7 +131,7 @@ def main(submit_arguments):
 if __name__ == "__main__":
     job_name = "dataset_processing"
     debug = True
-    partition = "a100"
+    partition = "p100"
     time = "06:00:00"
 
     master_dir = find_master()
