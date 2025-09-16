@@ -70,8 +70,8 @@ def main(submit_arguments):
     tokenized_datasets = dataset.map(
         preprocess_function,
         batched=True,
-        remove_columns=dataset.column_names,
-        # remove_columns=dataset["devtest"].column_names,  # keep only model features
+        # remove_columns=dataset.column_names,
+        remove_columns=dataset["devtest"].column_names,  # keep only model features
     )
     # We use a CLM data collator: pads dynamically and sets labels=input_ids with -100 on padding
     data_collator = DataCollatorForLanguageModeling(
@@ -91,8 +91,8 @@ def main(submit_arguments):
     trainer = Trainer(
         model=model,
         args=training_args,
-        # eval_dataset=tokenized_datasets["devtest"],
-        eval_dataset=tokenized_datasets,
+        eval_dataset=tokenized_datasets["devtest"],
+        # eval_dataset=tokenized_datasets,
         data_collator=data_collator,
         tokenizer=tokenizer,
     )
@@ -106,8 +106,8 @@ def main(submit_arguments):
     trainer = Trainer(
         model=model,
         args=training_args,
-        # eval_dataset=tokenized_datasets["devtest"],
-        eval_dataset=tokenized_datasets,
+        eval_dataset=tokenized_datasets["devtest"],
+        # eval_dataset=tokenized_datasets,
         data_collator=data_collator,
         tokenizer=tokenizer,
     )
