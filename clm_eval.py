@@ -104,20 +104,20 @@ def main(submit_arguments):
         logging_dir="./logs",
         report_to=["tensorboard"],
     )
-
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        # eval_dataset=tokenized_datasets["devtest"],
-        eval_dataset=tokenized_datasets,
-        data_collator=data_collator,
-        tokenizer=tokenizer,
-    )
-
-    eval_results = trainer.evaluate()
-    print("Evaluating on ", dataset_args.language)
-    print("Evaluation without adapter")
-    print(eval_results)
+    #
+    # trainer = Trainer(
+    #     model=model,
+    #     args=training_args,
+    #     # eval_dataset=tokenized_datasets["devtest"],
+    #     eval_dataset=tokenized_datasets,
+    #     data_collator=data_collator,
+    #     tokenizer=tokenizer,
+    # )
+    #
+    # eval_results = trainer.evaluate()
+    # print("Evaluating on ", dataset_args.language)
+    # print("Evaluation without adapter")
+    # print(eval_results)
     adapters.init(model)
 
     model.load_adapter(dataset_args.adapter_dir, load_as="clm")
