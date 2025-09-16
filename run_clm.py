@@ -270,6 +270,7 @@ def main(submit_arguments):
     # We now keep distinct sets of args, for a cleaner separation of concerns.
 
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments, AdapterArguments))
+
     # we remove sys.argv as it interferes with parsing
     sys.argv = ""
     # if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
@@ -282,6 +283,7 @@ def main(submit_arguments):
     else:
         print("calling parser")
         model_args, data_args, training_args, adapter_args = parser.parse_args_into_dataclasses(submit_arguments)
+    print("adapter_args", adapter_args)
 
     # Sending telemetry. Tracking the example usage helps us better allocate resources to maintain them. The
     # information sent is the one passed as arguments along with your Python/PyTorch versions.
@@ -676,7 +678,6 @@ def main(submit_arguments):
 
     # Setup adapters
     # setup_adapter_training(model, adapter_args, data_args.dataset_name or "mlm")
-    print("adapter_args", adapter_args)
     setup_adapter_training(model, adapter_args, "clm")
 
     # GPT FIX for torch dtypes mismatch
