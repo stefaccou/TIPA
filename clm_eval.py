@@ -13,7 +13,7 @@ def main(submit_arguments):
         TrainingArguments,
         HfArgumentParser,
     )
-    import datasets
+    from datasets import load_dataset, Dataset, Split
     import adapters
     from dataclasses import dataclass, field
     from typing import Optional
@@ -54,8 +54,24 @@ def main(submit_arguments):
     # dataset = datasets.load_dataset(
     #     "openlanguagedata/flores_plus", dataset_args.language, cache_dir=dataset_args.cache_dir
     # )
-    dataset = datasets.load_from_disk(f"data/test/{dataset_args.language}")
 
+    def generate_lines(dataset, cutoff):
+        n = 0
+        for example in dataset:
+            if n >= cutoff:
+                break
+            for line in example["text"].split("\n"):
+                if good_line := line.strip():
+                    n += 1
+                    # print(n, end="\r")
+                    yield {"text": good_line}
+
+    if dataset_args.language == "eng_Latn":
+        ds = load_dataset("HuggingFaceFW/fineweb", streaming=True, split="train")
+    else:
+        ds = load_dataset("HuggingFaceFW/fineweb-2", dataset_args.language, streaming=True, split="train")
+
+    test_dataset = Dataset.from_generator(generate_lines, gen_kwargs={"dataset": ds, "cutoff": 2000}, split=Split.TEST)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     model.config.pad_token_id = tokenizer.pad_token_id
@@ -68,10 +84,10 @@ def main(submit_arguments):
             # no padding here; we'll do dynamic padding in the collator
         )
 
-    tokenized_datasets = dataset.map(
+    tokenized_datasets = test_dataset.map(
         preprocess_function,
         batched=True,
-        remove_columns=dataset.column_names,
+        remove_columns=test_dataset.column_names,
         # remove_columns=dataset["devtest"].column_names,  # keep only model features
     )
     # We use a CLM data collator: pads dynamically and sets labels=input_ids with -100 on padding
@@ -109,8 +125,8 @@ def main(submit_arguments):
     trainer = Trainer(
         model=model,
         args=training_args,
-        eval_dataset=tokenized_datasets["devtest"],
-        # eval_dataset=tokenized_datasets,
+        # eval_dataset=tokenized_datasets["devtest"],
+        eval_dataset=tokenized_datasets,
         data_collator=data_collator,
         tokenizer=tokenizer,
     )
