@@ -719,26 +719,15 @@ def main(submit_arguments):
 
     # Training
     if training_args.do_train:
-        checkpoint = None
-        if training_args.resume_from_checkpoint is not None:
-            checkpoint = training_args.resume_from_checkpoint
-        elif last_checkpoint is not None:
-            checkpoint = last_checkpoint
-        # we check the model
-        print("training on model:", model)
-        train_result = trainer.train(resume_from_checkpoint=checkpoint)
-        # WE IMPLEMENT CUSTOM SAVING NAME
-        trainer.save_model(training_args.output_dir)  # Saves the tokenizer too for easy upload
-        metrics = train_result.metrics
-
-        max_train_samples = (
-            data_args.max_train_samples if data_args.max_train_samples is not None else len(train_dataset)
-        )
-        metrics["train_samples"] = min(max_train_samples, len(train_dataset))
-
-        trainer.log_metrics("train", metrics)
-        trainer.save_metrics("train", metrics)
-        trainer.save_state()
+        last_checkpoint = get_last_checkpoint(data_args.output_dir)
+        if last_checkpoint is not None:
+            print(f"Resuming training from checkpoint: {last_checkpoint}")
+            trainer.train(resume_from_checkpoint=last_checkpoint)
+        else:
+            print("No checkpoint found, starting training from scratch.")
+            trainer.train()
+        # we save the clm adapter as "clm"
+        model.save_adapter(data_args.output_dir, "clm")
 
     # Evaluation
     if training_args.do_eval:
