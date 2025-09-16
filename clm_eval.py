@@ -82,7 +82,7 @@ def main(submit_arguments):
     # 6) Evaluate
     training_args = TrainingArguments(
         output_dir="./results",
-        per_device_eval_batch_size=2,
+        per_device_eval_batch_size=4,
         do_eval=True,
         logging_dir="./logs",
         report_to=["tensorboard"],
