@@ -38,7 +38,7 @@ def main(submit_arguments):
 
     import adapters
     import transformers
-    from adapters import AdapterArguments, AdapterTrainer, setup_adapter_training
+    from adapters import AdapterArguments, AdapterTrainer
     from transformers import (
         CONFIG_MAPPING,
         # MODEL_FOR_MASKED_LM_MAPPING,
@@ -678,7 +678,12 @@ def main(submit_arguments):
 
     # Setup adapters
     # setup_adapter_training(model, adapter_args, data_args.dataset_name or "mlm")
-    setup_adapter_training(model, adapter_args, "clm")
+    # setup_adapter_training(model, adapter_args, "clm")
+
+    # custom setup for CLM
+    model.add_adapter(adapter_args.adapter_name, config=adapter_args.adapter_config)
+    model.train_adapter(adapter_args.adapter_name)
+    model.active_adapters = adapter_args.adapter_name
 
     # GPT FIX for torch dtypes mismatch
     model.config.use_cache = False
