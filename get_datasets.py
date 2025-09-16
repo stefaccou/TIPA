@@ -84,7 +84,7 @@ def main(submit_arguments):
             for line in example["text"].split("\n"):
                 if good_line := line.strip():
                     n += 1
-                    print(n, end="\r")
+                    # print(n, end="\r")
                     yield {"text": good_line}
 
     sequence_target = 200_000
@@ -109,7 +109,7 @@ def main(submit_arguments):
                         if not (sent := sent.strip()):
                             continue
                         n_sentences += 1
-                        print(n_sentences, end="\r")
+                        # print(n_sentences, end="\r")
                         if n_sentences == sequence_target:
                             break
                     if n_sentences == sequence_target:
