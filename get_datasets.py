@@ -26,7 +26,6 @@ def main(submit_arguments):
         )
 
     parser = HfArgumentParser(DatasetArguments)
-    dataset_args = None
 
     # add a comma to refer to first part of tuple output
     (dataset_args,) = parser.parse_args_into_dataclasses(submit_arguments)
