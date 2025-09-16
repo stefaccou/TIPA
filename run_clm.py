@@ -768,9 +768,9 @@ def main(submit_arguments):
 
 if __name__ == "__main__":
     job_name = "clm_adapter"
-    debug = True
+    debug = False
     partition = "a100"
-    time = "06:00:00"
+    time = "03:30:00"
 
     master_dir = find_master()
 
