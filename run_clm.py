@@ -679,11 +679,11 @@ def main(submit_arguments):
     # Setup adapters
     # setup_adapter_training(model, adapter_args, data_args.dataset_name or "mlm")
     # setup_adapter_training(model, adapter_args, "clm")
-
+    adapter_name = "clm"
     # custom setup for CLM
-    model.add_adapter(adapter_args.adapter_name, config=adapter_args.adapter_config)
-    model.train_adapter(adapter_args.adapter_name)
-    model.active_adapters = adapter_args.adapter_name
+    model.add_adapter(adapter_name, config=adapter_args.adapter_config)
+    model.train_adapter(adapter_name)
+    model.active_adapters = adapter_name
 
     # GPT FIX for torch dtypes mismatch
     model.config.use_cache = False
