@@ -32,7 +32,7 @@ def main(submit_arguments):
             default="data",
             metadata={"help": "Where to retrieve the downloaded datasets."},
         )
-        model_dir: Optional[str] = field(
+        adapter_dir: Optional[str] = field(
             default="outputs",
             metadata={"help": "Where to retrieve the trained model."},
         )
@@ -43,15 +43,17 @@ def main(submit_arguments):
     (dataset_args,) = parser.parse_args_into_dataclasses(submit_arguments)
 
     model_name = "google/gemma-3-1b-pt"
-    model = AutoModelForCausalLM.from_pretrained(model_name)
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=dataset_args.cache_dir)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=dataset_args.cache_dir)
     embedding_size = model.get_input_embeddings().weight.shape[0]
     if len(tokenizer) > embedding_size:
         model.resize_token_embeddings(len(tokenizer))
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token  # Gemma does this
         model.config.pad_token_id = tokenizer.pad_token_id
-    dataset = datasets.load_dataset("openlanguagedata/flores_plus", dataset_args.language)
+    dataset = datasets.load_dataset(
+        "openlanguagedata/flores_plus", dataset_args.language, cache_dir=dataset_args.cache_dir
+    )
 
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -99,7 +101,7 @@ def main(submit_arguments):
     print(eval_results)
     adapters.init(model)
 
-    model.load_adapter(dataset_args.model_dir, load_as="clm")
+    model.load_adapter(dataset_args.adapter_dir, load_as="clm")
     model.set_active_adapters("clm")
     trainer = Trainer(
         model=model,
