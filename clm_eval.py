@@ -98,6 +98,7 @@ def main(submit_arguments):
     )
 
     eval_results = trainer.evaluate()
+    print("Evaluation without adapter")
     print(eval_results)
     adapters.init(model)
 
@@ -112,6 +113,7 @@ def main(submit_arguments):
         tokenizer=tokenizer,
     )
     eval_results = trainer.evaluate()
+    print("Evaluation with adapter")
     print(eval_results)
 
 
