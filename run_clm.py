@@ -38,7 +38,7 @@ def main(submit_arguments):
 
     import adapters
     import transformers
-    from adapters import AdapterArguments, AdapterTrainer
+    from adapters import AdapterArguments, AdapterTrainer, SeqBnConfig
     from transformers import (
         CONFIG_MAPPING,
         # MODEL_FOR_MASKED_LM_MAPPING,
@@ -680,8 +680,12 @@ def main(submit_arguments):
     # setup_adapter_training(model, adapter_args, data_args.dataset_name or "mlm")
     # setup_adapter_training(model, adapter_args, "clm")
     adapter_name = "clm"
+    if adapter_args.adapter_config is not None:
+        adapter_config = adapters.get_adapter_config(adapter_args.adapter_config)
+    else:
+        adapter_config = SeqBnConfig(mh_adapter=True, output_adapter=True, reduction_factor=16, non_linearity="relu")
     # custom setup for CLM
-    model.add_adapter(adapter_name, config=adapter_args.adapter_config)
+    model.add_adapter(adapter_name, config=adapter_config)
     model.train_adapter(adapter_name)
     model.active_adapters = adapter_name
 
