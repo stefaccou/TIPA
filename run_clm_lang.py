@@ -227,7 +227,7 @@ def main(submit_arguments):
         eval_languages = {k: v for k, v in reversed(eval_languages.items())}
     for eval_language in eval_languages.keys():
         # print(eval_language)
-        if task == "sib":
+        if task in ["sib", "clm"]:
             eval_lang, script = eval_language
         else:
             eval_lang = eval_language
@@ -288,6 +288,7 @@ def main(submit_arguments):
             evaluations = {}
             weights = {}
             glots = get_glots(to_load)
+            print(glots)
             if eval_lang in glots.keys():
                 target_glot = glots[eval_lang]
             else:
