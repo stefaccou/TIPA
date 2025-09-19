@@ -173,18 +173,20 @@ def main(submit_arguments):
     if custom_args.eval_override:
         print(f"Overriding evaluation languages with {custom_args.eval_override}")
         eval_languages = {k: v for k, v in eval_languages.items() if k in custom_args.eval_override}
-    elif os.path.exists(
-        f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt"
-    ):
-        with open(
-            f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
-            "r",
-        ) as f:
-            failed_languages = f.read().splitlines()
-        if custom_args.retry:
-            eval_languages = {k: v for k, v in eval_languages.items() if k in failed_languages}
-        else:
-            eval_languages = {k: v for k, v in eval_languages.items() if k not in failed_languages}
+
+    # We remove this to do all languages always
+    # elif os.path.exists(
+    #     f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt"
+    # ):
+    #     with open(
+    #         f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
+    #         "r",
+    #     ) as f:
+    #         failed_languages = f.read().splitlines()
+    #     if custom_args.retry:
+    #         eval_languages = {k: v for k, v in eval_languages.items() if k in failed_languages}
+    #     else:
+    #         eval_languages = {k: v for k, v in eval_languages.items() if k not in failed_languages}
 
     tokenizer = AutoTokenizer.from_pretrained("google/gemma-3-1b-pt")
     # We use a CLM data collator: pads dynamically and sets labels=input_ids with -100 on padding
