@@ -415,8 +415,8 @@ def main(submit_arguments):
 
 if __name__ == "__main__":
     job_name = "clm_lang"
-    debug = False
-    partition = "a100"
+    debug = True
+    partition = "p100"
     time = "01:00:00"
 
     master_dir = find_master()
