@@ -320,9 +320,11 @@ def main(submit_arguments):
                     weights[distance_type] = typological_approximation(
                         target_glot, glots, distance_type, custom_args.limit
                     )
+                    print(weights)
                     if weights[distance_type] == {}:
                         print(f"No adapters found for {eval_lang} with distance type {distance_type}")
-                        continue
+                        raise ValueError("No adapters found")
+
                     merge_loaded_adapters(
                         model, merge_adapter_name=adapter_name, weights=weights[distance_type], delete_other=False
                     )
@@ -429,6 +431,14 @@ def main(submit_arguments):
             print(f"KeyError {e}, skipping this language")
         except DatasetGenerationError as e:
             print(f"DatasetGenerationError {e}, skipping this language")
+            with open(
+                f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
+                "a",
+            ) as f:
+                f.write(f"{eval_language}\n")
+            continue
+        except ValueError:
+            print("No distances can be calculated, skipping this language")
             with open(
                 f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
                 "a",
