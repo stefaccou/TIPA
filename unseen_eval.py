@@ -18,6 +18,7 @@ import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from transformers import EvalPrediction
 from tqdm import tqdm
+import os
 
 metrics = {"ner": evaluate.load("seqeval"), "qa": evaluate.load("squad"), "sib": evaluate.load("accuracy")}
 
@@ -420,6 +421,23 @@ def get_available_adapters(local=False):
     return to_load
 
 
+def get_clm_adapters(local=False, convert=False):
+    to_load = {}
+    if local:
+        # we go through all directories in the local provided path
+        for iso in os.listdir(local):
+            print(f"investigating {iso} in {local}")
+            if convert:
+                # convert from BCP 47 to ISO 639-3
+                if "_" in iso:
+                    iso = iso.split("_")[0]
+                    print(f"split to {iso}")
+                iso = ld.get(iso, tag_type=TagType.ISO_639_3_CODE).bcp_47_code
+            to_load[local + iso] = iso
+        print(to_load)
+    return to_load
+
+
 def get_glots(to_load):
     manuals = {
         "Arabic": "arab1267",
@@ -476,10 +494,18 @@ def merge_loaded_adapters(
         weights = {adapter: 1 / len(all_adapters) for adapter in all_adapters}
 
     if not patterns:
-        patterns = [
-            f"{model_type}\.encoder\.layer\.(?P<one>[\d\w]+)\.output\.adapters\.(?P<adapter>\w+)\.(?P<two>\w+)(?:\.0)?\.(?P<three>\w+)",
-            f"{model_type}\.invertible_adapters\.(?P<adapter>\w+)\.(?P<one>\w+)\.(?P<two>\d)\.(?P<three>\w+)",
-        ]
+        if model_type == "roberta":
+            patterns = [
+                f"{model_type}\.encoder\.layer\.(?P<one>[\d\w]+)\.output\.adapters\.(?P<adapter>\w+)\.(?P<two>\w+)(?:\.0)?\.(?P<three>\w+)",
+                f"{model_type}\.invertible_adapters\.(?P<adapter>\w+)\.(?P<one>\w+)\.(?P<two>\d)\.(?P<three>\w+)",
+            ]
+        elif model_type == "clm":
+            patterns = [
+                "model\.layers\.(?P<one>[\d\w]+)\.output_adapters\.adapters\.(?P<adapter>\w+)\.(?P<two>\w+)(?:\.0)?\.(?P<three>\w+)",
+                "model\.invertible_adapters\.(?P<adapter>\w+)\.(?P<one>\w+)\.(?P<two>\d)\.(?P<three>\w+)",
+            ]
+        else:
+            raise ValueError(f"Unknown model type {model_type}")
     comp_patterns = [re.compile(pattern) for pattern in patterns]
     organized_layers = {}
     for i, pattern in enumerate(patterns):
@@ -513,18 +539,39 @@ def merge_loaded_adapters(
                 for three, keys in three.items():
                     result = sum([sd[layer] * weights[adapter_name] for layer, adapter_name in keys])
                     if two == "adapter_down":
-                        new_state_dict[
-                            f"{model_type}.encoder.layer.{one}.output.adapters.{merge_adapter_name}.{two}.0.{three}"
-                        ] = result
+                        if model_type == "roberta":
+                            new_state_dict[
+                                f"{model_type}.encoder.layer.{one}.output.adapters.{merge_adapter_name}.{two}.0.{three}"
+                            ] = result
+                        elif model_type == "clm":
+                            new_state_dict[
+                                f"model.layers.{one}.output_adapters.adapters.{merge_adapter_name}.{two}.0.{three}"
+                            ] = result
+                        else:
+                            raise ValueError(f"Unknown model type {model_type}")
                     elif two == "adapter_up":
-                        new_state_dict[
-                            f"{model_type}.encoder.layer.{one}.output.adapters.{merge_adapter_name}.{two}.{three}"
-                        ] = result
+                        if model_type == "roberta":
+                            new_state_dict[
+                                f"{model_type}.encoder.layer.{one}.output.adapters.{merge_adapter_name}.{two}.{three}"
+                            ] = result
+                        elif model_type == "clm":
+                            new_state_dict[
+                                f"model.layers.{one}.output_adapters.adapters.{merge_adapter_name}.{two}.{three}"
+                            ] = result
+                        else:
+                            raise ValueError(f"Unknown model type {model_type}")
                     else:
                         # we are in the second pattern
-                        new_state_dict[f"{model_type}.invertible_adapters.{merge_adapter_name}.{one}.{two}.{three}"] = (
-                            result
-                        )
+                        if model_type == "roberta":
+                            new_state_dict[
+                                f"{model_type}.invertible_adapters.{merge_adapter_name}.{one}.{two}.{three}"
+                            ] = result
+                        elif model_type == "clm":
+                            new_state_dict[f"model.invertible_adapters.{merge_adapter_name}.{one}.{two}.{three}"] = (
+                                result
+                            )
+                        else:
+                            raise ValueError(f"Unknown model type {model_type}")
 
     # we now load in the new model
     if merge_adapter_name in model.adapters_config.adapters.keys():
