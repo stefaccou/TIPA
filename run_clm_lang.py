@@ -20,6 +20,7 @@ def main(submit_arguments):
     from datasets.exceptions import DatasetGenerationError
 
     from transformers import (
+        Trainer,
         AutoModelForCausalLM,
         AutoTokenizer,
         HfArgumentParser,
@@ -267,7 +268,10 @@ def main(submit_arguments):
                     task, model, tokenized_datasets, tokenizer, data_collator, compute_metrics
                 )
                 # instantiate
-                eval_trainer = AdapterTrainer(**trainer_kwargs)
+                if name is not None:
+                    eval_trainer = AdapterTrainer(**trainer_kwargs)
+                else:
+                    eval_trainer = Trainer(**trainer_kwargs)
                 if task != "qa":
                     ev = eval_trainer.evaluate()
                 else:
