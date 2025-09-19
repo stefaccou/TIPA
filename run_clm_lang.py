@@ -193,6 +193,12 @@ def main(submit_arguments):
 
     model = AutoModelForCausalLM.from_pretrained("google/gemma-3-1b-pt")
     init(model)
+    embedding_size = model.get_input_embeddings().weight.shape[0]
+    if len(tokenizer) > embedding_size:
+        model.resize_token_embeddings(len(tokenizer))
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token  # Gemma does this
+        model.config.pad_token_id = tokenizer.pad_token_id
 
     to_load = get_clm_adapters(local=custom_args.local_adapters, convert=True)
     for link, id in to_load.items():
