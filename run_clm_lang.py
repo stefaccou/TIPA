@@ -113,9 +113,7 @@ def main(submit_arguments):
                 "nargs": "+",
             },
         )
-        local_adapters: Optional[List[str]] = field(
-            default=None, metadata={"help": ("Local language adapters to load in"), "nargs": "+"}
-        )
+        local_adapters: Optional[str] = field(default=None, metadata={"help": ("Local language adapters to load in")})
         reverse: Optional[bool] = field(
             default=False,
             metadata={
