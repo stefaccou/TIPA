@@ -284,7 +284,7 @@ def main(submit_arguments):
                     start_logits, end_logits = predictions
                     ev = compute_metrics(start_logits, end_logits, tokenized_datasets, dataset_eval)
 
-                print(f"Evaluation results for {name}:")
+                # print(f"Evaluation results for {name}:")
                 print(ev)
                 # we empty the cache and model
                 # model.cpu()
