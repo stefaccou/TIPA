@@ -172,8 +172,9 @@ def main(submit_arguments):
     # we first check if the file exists:
     if custom_args.eval_override:
         print(f"Overriding evaluation languages with {custom_args.eval_override}")
-        print(eval_languages)
-        eval_languages = {k: v for k, v in eval_languages.items() if k in custom_args.eval_override}
+        eval_languages = {
+            k: v for k, v in eval_languages.items() if k in custom_args.eval_override or v in custom_args.eval_override
+        }
         print(eval_languages)
 
     # We remove this to do all languages always
