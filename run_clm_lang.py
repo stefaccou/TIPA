@@ -333,14 +333,14 @@ def main(submit_arguments):
                             os.makedirs(adapter_path)
                         model.save_adapter(adapter_path, adapter_name)
 
-                print(f"evaluating on reconstructed {eval_lang} adapter, distance type {distance_type}")
+                print(f"Evaluating on reconstructed {eval_lang} adapter, distance type {distance_type}")
                 evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
                 model.delete_adapter(adapter_name)
                 # delete the adapter for further iterations
 
             if not custom_args.disable_baselines:
                 # we calculate the baseline of using the english language model and the task adapter
-                print("evaluating on baseline without adapter")
+                print("Evaluating base model without adapter")
                 evaluations["baseline_en"] = run_eval(model, None)
 
                 # we calculate a baseline (just average over all adapter)
