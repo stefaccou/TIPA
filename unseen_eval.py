@@ -6,7 +6,7 @@ import collections
 from huggingface_hub import HfApi
 from qq import LanguageData, TagType
 from urielplus import urielplus
-from datasets import load_dataset, get_dataset_config_names
+from datasets import load_dataset, get_dataset_config_names, Dataset, Split
 from transformers import (
     TrainingArguments,
     AutoModelForTokenClassification,
@@ -77,16 +77,51 @@ def get_eval_languages(task):
                 continue
         print(eval_languages)
         return eval_languages
+    elif task == "clm":
+        langs_scripts = get_dataset_config_names("HuggingFaceFW/fineweb-2")
+        eval_languages = {}
+        for ds in langs_scripts:
+            lang, script = ds.split("_")
+            try:
+                name = ld.get(lang, tag_type=TagType.ISO_639_3_CODE).bcp_47_code
+                eval_languages[(name, script)] = ds
+            except KeyError:
+                # print(f"Language {lang} not in database, skipping)
+                continue
+        print(eval_languages)
+        return eval_languages
 
 
 def load_eval(task, eval_language, eval_languages):
-    dataset = load_dataset(task2ds[task], eval_languages[eval_language], trust_remote_code="True")
-    if "test" in dataset.keys():
-        dataset_eval = dataset["test"]
-    elif "validation" in dataset.keys():
-        dataset_eval = dataset["validation"]
+    if not task == "clm":
+        dataset = load_dataset(task2ds[task], eval_languages[eval_language], trust_remote_code="True")
+        if "test" in dataset.keys():
+            dataset_eval = dataset["test"]
+        elif "validation" in dataset.keys():
+            dataset_eval = dataset["validation"]
+        else:
+            dataset_eval = dataset["train"]
     else:
-        dataset_eval = dataset["train"]
+
+        def generate_lines(dataset, cutoff):
+            n = 0
+            for example in dataset:
+                if n >= cutoff:
+                    break
+                for line in example["text"].split("\n"):
+                    if good_line := line.strip():
+                        n += 1
+                        # print(n, end="\r")
+                        yield {"text": good_line}
+
+        if eval_languages[eval_language] == "eng_Latn":
+            ds = load_dataset("HuggingFaceFW/fineweb", streaming=True, split="train")
+        else:
+            ds = load_dataset("HuggingFaceFW/fineweb-2", eval_languages[eval_language], streaming=True, split="train")
+
+        dataset_eval = Dataset.from_generator(
+            generate_lines, gen_kwargs={"dataset": ds, "cutoff": 2000}, split=Split.TEST
+        )
     return dataset_eval
 
 
@@ -267,6 +302,24 @@ def preprocess(dataset, task, tokenizer):
         )
         return tokenized_datasets
 
+    elif task == "clm":
+
+        def preprocess_function(examples):
+            return tokenizer(
+                examples["text"],
+                truncation=True,
+                max_length=512,
+                # no padding here; we'll do dynamic padding in the collator
+            )
+
+        tokenized_datasets = dataset.map(
+            preprocess_function,
+            batched=True,
+            remove_columns=dataset.column_names,
+            # remove_columns=dataset["devtest"].column_names,  # keep only model features
+        )
+        return tokenized_datasets
+
 
 def get_compute_metrics(task, label_names=None):
     if task == "ner":
@@ -379,12 +432,19 @@ def get_compute_metrics(task, label_names=None):
 
             theoretical_answers = [{"id": ex["id"], "answers": ex["answers"]} for ex in examples]
             return metrics[task].compute(predictions=predicted_answers, references=theoretical_answers)
+
     elif task == "sib":
 
         def compute_metrics(eval_preds):
             logits, labels = eval_preds
             predictions = np.argmax(logits, axis=-1)
             return metrics[task].compute(predictions=predictions, references=labels)
+
+    elif task == "clm":
+
+        def compute_metrics(eval_preds):
+            print("if you see this, something went wrong in passing the arguments for clm")
+            return {}
 
     return compute_metrics
 
@@ -394,7 +454,7 @@ def get_trainer_kwargs(task, model, tokenized_datasets, tokenizer, data_collator
         output_dir="./eval_output", remove_unused_columns=False if not task == "qa" else True, fp16=True
     )
     trainer_kwargs = {"model": model, "args": args, "eval_dataset": tokenized_datasets}
-    if task != "qa":
+    if task not in ["qa", "clm"]:
         trainer_kwargs["compute_metrics"] = compute_metrics
     if task in ["qa", "sib"]:
         trainer_kwargs["processing_class"] = tokenizer
@@ -421,19 +481,20 @@ def get_available_adapters(local=False):
     return to_load
 
 
-def get_clm_adapters(local=False, convert=False):
+def get_clm_adapters(local=None, convert=False):
     to_load = {}
     if local:
         # we go through all directories in the local provided path
-        for iso in os.listdir(local):
-            print(f"investigating {iso} in {local}")
+        for adapter in os.listdir(local):
+            print(f"investigating {adapter} in {local}")
+            code = adapter
             if convert:
                 # convert from BCP 47 to ISO 639-3
-                if "_" in iso:
-                    iso = iso.split("_")[0]
-                    print(f"split to {iso}")
-                iso = ld.get(iso, tag_type=TagType.ISO_639_3_CODE).bcp_47_code
-            to_load[local + iso] = iso
+                if "_" in code:
+                    code = code.split("_")[0]
+                    print(f"split to {code}")
+                code = ld.get(code, tag_type=TagType.ISO_639_3_CODE).bcp_47_code
+            to_load[local + adapter] = code
         print(to_load)
     return to_load
 
