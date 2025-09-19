@@ -249,9 +249,9 @@ def main(submit_arguments):
                     f"./eval_output/clm/{eval_lang}/{task}{f'_{script}' if script else ''}_eval{limit_str}.json"
                 )
 
-            # if os.path.exists(output_file):
-            #     print(f"Skipping {eval_language} as it has already been processed. Output file: {output_file}")
-            #     continue
+            if os.path.exists(output_file):
+                print(f"Skipping {eval_language} as it has already been processed. Output file: {output_file}")
+                continue
 
             # Load and preprocess the dataset
             dataset_eval = load_eval(task, eval_language, eval_languages)
@@ -321,7 +321,7 @@ def main(submit_arguments):
                         target_glot, glots, distance_type, custom_args.limit
                     )
                     print(weights[distance_type])
-                    if weights == {}:
+                    if weights[distance_type] == {}:
                         print(f"No adapters found for {eval_lang} with distance type {distance_type}")
                         continue
                     merge_loaded_adapters(
