@@ -415,7 +415,7 @@ def main(submit_arguments):
 
 if __name__ == "__main__":
     job_name = "clm_lang"
-    debug = True
+    debug = False
     partition = "a100"
     time = "01:00:00"
 
