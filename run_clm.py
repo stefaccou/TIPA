@@ -774,12 +774,6 @@ if __name__ == "__main__":
     master_dir = find_master()
     # Set the experiment folder as a subdirectory of 'Master_thesis'
     experiments_dir = master_dir / "experiment_folder"
-    pass_name = debug * "debug_" + job_name
-    pass_partition = f"gpu_{partition}{debug * '_debug'}"
-    run_count = update_submission_log(experiments_dir, pass_name)
-    experiments_dir = experiments_dir / pass_name / f"{run_count:03d}"
-    experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
-    # some shenanigans to pass a time argument through submitit
     first = sys.argv[1]
     if first.startswith("--"):
         job_input = sys.argv[1:]
@@ -789,6 +783,13 @@ if __name__ == "__main__":
             time = f"0{first}:00:00"
         else:
             job_name = job_name + f"_{first}"
+    pass_name = debug * "debug_" + job_name
+    pass_partition = f"gpu_{partition}{debug * '_debug'}"
+    run_count = update_submission_log(experiments_dir, pass_name)
+    experiments_dir = experiments_dir / pass_name / f"{run_count:03d}"
+    experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
+    # some shenanigans to pass a time argument through submitit
+
     parameters = {
         "slurm_partition": pass_partition,
         "slurm_time": f"{'01:00:00' if pass_partition.endswith('debug') else time}",
