@@ -454,16 +454,16 @@ if __name__ == "__main__":
     first = sys.argv[1]
     if first.startswith("--"):
         job_input = sys.argv[1:]
-        pass_time = time
     else:
         job_input = sys.argv[2:]
         if len(first) == 1:
-            pass_time = f"0{first}:00:00"
+            time = f"0{first}:00:00"
         else:
-            pass_time = first
+            job_name = job_name + f"_{first}"
+
     parameters = {
         "slurm_partition": pass_partition,
-        "slurm_time": f"{'01:00:00' if pass_partition.endswith('debug') else pass_time}",
+        "slurm_time": f"{'01:00:00' if pass_partition.endswith('debug') else time}",
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if pass_partition.startswith(('gpu_p100', 'gpu_v100')) else 'wice'}",
