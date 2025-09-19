@@ -378,8 +378,8 @@ def main(submit_arguments):
                 #     # print(model.roberta.encoder.layer[0].output.adapters)
                 #     continue
 
-            if not os.path.exists(f"./eval_output/approximation/{eval_lang}"):
-                os.makedirs(f"./eval_output/approximation/{eval_lang}")
+            if not os.path.exists(f"./eval_output/clm/approximation/{eval_lang}"):
+                os.makedirs(f"./eval_output/clm/approximation/{eval_lang}")
             # we save this
             with open(output_file, "w") as f:
                 json.dump(evaluations, f, indent=4)
