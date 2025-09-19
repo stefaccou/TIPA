@@ -343,10 +343,10 @@ def main(submit_arguments):
 
                 # we calculate a baseline (just average over all adapter)
                 # we load the mono/huge_avg_adapter for this
-                print("evaluating on baseline (non-weighted average)")
-                model.load_adapter("./trained_adapters/clm/huge_avg_adapter", load_as="huge_avg_adapter")
-                evaluations["baseline_avg_adapter"] = run_eval(model, "huge_avg_adapter")
-                model.delete_adapter("huge_avg_adapter")
+                # print("evaluating on baseline (non-weighted average)")
+                # model.load_adapter("./trained_adapters/clm/huge_avg_adapter", load_as="huge_avg_adapter")
+                # evaluations["baseline_avg_adapter"] = run_eval(model, "huge_avg_adapter")
+                # model.delete_adapter("huge_avg_adapter")
                 # we calculate the baseline of using the typologically closest model and the task adapter
                 print("evaluating on baseline (closest adapter)")
                 for distance_type in distance_types:
