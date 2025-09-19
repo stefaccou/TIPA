@@ -172,7 +172,9 @@ def main(submit_arguments):
     # we first check if the file exists:
     if custom_args.eval_override:
         print(f"Overriding evaluation languages with {custom_args.eval_override}")
+        print(eval_languages)
         eval_languages = {k: v for k, v in eval_languages.items() if k in custom_args.eval_override}
+        print(eval_languages)
 
     # We remove this to do all languages always
     # elif os.path.exists(
@@ -236,6 +238,7 @@ def main(submit_arguments):
         else:
             eval_lang = eval_language
             script = None
+        print(eval_lang, script)
         try:
             print(
                 "\n\n",
