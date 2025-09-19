@@ -451,7 +451,10 @@ def get_compute_metrics(task, label_names=None):
 
 def get_trainer_kwargs(task, model, tokenized_datasets, tokenizer, data_collator, compute_metrics):
     args = TrainingArguments(
-        output_dir="./eval_output", remove_unused_columns=False if not task == "qa" else True, fp16=True
+        output_dir="./eval_output",
+        remove_unused_columns=False if not task == "qa" else True,
+        fp16=True,
+        per_device_eval_batch_size=2,  # increase if you have the GPU memory
     )
     trainer_kwargs = {"model": model, "args": args, "eval_dataset": tokenized_datasets}
     if task not in ["qa", "clm"]:

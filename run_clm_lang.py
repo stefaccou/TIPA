@@ -17,6 +17,7 @@ def main(submit_arguments):
         typological_approximation,
         get_glots,
     )
+    from datasets.exceptions import DatasetGenerationError
 
     from transformers import (
         AutoModelForCausalLM,
@@ -418,6 +419,14 @@ def main(submit_arguments):
             ) as f:
                 f.write(f"{eval_language}\n")
             print(f"KeyError {e}, skipping this language")
+        except DatasetGenerationError as e:
+            print(f"DatasetGenerationError {e}, skipping this language")
+            with open(
+                f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
+                "a",
+            ) as f:
+                f.write(f"{eval_language}\n")
+            continue
 
 
 if __name__ == "__main__":
