@@ -62,6 +62,7 @@ def main(submit_arguments):
         "Arabic": ["arb_Arab"],
         "Estonian": ["ekk_Latn"],
         "Swahili": ["swh_Latn"],
+        "English": ["eng_Latn"],
     }
 
     # we check which languages were passed as submit_arguments
