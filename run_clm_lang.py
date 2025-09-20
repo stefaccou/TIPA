@@ -356,6 +356,7 @@ def main(submit_arguments):
                 # we calculate the baseline of using the typologically closest model and the task adapter
                 print("evaluating on baseline (closest adapter)")
                 for distance_type in distance_types:
+                    done = []
                     try:
                         # we have to calculate these if we skipped the adapter creation
                         # we set limit to one so we only get the best adapter
@@ -363,10 +364,14 @@ def main(submit_arguments):
                             weights[distance_type] = typological_approximation(target_glot, glots, distance_type, 1)
                         # we load the closest adapter
                         closest_adapter = max(weights[distance_type], key=weights[distance_type].get)
+                        if closest_adapter in done:
+                            print(f"Already done {closest_adapter}, skipping")
+                            continue
                         print(
                             f"closest {distance_type} adapter is {closest_adapter} ({ld.get(closest_adapter, tag_type=TagType.BCP_47_CODE).english_name})"
                         )
                         evaluations[f"baseline_closest_{distance_type}"] = run_eval(model, closest_adapter)
+                        done.append(closest_adapter)
                     except Exception as e:
                         print(f"Error finding closest adapter: {e}")
 
