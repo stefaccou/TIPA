@@ -476,7 +476,7 @@ if __name__ == "__main__":
         "slurm_job_name": job_name,
         "slurm_additional_parameters": {
             "clusters": f"{'genius' if partition.startswith(('gpu_p100', 'gpu_v100')) else 'wice'}",
-            "account": os.environ["ACCOUNT_INFO"],  # replace with your account
+            "account": os.environ["LAGOM_ACCOUNT"],  # replace with your account
             "nodes": 1,
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,
