@@ -475,13 +475,12 @@ def get_available_adapters(local=False, model_type="xlm-roberta-base"):
         for m in all_models
         if m.modelId.startswith(f"AdapterHub/{model_type}-") and m.modelId.endswith("-wiki_pfeiffer")
     }
-    print("total models found on AdapterHub:", len(to_load))
     if local:
         trained_adapter_path = "./trained_adapters/"
         for iso in local:
             to_load[trained_adapter_path + iso] = iso
         print("extended to load with locals")
-        print(to_load)
+    print(to_load)
     return to_load
 
 
@@ -497,7 +496,6 @@ def get_clm_adapters(local=None, convert=False):
                     code = code.split("_")[0]
                 code = ld.get(code, tag_type=TagType.ISO_639_3_CODE).bcp_47_code
             to_load[local + adapter] = code
-        print(to_load)
     return to_load
 
 

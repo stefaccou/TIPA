@@ -217,6 +217,7 @@ def main(submit_arguments):
     model = AutoAdapterModel.from_pretrained("bert-base-multilingual-cased")
 
     to_load = get_available_adapters(local=custom_args.local_adapters, model_type="bert-base-multilingual-cased")
+    print(len(to_load), " adapters found")
     for link, id in to_load.items():
         try:
             model.load_adapter(link, load_as=id)
