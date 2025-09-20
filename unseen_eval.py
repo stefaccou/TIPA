@@ -489,13 +489,11 @@ def get_clm_adapters(local=None, convert=False):
     if local:
         # we go through all directories in the local provided path
         for adapter in os.listdir(local):
-            print(f"investigating {adapter} in {local}")
             code = adapter
             if convert:
                 # convert from BCP 47 to ISO 639-3
                 if "_" in code:
                     code = code.split("_")[0]
-                    print(f"split to {code}")
                 code = ld.get(code, tag_type=TagType.ISO_639_3_CODE).bcp_47_code
             to_load[local + adapter] = code
         print(to_load)

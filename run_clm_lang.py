@@ -175,8 +175,6 @@ def main(submit_arguments):
         eval_languages = {
             k: v for k, v in eval_languages.items() if k in custom_args.eval_override or v in custom_args.eval_override
         }
-        print(eval_languages)
-
     # We remove this to do all languages always
     # elif os.path.exists(
     #     f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt"
