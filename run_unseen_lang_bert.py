@@ -334,9 +334,10 @@ def main(submit_arguments):
                     weights[distance_type] = typological_approximation(
                         target_glot, glots, distance_type, custom_args.limit
                     )
-                    if weights == {}:
+                    if weights[distance_type] == {}:
                         print(f"No adapters found for {eval_lang} with distance type {distance_type}")
                         continue
+                    print(weights)
                     merge_loaded_adapters(
                         model,
                         merge_adapter_name=adapter_name,
