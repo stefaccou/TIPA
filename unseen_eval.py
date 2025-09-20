@@ -466,14 +466,14 @@ def get_trainer_kwargs(task, model, tokenized_datasets, tokenizer, data_collator
     return trainer_kwargs
 
 
-def get_available_adapters(local=False):
+def get_available_adapters(local=False, model_type="xlm-roberta-base"):
     # get all adapters from huggingface
-    all_models = api.list_models(author="AdapterHub", library="adapter-transformers", search="xlm-roberta-base-")
+    all_models = api.list_models(author="AdapterHub", library="adapter-transformers", search=f"{model_type}-")
 
     to_load = {
-        m.modelId: m.modelId.split("xlm-roberta-base-")[-1].rsplit("-wiki_pfeiffer", 1)[0]
+        m.modelId: m.modelId.split(f"{model_type}-")[-1].rsplit("-wiki_pfeiffer", 1)[0]
         for m in all_models
-        if m.modelId.startswith("AdapterHub/xlm-roberta-base-") and m.modelId.endswith("-wiki_pfeiffer")
+        if m.modelId.startswith(f"AdapterHub/{model_type}-") and m.modelId.endswith("-wiki_pfeiffer")
     }
     if local:
         trained_adapter_path = "./trained_adapters/"
@@ -556,7 +556,7 @@ def merge_loaded_adapters(
         weights = {adapter: 1 / len(all_adapters) for adapter in all_adapters}
 
     if not patterns:
-        if model_type == "roberta":
+        if model_type in ["roberta", "bert"]:
             patterns = [
                 f"{model_type}\.encoder\.layer\.(?P<one>[\d\w]+)\.output\.adapters\.(?P<adapter>\w+)\.(?P<two>\w+)(?:\.0)?\.(?P<three>\w+)",
                 f"{model_type}\.invertible_adapters\.(?P<adapter>\w+)\.(?P<one>\w+)\.(?P<two>\d)\.(?P<three>\w+)",
@@ -601,7 +601,7 @@ def merge_loaded_adapters(
                 for three, keys in three.items():
                     result = sum([sd[layer] * weights[adapter_name] for layer, adapter_name in keys])
                     if two == "adapter_down":
-                        if model_type == "roberta":
+                        if model_type in ["roberta", "bert"]:
                             new_state_dict[
                                 f"{model_type}.encoder.layer.{one}.output.adapters.{merge_adapter_name}.{two}.0.{three}"
                             ] = result
@@ -612,7 +612,7 @@ def merge_loaded_adapters(
                         else:
                             raise ValueError(f"Unknown model type {model_type}")
                     elif two == "adapter_up":
-                        if model_type == "roberta":
+                        if model_type in ["roberta", "bert"]:
                             new_state_dict[
                                 f"{model_type}.encoder.layer.{one}.output.adapters.{merge_adapter_name}.{two}.{three}"
                             ] = result
@@ -624,7 +624,7 @@ def merge_loaded_adapters(
                             raise ValueError(f"Unknown model type {model_type}")
                     else:
                         # we are in the second pattern
-                        if model_type == "roberta":
+                        if model_type in ["roberta", "bert"]:
                             new_state_dict[
                                 f"{model_type}.invertible_adapters.{merge_adapter_name}.{one}.{two}.{three}"
                             ] = result

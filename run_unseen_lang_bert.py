@@ -151,7 +151,7 @@ def main(submit_arguments):
             if self.retry:
                 # we check if a file exists with failed languages
                 if not os.path.exists(
-                    f"./experiment_folder/logs/failed_languages_{self.task}{'_' + self.output_name if self.output_name else ''}.txt"
+                    f"./experiment_folder/logs/bert/failed_languages_{self.task}{'_' + self.output_name if self.output_name else ''}.txt"
                 ):
                     raise ValueError(
                         f"File with failed languages {self.task} does not exist. Please run the script without --retry first."
@@ -189,10 +189,10 @@ def main(submit_arguments):
         print(f"Overriding evaluation languages with {custom_args.eval_override}")
         eval_languages = {k: v for k, v in eval_languages.items() if k in custom_args.eval_override}
     elif os.path.exists(
-        f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt"
+        f"./experiment_folder/logs/bert/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt"
     ):
         with open(
-            f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
+            f"./experiment_folder/logs/bert/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
             "r",
         ) as f:
             failed_languages = f.read().splitlines()
@@ -212,7 +212,7 @@ def main(submit_arguments):
 
     model = AutoAdapterModel.from_pretrained("bert-base-multilingual-cased")
 
-    to_load = get_available_adapters(local=custom_args.local_adapters)
+    to_load = get_available_adapters(local=custom_args.local_adapters, model_type="bert-base-multilingual-cased")
     for link, id in to_load.items():
         try:
             model.load_adapter(link, load_as=id)
@@ -251,9 +251,11 @@ def main(submit_arguments):
                 f"{script}",
             )
             if custom_args.output_name:
-                output_file = f"./eval_output/approximation/{eval_lang}/{task}{f'_{script}' if script else ''}_{custom_args.output_name}{limit_str}.json"
+                output_file = f"./eval_output/bert/{eval_lang}/{task}{f'_{script}' if script else ''}_{custom_args.output_name}{limit_str}.json"
             else:
-                output_file = f"./eval_output/approximation/{eval_lang}/{task}{f'_{script}' if script else ''}_eval{limit_str}.json"
+                output_file = (
+                    f"./eval_output/bert/{eval_lang}/{task}{f'_{script}' if script else ''}_eval{limit_str}.json"
+                )
 
             if os.path.exists(output_file):
                 print(f"Skipping {eval_language} as it has already been processed. Output file: {output_file}")
@@ -331,7 +333,11 @@ def main(submit_arguments):
                         print(f"No adapters found for {eval_lang} with distance type {distance_type}")
                         continue
                     merge_loaded_adapters(
-                        model, merge_adapter_name=adapter_name, weights=weights[distance_type], delete_other=False
+                        model,
+                        merge_adapter_name=adapter_name,
+                        weights=weights[distance_type],
+                        delete_other=False,
+                        model_type="bert",
                     )
                     # save this adapter
                     # check if directory exists first
@@ -339,7 +345,7 @@ def main(submit_arguments):
                         if not os.path.exists(adapter_path):
                             os.makedirs(adapter_path)
                         model.save_adapter(adapter_path, adapter_name)
-                model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
+                model.load_adapter(f"./trained_adapters/task_adapters/bert/{task}", load_as=task)
                 print(f"evaluating on reconstructed {eval_lang} adapter, distance type {distance_type}")
                 evaluations["reconstructed_" + distance_type] = run_eval(model, adapter_name)
                 model.delete_adapter(adapter_name)
@@ -347,22 +353,22 @@ def main(submit_arguments):
                 model.delete_adapter(task)
 
             if not custom_args.disable_baselines:
-                model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
+                model.load_adapter(f"./trained_adapters/task_adapters/bert/{task}", load_as=task)
                 # we calculate the baseline of using the english language model and the task adapter
                 print("evaluating on baseline (english model + task adapter)")
                 evaluations["baseline_en"] = run_eval(model, "en")
                 model.delete_adapter(task)
-                model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
+                model.load_adapter(f"./trained_adapters/task_adapters/bert/{task}", load_as=task)
                 print("evaluating on baseline (only task adapter")
                 # we calculate a baseline (just task adapter)
                 evaluations["baseline_task_adapter"] = run_eval(model, task)
                 # we calculate a baseline (just average over all adapter)
                 # we load the mono/huge_avg_adapter for this
-                print("evaluating on baseline (non-weighted average)")
-                model.load_adapter("./trained_adapters/typological/huge_avg_adapter", load_as="huge_avg_adapter")
-                evaluations["baseline_avg_adapter"] = run_eval(model, "huge_avg_adapter")
-                model.delete_adapter("huge_avg_adapter")
-                # we calculate the baseline of using the typologically closest model and the task adapter
+                # print("evaluating on baseline (non-weighted average)")
+                # model.load_adapter("./trained_adapters/typological/huge_avg_adapter", load_as="huge_avg_adapter")
+                # evaluations["baseline_avg_adapter"] = run_eval(model, "huge_avg_adapter")
+                # model.delete_adapter("huge_avg_adapter")
+                # # we calculate the baseline of using the typologically closest model and the task adapter
                 print("evaluating on baseline (closest model + task adapter)")
                 for distance_type in distance_types:
                     try:
@@ -397,9 +403,13 @@ def main(submit_arguments):
                     print(f"calculating no train but gain baseline with closest adapter {related}")
                     # as no preferred value for lambda is found by Klimaszewski, we do equal weighting for en and related
                     merge_loaded_adapters(
-                        model, merge_adapter_name="no_train_gain", weights={"en": 0.5, related: 0.5}, delete_other=False
+                        model,
+                        merge_adapter_name="no_train_gain",
+                        weights={"en": 0.5, related: 0.5},
+                        delete_other=False,
+                        model_type="bert",
                     )
-                    model.load_adapter(f"./trained_adapters/task_adapters/{task}", load_as=task)
+                    model.load_adapter(f"./trained_adapters/task_adapters/bert/{task}", load_as=task)
                     evaluations["no_train_gain"] = run_eval(model, "no_train_gain")
                     # we now delete the added adapters
                     model.delete_adapter("no_train_gain")
@@ -410,8 +420,8 @@ def main(submit_arguments):
                     # print(model.roberta.encoder.layer[0].output.adapters)
                     continue
 
-            if not os.path.exists(f"./eval_output/approximation/{eval_lang}"):
-                os.makedirs(f"./eval_output/approximation/{eval_lang}")
+            if not os.path.exists(f"./eval_output/bert/{eval_lang}"):
+                os.makedirs(f"./eval_output/bert/{eval_lang}")
             # we save this
             with open(output_file, "w") as f:
                 json.dump(evaluations, f, indent=4)
@@ -423,7 +433,7 @@ def main(submit_arguments):
             print(f"RuntimeError {e}, skipping this language")
             # we write this language to a file so we do not check it again
             with open(
-                f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
+                f"./experiment_folder/logs/bert/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
                 "a",
             ) as f:
                 f.write(f"{eval_language}\n")
@@ -431,14 +441,14 @@ def main(submit_arguments):
         except IndexError as e:
             print(f"IndexError {e}, skipping this language")
             with open(
-                f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
+                f"./experiment_folder/logs/bert/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
                 "a",
             ) as f:
                 f.write(f"{eval_language}\n")
             continue
         except KeyError as e:
             with open(
-                f"./experiment_folder/logs/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
+                f"./experiment_folder/logs/bert/failed_languages_{task}{'_' + custom_args.output_name if custom_args.output_name else ''}.txt",
                 "a",
             ) as f:
                 f.write(f"{eval_language}\n")
@@ -457,7 +467,7 @@ if __name__ == "__main__":
     run_count = update_submission_log(experiments_dir, job_name)
     experiments_dir = experiments_dir / job_name / f"{run_count:03d}"
     experiments_dir.mkdir(parents=True, exist_ok=True)  # Create if it doesn't exist
-    partition = f"gpu_p100{debug * '_debug'}"
+    partition = f"gpu_a100{debug * '_debug'}"
     # some shenanigans to pass a time argument through submitit
     first = sys.argv[1]
     if first.startswith("--"):
