@@ -475,6 +475,7 @@ def get_available_adapters(local=False, model_type="xlm-roberta-base"):
         for m in all_models
         if m.modelId.startswith(f"AdapterHub/{model_type}-") and m.modelId.endswith("-wiki_pfeiffer")
     }
+    print("total models found on AdapterHub:", len(to_load))
     if local:
         trained_adapter_path = "./trained_adapters/"
         for iso in local:
