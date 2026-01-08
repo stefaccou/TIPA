@@ -7,8 +7,11 @@ We also provide a weighting function based on typological distance between a sou
 For more info, we refer to notebook "0_Method_implementation.ipynb" in the repository,
 or to our paper [TBD].
 
-The files for creating the task adapters or English-language finetunings can be found in directory adapters_finetunings.
-
++ The files for creating the task adapters or English-language finetunings can be found in directory `adapters_finetunings`.
++ Analysis files, as well as additional figures and tables, can be found in directory `analysis`.
++ The averaged adapter used in the baseline calculations is joined under `trained_adapters`.
++ All scores for the full set of evaluations can be found under `eval_scores`.
++ Additional (unfinished) extension experiments are added to folder `extension-experiments`
 
 ## Usage
 
