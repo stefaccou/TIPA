@@ -7,6 +7,9 @@ We also provide a weighting function based on typological distance between a sou
 For more info, we refer to notebook "0_Method_implementation.ipynb" in the repository,
 or to our paper [TBD].
 
+The files for creating the task adapters or English-language finetunings can be found in directory adapters_finetunings.
+
+
 ## Usage
 
 ```zsh

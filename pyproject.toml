@@ -35,6 +35,7 @@ dev = [
 [project.urls]
 "Homepage" = "https://github.com/stefaccou/TIPA"
 
+[py-modules] = ["unseen_eval", "cluster_submission_utils"]
 [tool.setuptools.packages.find]
 where = ["src"]
 

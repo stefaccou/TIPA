@@ -718,7 +718,7 @@ if __name__ == "__main__":
 
     master_dir = find_master()
 
-    # Set the experiment folder as a subdirectory of 'Master_thesis'
+    # Set the experiment folder as a subdirectory of 'TIPA'
     experiments_dir = master_dir / "experiment_folder"
 
     run_count = update_submission_log(experiments_dir, job_name)
@@ -736,7 +736,7 @@ if __name__ == "__main__":
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,
             "mail_type": "BEGIN, END,FAIL",
-            "mail_user": "stef.accou@student.kuleuven.be",
+            "mail_user": os.environ["MAIL_ADDRESS"],
         },
     }
 

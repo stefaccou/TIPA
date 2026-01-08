@@ -772,7 +772,7 @@ if __name__ == "__main__":
     partition = "a100"
     time = "05:00:00"
     master_dir = find_master()
-    # Set the experiment folder as a subdirectory of 'Master_thesis'
+    # Set the experiment folder as a subdirectory of 'TIPA'
     experiments_dir = master_dir / "experiment_folder"
     first = sys.argv[1]
     if first.startswith("--"):
@@ -801,7 +801,7 @@ if __name__ == "__main__":
             "cpus_per_gpu": 16,
             "gpus_per_node": 1,
             "mail_type": "BEGIN,END,FAIL",
-            "mail_user": f"{'' if pass_partition.endswith('debug') else 'stef.accou@student.kuleuven.be'}",
+            "mail_user": f"{'' if pass_partition.endswith('debug') else os.environ["MAIL_ADDRESS"]}",
         },
     }
 
