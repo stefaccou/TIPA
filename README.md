@@ -13,6 +13,9 @@ or to our paper [TBD].
 + All scores for the full set of evaluations can be found under `eval_scores`.
 + Additional (unfinished) extension experiments are added to folder `extension-experiments`
 
+The actual experiments were conducted in files `1_tipa_adapters.py` and finetune baselines calculated in `2_finetune_baseline.py`.
+
+
 ## Usage
 
 ```zsh
