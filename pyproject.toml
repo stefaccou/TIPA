@@ -3,12 +3,12 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "master_thesis_adapters"
+name = "TIPA"
 version = "0.1"
 requires-python = ">= 3.11"
 authors = [{ name = "Stef Accou", email = "stef.accou@gmail.com" }]
 maintainers = [{ name = "Stef Accou", email = "stef.accou@gmail.com" }]
-description = "A package to do the things we do in a thesis (master_thesis_adapters)."
+description = "A package to showcase the Typologically Informed Parameter Aggregation (TIPA) framework."
 readme = "README.md"
 license = { file = "LICENSE" }
 classifiers = [
@@ -33,7 +33,7 @@ dev = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/stefaccou/Master_thesis"
+"Homepage" = "https://github.com/stefaccou/TIPA"
 
 [tool.setuptools.packages.find]
 where = ["src"]

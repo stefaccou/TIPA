@@ -1,4 +1,0 @@
-submitit INFO (2025-09-04 17:46:17,990) - Starting with JobEnvironment(job_id=1729, hostname=Laptop, local_rank=0(1), node=0(1), global_rank=0(1))
-submitit INFO (2025-09-04 17:46:17,990) - Loading pickle: /mnt/c/Users/stefa/Courses/Master_thesis/experiments/fineweb2_serbian_clm/000/1729_submitted.pkl
-starting main
-submitit ERROR (2025-09-04 17:46:18,002) - Submitted job triggered an exception
