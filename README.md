@@ -14,10 +14,3 @@ or to our paper [TBD].
 + Additional (unfinished) extension experiments are added to folder `extension-experiments`
 
 The actual experiments were conducted in files `1_tipa_adapters.py` and finetune baselines calculated in `2_finetune_baseline.py`.
-
-
-## Usage
-
-```zsh
-pip install git+https://github.com/stefaccou/TIPA
-```
